@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -77,10 +78,70 @@ export default function QuestBoard() {
     setPendingQuests(updatedQuests);
   };
 
-  const handleChangePendingActionHint = (index, newActionHint) => {
+  const handleChangePendingActionHint = async (index, newActionHint) => {
     const updatedQuests = [...pendingQuests];
     updatedQuests[index] = { ...updatedQuests[index], actionHint: newActionHint };
     setPendingQuests(updatedQuests);
+    
+    // Auto-generate RPG title when action hint is filled
+    if (newActionHint.trim()) {
+      try {
+        const result = await base44.integrations.Core.InvokeLLM({
+          prompt: `你是冒险者工会的AI助手。请根据任务描述生成RPG风格的任务标题、难度和标签。
+
+任务描述："${newActionHint}"
+
+命名规则：
+1. 标题格式：【任务类型】任务名称
+   - 任务类型示例：讨伐、收集、护送、调查、修炼、征服、探索
+2. 标题要有场景感和戏剧性
+
+难度评级（4个等级）：
+- C级：轻松任务（日常琐事）
+- B级：中等挑战（需要些努力）
+- A级：高难度（突破舒适区）
+- S级：超级挑战（改变人生）
+
+示例：
+输入："跑步5km@07:00"
+输出：
+{
+  "title": "【修炼】晨曦长跑试炼",
+  "difficulty": "B",
+  "rarity": "Common",
+  "tags": ["运动"]
+}
+
+请生成：`,
+          response_json_schema: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
+              rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] },
+              tags: { type: "array", items: { type: "string" } }
+            }
+          }
+        });
+
+        // Use a new copy of pendingQuests to ensure we're updating the latest state
+        setPendingQuests(prevQuests => {
+          const finalQuests = [...prevQuests];
+          finalQuests[index] = {
+            ...finalQuests[index],
+            actionHint: newActionHint, // Ensure actionHint is also updated
+            title: result.title,
+            difficulty: result.difficulty,
+            rarity: result.rarity,
+            tags: result.tags || []
+          };
+          return finalQuests;
+        });
+      } catch (error) {
+        console.error('生成任务标题失败:', error);
+        // Optionally show a toast or alert to the user
+      }
+    }
   };
 
   const handleAddManualQuest = () => {

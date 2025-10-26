@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "properties": {
+    "displayName": {
+      "type": "string",
+      "description": "Adventurer display name"
+    },
+    "streakCount": {
+      "type": "integer",
+      "default": 0,
+      "description": "Current consecutive days streak"
+    },
+    "longestStreak": {
+      "type": "integer",
+      "default": 0,
+      "description": "Longest streak achieved"
+    },
+    "lastClearDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Last date all quests were cleared"
+    },
+    "freezeTokenCount": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of freeze tokens available"
+    },
+    "praiseTone": {
+      "type": "string",
+      "default": "guild",
+      "description": "Praise dialog tone"
+    }
+  },
+  "name": "User"
+}

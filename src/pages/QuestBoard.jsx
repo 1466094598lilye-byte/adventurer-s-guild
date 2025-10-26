@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -432,7 +431,7 @@ export default function QuestBoard() {
           <ChestOpening
             date={today}
             onClose={() => setShowChest(false)}
-            onLootGenerated={(loot) => {
+            onLootGenerated={() => {
               queryClient.invalidateQueries(['loot']);
             }}
           />

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -78,10 +79,14 @@ export default function QuestBoard() {
   };
 
   const handleChangePendingActionHint = async (index, newActionHint) => {
-    const updatedQuests = [...pendingQuests];
-    updatedQuests[index] = { ...updatedQuests[index], actionHint: newActionHint };
-    setPendingQuests(updatedQuests);
+    // First update the action hint immediately
+    setPendingQuests(prevQuests => {
+      const updated = [...prevQuests];
+      updated[index] = { ...updated[index], actionHint: newActionHint };
+      return updated;
+    });
     
+    // Then generate RPG title if action hint is filled
     if (newActionHint.trim()) {
       try {
         const result = await base44.integrations.Core.InvokeLLM({
@@ -122,16 +127,18 @@ export default function QuestBoard() {
           }
         });
 
-        const finalQuests = [...pendingQuests];
-        finalQuests[index] = {
-          ...finalQuests[index],
-          actionHint: newActionHint,
-          title: result.title,
-          difficulty: result.difficulty,
-          rarity: result.rarity,
-          tags: result.tags || []
-        };
-        setPendingQuests(finalQuests);
+        // Update with AI generated data
+        setPendingQuests(prevQuests => {
+          const updated = [...prevQuests];
+          updated[index] = {
+            ...updated[index],
+            title: result.title,
+            difficulty: result.difficulty,
+            rarity: result.rarity,
+            tags: result.tags || []
+          };
+          return updated;
+        });
       } catch (error) {
         console.error('生成任务标题失败:', error);
       }

@@ -141,7 +141,7 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
                   className="block text-xs font-bold uppercase mb-2"
                   style={{ color: '#000' }}
                 >
-                  小时
+                  时
                 </label>
                 <select
                   value={hour}
@@ -167,7 +167,7 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
                   className="block text-xs font-bold uppercase mb-2"
                   style={{ color: '#000' }}
                 >
-                  分钟
+                  分
                 </label>
                 <select
                   value={minute}

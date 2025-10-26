@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, Loader2, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
@@ -6,7 +6,68 @@ export default function VoiceInput({ onQuestsGenerated }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const [audioLevels, setAudioLevels] = useState([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
   const recognitionRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const animationFrameRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+    };
+  }, []);
+
+  const startAudioVisualization = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const analyser = audioContext.createAnalyser();
+      const microphone = audioContext.createMediaStreamSource(stream);
+      
+      analyser.fftSize = 32;
+      microphone.connect(analyser);
+      
+      audioContextRef.current = audioContext;
+      analyserRef.current = analyser;
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      
+      const updateLevels = () => {
+        analyser.getByteFrequencyData(dataArray);
+        
+        // Sample 10 bars from the frequency data
+        const levels = [];
+        const step = Math.floor(dataArray.length / 10);
+        for (let i = 0; i < 10; i++) {
+          const value = dataArray[i * step] / 255;
+          levels.push(Math.min(value * 1.5, 1)); // Amplify slightly
+        }
+        
+        setAudioLevels(levels);
+        animationFrameRef.current = requestAnimationFrame(updateLevels);
+      };
+      
+      updateLevels();
+    } catch (error) {
+      console.error('无法访问麦克风:', error);
+    }
+  };
+
+  const stopAudioVisualization = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+    }
+    setAudioLevels([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  };
 
   const startRecording = async () => {
     try {
@@ -24,6 +85,7 @@ export default function VoiceInput({ onQuestsGenerated }) {
 
       recognition.onstart = () => {
         setIsRecording(true);
+        startAudioVisualization();
         console.log('语音识别已启动');
       };
 
@@ -46,6 +108,7 @@ export default function VoiceInput({ onQuestsGenerated }) {
       recognition.onerror = (event) => {
         console.error('语音识别错误:', event.error);
         setIsRecording(false);
+        stopAudioVisualization();
         if (event.error === 'no-speech') {
           alert('没有检测到语音，请重试');
         } else if (event.error === 'not-allowed') {
@@ -57,6 +120,7 @@ export default function VoiceInput({ onQuestsGenerated }) {
 
       recognition.onend = () => {
         setIsRecording(false);
+        stopAudioVisualization();
         console.log('语音识别已结束');
       };
 
@@ -72,6 +136,7 @@ export default function VoiceInput({ onQuestsGenerated }) {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
       setIsRecording(false);
+      stopAudioVisualization();
       
       if (transcript.trim()) {
         await handleTextSubmit(transcript);
@@ -178,63 +243,116 @@ RPG标题命名规则：
         boxShadow: '6px 6px 0px #000'
       }}
     >
-      <div className="flex gap-3 mb-3">
-        <button
-          onClick={isRecording ? stopRecording : startRecording}
-          disabled={isProcessing}
-          className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black transition-all"
-          style={{
-            backgroundColor: isRecording ? '#FF6B35' : '#4ECDC4',
-            border: '4px solid #000',
-            boxShadow: '5px 5px 0px #000',
-            transform: isRecording ? 'scale(1.1)' : 'scale(1)'
-          }}
-        >
-          {isProcessing ? (
-            <Loader2 className="w-8 h-8 animate-spin" />
-          ) : isRecording ? (
-            <MicOff className="w-8 h-8" strokeWidth={3} />
-          ) : (
-            <Mic className="w-8 h-8" strokeWidth={3} />
-          )}
-        </button>
-
-        <div className="flex-1">
-          <input
-            type="text"
-            placeholder="输入任务或点击麦克风说话..."
-            value={transcript}
-            onChange={(e) => setTranscript(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                handleTextSubmit(transcript);
-              }
-            }}
+      {!isRecording ? (
+        // Default Input Mode
+        <div className="flex gap-3 mb-3">
+          <button
+            onClick={startRecording}
             disabled={isProcessing}
-            className="w-full h-16 px-4 font-bold text-lg"
+            className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black transition-all"
+            style={{
+              backgroundColor: '#4ECDC4',
+              border: '4px solid #000',
+              boxShadow: '5px 5px 0px #000'
+            }}
+          >
+            {isProcessing ? (
+              <Loader2 className="w-8 h-8 animate-spin" />
+            ) : (
+              <Mic className="w-8 h-8" strokeWidth={3} />
+            )}
+          </button>
+
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder="输入任务或点击麦克风说话..."
+              value={transcript}
+              onChange={(e) => setTranscript(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleTextSubmit(transcript);
+                }
+              }}
+              disabled={isProcessing}
+              className="w-full h-16 px-4 font-bold text-lg"
+              style={{
+                backgroundColor: '#FFF',
+                border: '4px solid #000',
+                boxShadow: '5px 5px 0px #000'
+              }}
+            />
+          </div>
+
+          <button
+            onClick={() => handleTextSubmit(transcript)}
+            disabled={isProcessing || !transcript.trim()}
+            className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
+            style={{
+              backgroundColor: '#C44569',
+              color: '#FFF',
+              border: '4px solid #000',
+              boxShadow: '5px 5px 0px #000',
+              opacity: (!transcript.trim() || isProcessing) ? 0.5 : 1
+            }}
+          >
+            <Sparkles className="w-8 h-8" strokeWidth={3} />
+          </button>
+        </div>
+      ) : (
+        // Voice Recording Mode with Waveform
+        <div className="mb-3">
+          <div 
+            className="p-6 mb-3"
             style={{
               backgroundColor: '#FFF',
               border: '4px solid #000',
               boxShadow: '5px 5px 0px #000'
             }}
-          />
-        </div>
+          >
+            {/* Waveform Visualization */}
+            <div className="flex items-end justify-center gap-1 mb-4" style={{ height: '80px' }}>
+              {audioLevels.map((level, i) => (
+                <div
+                  key={i}
+                  className="transition-all duration-100 ease-out"
+                  style={{
+                    width: '8%',
+                    height: `${Math.max(level * 100, 10)}%`,
+                    backgroundColor: '#FF6B35',
+                    border: '2px solid #000',
+                    boxShadow: '2px 2px 0px #000'
+                  }}
+                />
+              ))}
+            </div>
 
-        <button
-          onClick={() => handleTextSubmit(transcript)}
-          disabled={isProcessing || !transcript.trim()}
-          className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
-          style={{
-            backgroundColor: '#C44569',
-            color: '#FFF',
-            border: '4px solid #000',
-            boxShadow: '5px 5px 0px #000',
-            opacity: (!transcript.trim() || isProcessing) ? 0.5 : 1
-          }}
-        >
-          <Sparkles className="w-8 h-8" strokeWidth={3} />
-        </button>
-      </div>
+            {/* Real-time Transcript */}
+            <div className="min-h-[40px] flex items-center justify-center">
+              {transcript ? (
+                <p className="font-bold text-lg text-center">{transcript}</p>
+              ) : (
+                <p className="font-bold text-gray-400 text-center">正在聆听...</p>
+              )}
+            </div>
+          </div>
+
+          {/* Stop Button */}
+          <button
+            onClick={stopRecording}
+            className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
+            style={{
+              backgroundColor: '#FF6B35',
+              color: '#FFF',
+              border: '4px solid #000',
+              boxShadow: '5px 5px 0px #000'
+            }}
+          >
+            <MicOff className="w-6 h-6" strokeWidth={3} />
+            完成录音
+          </button>
+        </div>
+      )}
 
       <p className="text-xs font-bold uppercase tracking-wide" style={{ color: '#000' }}>
         💡 说出你的任务，工会AI将为你整理！

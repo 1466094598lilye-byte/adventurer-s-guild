@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Filter, Loader2 } from 'lucide-react';
+import { Filter, Loader2, Edit2, Check } from 'lucide-react';
 import VoiceInput from '../components/quest/VoiceInput';
 import QuestCard from '../components/quest/QuestCard';
 import PraiseDialog from '../components/quest/PraiseDialog';
@@ -14,6 +14,7 @@ export default function QuestBoard() {
   const [selectedQuest, setSelectedQuest] = useState(null);
   const [showChest, setShowChest] = useState(false);
   const [pendingQuests, setPendingQuests] = useState([]);
+  const [editingPendingIndex, setEditingPendingIndex] = useState(null);
   const [editingQuest, setEditingQuest] = useState(null);
   const [toast, setToast] = useState(null);
   const queryClient = useQueryClient();
@@ -68,6 +69,13 @@ export default function QuestBoard() {
         source: 'ai'
       });
     });
+  };
+
+  const handleEditPendingQuest = (index, newActionHint) => {
+    const updatedQuests = [...pendingQuests];
+    updatedQuests[index] = { ...updatedQuests[index], actionHint: newActionHint };
+    setPendingQuests(updatedQuests);
+    setEditingPendingIndex(null);
   };
 
   const handleComplete = async (quest) => {
@@ -215,14 +223,52 @@ export default function QuestBoard() {
               {pendingQuests.map((quest, i) => (
                 <div 
                   key={i}
-                  className="p-2"
+                  className="p-3"
                   style={{
                     backgroundColor: '#FFF',
                     border: '3px solid #000'
                   }}
                 >
-                  <p className="font-black text-sm">{quest.title}</p>
-                  <p className="text-xs font-bold text-gray-600">({quest.actionHint})</p>
+                  <p className="font-black text-sm mb-2">{quest.title}</p>
+                  {editingPendingIndex === i ? (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={quest.actionHint}
+                        onChange={(e) => {
+                          const updated = [...pendingQuests];
+                          updated[i] = { ...updated[i], actionHint: e.target.value };
+                          setPendingQuests(updated);
+                        }}
+                        className="flex-1 px-2 py-1 font-bold text-sm"
+                        style={{
+                          border: '2px solid #000'
+                        }}
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => setEditingPendingIndex(null)}
+                        className="px-3 py-1 font-bold text-sm"
+                        style={{
+                          backgroundColor: '#4ECDC4',
+                          border: '2px solid #000'
+                        }}
+                      >
+                        <Check className="w-4 h-4" strokeWidth={3} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-gray-600">({quest.actionHint})</p>
+                      <button
+                        onClick={() => setEditingPendingIndex(i)}
+                        className="p-1 hover:bg-gray-100"
+                        style={{ border: '2px solid #000' }}
+                      >
+                        <Edit2 className="w-4 h-4" strokeWidth={3} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

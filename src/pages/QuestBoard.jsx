@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -14,7 +13,7 @@ export default function QuestBoard() {
   const [selectedQuest, setSelectedQuest] = useState(null);
   const [showChest, setShowChest] = useState(false);
   const [pendingQuests, setPendingQuests] = useState([]);
-  const [toast, setToast] = useState(null); // Added: new state for toast notification
+  const [toast, setToast] = useState(null);
   const queryClient = useQueryClient();
 
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -90,7 +89,6 @@ export default function QuestBoard() {
     }
   };
 
-  // Added: handleReopen function
   const handleReopen = async (quest) => {
     await updateQuestMutation.mutateAsync({
       id: quest.id,
@@ -241,7 +239,7 @@ export default function QuestBoard() {
                   alert('编辑功能开发中');
                 }}
                 onDelete={(id) => deleteQuestMutation.mutate(id)}
-                onReopen={handleReopen} {/* Added: onReopen prop */}
+                onReopen={handleReopen}
               />
             ))}
           </div>
@@ -285,7 +283,6 @@ export default function QuestBoard() {
         </div>
       )}
 
-      {/* Toast Animation Style */}
       <style>{`
         @keyframes fade-in-out {
           0% { opacity: 0; transform: translate(-50%, -10px); }

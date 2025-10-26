@@ -1,3 +1,4 @@
+
 import { useState, useRef } from 'react';
 import { Mic, MicOff, Loader2, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -51,21 +52,25 @@ export default function VoiceInput({ onQuestsGenerated }) {
 
       // Get transcript and parse to quests
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `你是冒险者工会的AI助手。用户语音输入了任务描述。请转写语音内容，然后将其解析为结构化任务。
+        prompt: `你是冒险者工会的AI助手。用户语音输入了任务描述。请转写语音内容，然后将其解析为RPG风格的结构化任务。
 
-规则：
-1. 抽取【动作动词】【对象/地点】【时间】【数量/频率】【标签】
-2. 任务命名=「工会样式标题」+（一眼能看懂的括号动作）
-3. 标题要有冒险/RPG感觉，括号内是清晰的实际行动
-4. 根据任务难度判断difficulty（F最简单到S最难）
-5. 根据任务重要性判断rarity（Common/Rare/Epic/Legendary）
+命名规则（更像RPG游戏）：
+1. 标题格式：【任务类型】任务名称
+   - 任务类型示例：讨伐、收集、护送、调查、修炼、征服、探索
+2. 标题要有场景感和戏剧性，比如：
+   - 跑步 → 【修炼】晨曦长跑试炼
+   - 背单词 → 【收集】古语词汇宝库
+   - 发邮件 → 【护送】重要情报传递
+   - 打扫房间 → 【征服】混沌领域整顿
+   - 工作 → 【讨伐】代码之兽征服战
+3. 括号动作保持清晰实用，不要过度修饰
 
 示例：
 输入："明早7点跑步5公里，给Daisy发邮件确认看房"
 输出：
 [
   {
-    "title": "黎明疾行·体能试炼",
+    "title": "【修炼】晨曦长跑试炼",
     "actionHint": "跑步5km@07:00",
     "dueDate": "明日07:00",
     "tags": ["运动"],
@@ -73,7 +78,7 @@ export default function VoiceInput({ onQuestsGenerated }) {
     "rarity": "Common"
   },
   {
-    "title": "书信送达·房产小队",
+    "title": "【护送】房产情报传递",
     "actionHint": "给Daisy发看房确认邮件",
     "dueDate": "今日",
     "tags": ["事务"],
@@ -122,7 +127,31 @@ export default function VoiceInput({ onQuestsGenerated }) {
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `你是冒险者工会的AI助手。用户输入了任务描述："${text}"
 
-请将其解析为结构化任务。规则同上。`,
+请将其解析为RPG风格的结构化任务。
+
+命名规则（更像RPG游戏）：
+1. 标题格式：【任务类型】任务名称
+   - 任务类型示例：讨伐、收集、护送、调查、修炼、征服、探索
+2. 标题要有场景感和戏剧性，比如：
+   - 跑步 → 【修炼】晨曦长跑试炼
+   - 背单词 → 【收集】古语词汇宝库
+   - 发邮件 → 【护送】重要情报传递
+   - 打扫房间 → 【征服】混沌领域整顿
+   - 工作 → 【讨伐】代码之兽征服战
+3. 括号动作保持清晰实用，不要过度修饰
+
+示例：
+输入："写周报"
+输出：
+{
+  "title": "【记录】冒险周志编撰",
+  "actionHint": "完成本周工作周报",
+  "tags": ["工作"],
+  "difficulty": "D",
+  "rarity": "Common"
+}
+
+请处理用户输入。`,
         response_json_schema: {
           type: "object",
           properties: {

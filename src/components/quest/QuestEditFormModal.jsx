@@ -1,12 +1,18 @@
 import { useState } from 'react';
 import { X, Save } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 
 export default function QuestEditFormModal({ quest, onSave, onClose }) {
   const [actionHint, setActionHint] = useState(quest.actionHint || '');
-  const [dueDate, setDueDate] = useState(
-    quest.dueDate ? format(new Date(quest.dueDate), "yyyy-MM-dd'T'HH:mm") : ''
-  );
+  
+  // Parse initial date and time
+  const initialDate = quest.dueDate ? format(new Date(quest.dueDate), 'yyyy-MM-dd') : '';
+  const initialHour = quest.dueDate ? format(new Date(quest.dueDate), 'HH') : '';
+  const initialMinute = quest.dueDate ? format(new Date(quest.dueDate), 'mm') : '';
+  
+  const [date, setDate] = useState(initialDate);
+  const [hour, setHour] = useState(initialHour);
+  const [minute, setMinute] = useState(initialMinute);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -17,10 +23,16 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
       return;
     }
 
+    // Combine date and time
+    let dueDate = null;
+    if (date && hour && minute) {
+      dueDate = new Date(`${date}T${hour}:${minute}`).toISOString();
+    }
+
     setIsSaving(true);
     await onSave({
       actionHint: actionHint.trim(),
-      dueDate: dueDate ? new Date(dueDate).toISOString() : null
+      dueDate: dueDate
     });
     setIsSaving(false);
   };
@@ -111,16 +123,71 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
               截止日期
             </label>
             <input
-              type="datetime-local"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              className="w-full px-4 py-3 font-bold text-base"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full px-4 py-3 font-bold text-base mb-3"
               style={{
                 backgroundColor: '#FFF',
                 border: '3px solid #000',
                 boxShadow: '4px 4px 0px #000'
               }}
             />
+            
+            {/* Time Inputs */}
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label 
+                  className="block text-xs font-bold uppercase mb-2"
+                  style={{ color: '#000' }}
+                >
+                  小时
+                </label>
+                <select
+                  value={hour}
+                  onChange={(e) => setHour(e.target.value)}
+                  className="w-full px-4 py-3 font-bold text-base"
+                  style={{
+                    backgroundColor: '#FFF',
+                    border: '3px solid #000',
+                    boxShadow: '4px 4px 0px #000'
+                  }}
+                >
+                  <option value="">--</option>
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={String(i).padStart(2, '0')}>
+                      {String(i).padStart(2, '0')}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="flex-1">
+                <label 
+                  className="block text-xs font-bold uppercase mb-2"
+                  style={{ color: '#000' }}
+                >
+                  分钟
+                </label>
+                <select
+                  value={minute}
+                  onChange={(e) => setMinute(e.target.value)}
+                  className="w-full px-4 py-3 font-bold text-base"
+                  style={{
+                    backgroundColor: '#FFF',
+                    border: '3px solid #000',
+                    boxShadow: '4px 4px 0px #000'
+                  }}
+                >
+                  <option value="">--</option>
+                  {Array.from({ length: 60 }, (_, i) => (
+                    <option key={i} value={String(i).padStart(2, '0')}>
+                      {String(i).padStart(2, '0')}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
 
           {/* Action Buttons */}

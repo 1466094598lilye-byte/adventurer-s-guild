@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Filter, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Filter, Loader2, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import VoiceInput from '../components/quest/VoiceInput';
 import QuestCard from '../components/quest/QuestCard';
 import PraiseDialog from '../components/quest/PraiseDialog';
@@ -93,8 +92,6 @@ export default function QuestBoard() {
       tags: []
     };
     setPendingQuests([...pendingQuests, newQuest]);
-    // Set editingPendingIndex to the index of the newly added quest
-    // which will be `pendingQuests.length` before the state updates
     setEditingPendingIndex(pendingQuests.length);
   };
 
@@ -103,9 +100,6 @@ export default function QuestBoard() {
     setPendingQuests(updatedQuests);
     if (editingPendingIndex === index) {
       setEditingPendingIndex(null);
-    } else if (editingPendingIndex > index) {
-      // If a quest before the currently edited one is deleted, adjust the index
-      setEditingPendingIndex(editingPendingIndex - 1);
     }
   };
 
@@ -267,7 +261,7 @@ export default function QuestBoard() {
               <h3 className="font-black uppercase">待确认委托 ({pendingQuests.length})</h3>
               <button
                 onClick={handleAddManualQuest}
-                className="w-8 h-8 flex items-center justify-center font-black text-xl"
+                className="w-8 h-8 flex items-center justify-center font-black"
                 style={{
                   backgroundColor: '#4ECDC4',
                   border: '3px solid #000',
@@ -275,7 +269,7 @@ export default function QuestBoard() {
                 }}
                 title="手动添加任务"
               >
-                +
+                <Plus className="w-5 h-5" strokeWidth={3} />
               </button>
             </div>
             <div className="space-y-2 mb-4">

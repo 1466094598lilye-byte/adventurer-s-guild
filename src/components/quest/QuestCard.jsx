@@ -32,8 +32,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
           border: '4px solid #000',
           boxShadow: isDone ? '3px 3px 0px #000' : '6px 6px 0px #000',
           transform: `rotate(${Math.random() * 2 - 1}deg)`,
-          animation: isGlowing ? 'glow 0.5s ease-in-out' : 'none',
-          overflow: 'visible'
+          animation: isGlowing ? 'glow 0.5s ease-in-out' : 'none'
         }}
       >
         <div className="flex gap-3">
@@ -80,10 +79,11 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                       onClick={() => setShowMenu(false)}
                     />
                     <div 
-                      className="absolute right-0 top-full mt-2 w-40 bg-white z-50"
+                      className="absolute right-0 bottom-full mb-2 w-40 bg-white"
                       style={{
                         border: '3px solid #000',
-                        boxShadow: '4px 4px 0px #000'
+                        boxShadow: '4px 4px 0px #000',
+                        zIndex: 9999
                       }}
                     >
                       {isDone && (

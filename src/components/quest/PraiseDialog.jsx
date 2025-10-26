@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, BookMarked, Star } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
@@ -6,7 +6,7 @@ export default function PraiseDialog({ quest, onClose, onAddNote }) {
   const [praise, setPraise] = useState('');
   const [loading, setLoading] = useState(true);
 
-  useState(() => {
+  useEffect(() => {
     generatePraise();
   }, []);
 

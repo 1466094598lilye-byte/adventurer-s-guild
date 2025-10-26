@@ -2,6 +2,7 @@ import QuestBoard from './pages/QuestBoard';
 import Journal from './pages/Journal';
 import Treasures from './pages/Treasures';
 import Profile from './pages/Profile';
+import Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -14,4 +15,5 @@ export const PAGES = {
 export const pagesConfig = {
     mainPage: "QuestBoard",
     Pages: PAGES,
+    Layout: Layout,
 };

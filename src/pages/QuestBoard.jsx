@@ -6,6 +6,7 @@ import VoiceInput from '../components/quest/VoiceInput';
 import QuestCard from '../components/quest/QuestCard';
 import PraiseDialog from '../components/quest/PraiseDialog';
 import ChestOpening from '../components/treasure/ChestOpening';
+import QuestEditFormModal from '../components/quest/QuestEditFormModal';
 import { format } from 'date-fns';
 
 export default function QuestBoard() {
@@ -13,6 +14,7 @@ export default function QuestBoard() {
   const [selectedQuest, setSelectedQuest] = useState(null);
   const [showChest, setShowChest] = useState(false);
   const [pendingQuests, setPendingQuests] = useState([]);
+  const [editingQuest, setEditingQuest] = useState(null);
   const [toast, setToast] = useState(null);
   const queryClient = useQueryClient();
 
@@ -103,6 +105,71 @@ export default function QuestBoard() {
     const message = messages[Math.floor(Math.random() * messages.length)];
     setToast(message);
     setTimeout(() => setToast(null), 2000);
+  };
+
+  const handleEditQuestSave = async ({ actionHint, dueDate }) => {
+    try {
+      // Call AI to regenerate RPG elements
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `你是冒险者工会的AI助手。冒险者修改了任务的实际行动描述。请根据新的行动描述，重新生成RPG风格的任务名称、难度、稀有度和标签。
+
+新的行动描述："${actionHint}"
+
+命名规则（更像RPG游戏）：
+1. 标题格式：【任务类型】任务名称
+   - 任务类型示例：讨伐、收集、护送、调查、修炼、征服、探索
+2. 标题要有场景感和戏剧性
+
+示例：
+输入："跑步5km@07:00"
+输出：
+{
+  "title": "【修炼】晨曦长跑试炼",
+  "difficulty": "C",
+  "rarity": "Common",
+  "tags": ["运动"]
+}
+
+请生成：`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            difficulty: { type: "string", enum: ["F", "E", "D", "C", "B", "A", "S"] },
+            rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] },
+            tags: { type: "array", items: { type: "string" } }
+          }
+        }
+      });
+
+      // Merge AI-generated data with user input
+      const updateData = {
+        title: result.title,
+        actionHint: actionHint,
+        difficulty: result.difficulty,
+        rarity: result.rarity,
+        tags: result.tags || [],
+        dueDate: dueDate
+      };
+
+      // Update quest in database
+      await updateQuestMutation.mutateAsync({
+        id: editingQuest.id,
+        data: updateData
+      });
+
+      // Show success toast
+      setToast('委托更新成功！');
+      setTimeout(() => setToast(null), 2000);
+
+      // Close modal
+      setEditingQuest(null);
+
+      // Refresh quest list
+      queryClient.invalidateQueries(['quests']);
+    } catch (error) {
+      alert('更新失败，请重试');
+    }
   };
 
   const filteredQuests = quests.filter(quest => {
@@ -228,9 +295,7 @@ export default function QuestBoard() {
                 key={quest.id}
                 quest={quest}
                 onComplete={handleComplete}
-                onEdit={(q) => {
-                  alert('编辑功能开发中');
-                }}
+                onEdit={(q) => setEditingQuest(q)}
                 onDelete={(id) => deleteQuestMutation.mutate(id)}
                 onReopen={handleReopen}
               />
@@ -255,6 +320,14 @@ export default function QuestBoard() {
             onLootGenerated={(loot) => {
               queryClient.invalidateQueries(['loot']);
             }}
+          />
+        )}
+
+        {editingQuest && (
+          <QuestEditFormModal
+            quest={editingQuest}
+            onSave={handleEditQuestSave}
+            onClose={() => setEditingQuest(null)}
           />
         )}
       </div>

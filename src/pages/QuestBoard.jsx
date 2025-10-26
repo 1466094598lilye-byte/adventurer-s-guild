@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -83,7 +82,6 @@ export default function QuestBoard() {
     updatedQuests[index] = { ...updatedQuests[index], actionHint: newActionHint };
     setPendingQuests(updatedQuests);
     
-    // Auto-generate RPG title when action hint is filled
     if (newActionHint.trim()) {
       try {
         const result = await base44.integrations.Core.InvokeLLM({
@@ -124,22 +122,18 @@ export default function QuestBoard() {
           }
         });
 
-        // Use a new copy of pendingQuests to ensure we're updating the latest state
-        setPendingQuests(prevQuests => {
-          const finalQuests = [...prevQuests];
-          finalQuests[index] = {
-            ...finalQuests[index],
-            actionHint: newActionHint, // Ensure actionHint is also updated
-            title: result.title,
-            difficulty: result.difficulty,
-            rarity: result.rarity,
-            tags: result.tags || []
-          };
-          return finalQuests;
-        });
+        const finalQuests = [...pendingQuests];
+        finalQuests[index] = {
+          ...finalQuests[index],
+          actionHint: newActionHint,
+          title: result.title,
+          difficulty: result.difficulty,
+          rarity: result.rarity,
+          tags: result.tags || []
+        };
+        setPendingQuests(finalQuests);
       } catch (error) {
         console.error('生成任务标题失败:', error);
-        // Optionally show a toast or alert to the user
       }
     }
   };

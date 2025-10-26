@@ -6,136 +6,79 @@ export default function VoiceInput({ onQuestsGenerated }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcript, setTranscript] = useState('');
-  const mediaRecorderRef = useRef(null);
-  const chunksRef = useRef([]);
+  const recognitionRef = useRef(null);
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Check if browser supports speech recognition
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       
-      // Try to use audio/wav or audio/mp4 if supported, otherwise fallback to webm
-      const mimeType = MediaRecorder.isTypeSupported('audio/wav') 
-        ? 'audio/wav' 
-        : MediaRecorder.isTypeSupported('audio/mp4') 
-        ? 'audio/mp4'
-        : 'audio/webm';
-      
-      console.log('使用音频格式:', mimeType);
-      
-      const mediaRecorder = new MediaRecorder(stream, { mimeType });
-      mediaRecorderRef.current = mediaRecorder;
-      chunksRef.current = [];
+      if (!SpeechRecognition) {
+        alert('您的浏览器不支持语音识别，请使用文本输入');
+        return;
+      }
 
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          chunksRef.current.push(e.data);
-        }
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'zh-CN';
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onstart = () => {
+        setIsRecording(true);
+        console.log('语音识别已启动');
       };
 
-      mediaRecorder.onstop = async () => {
-        // Get file extension based on mime type
-        const extension = mimeType.includes('wav') ? 'wav' : mimeType.includes('mp4') ? 'mp4' : 'webm';
-        const audioBlob = new Blob(chunksRef.current, { type: mimeType });
-        await processAudio(audioBlob, extension, mimeType);
-        stream.getTracks().forEach(track => track.stop());
-      };
+      recognition.onresult = (event) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
 
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch (error) {
-      alert('无法访问麦克风，请检查权限设置');
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  };
-
-  const processAudio = async (audioBlob, extension, mimeType) => {
-    setIsProcessing(true);
-    try {
-      // Upload audio with correct extension
-      const audioFile = new File([audioBlob], `voice.${extension}`, { type: mimeType });
-      console.log('上传音频文件...', audioFile.name, audioFile.type);
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: audioFile });
-      console.log('音频上传成功:', file_url);
-
-      // Get transcript and parse to quests
-      console.log('调用AI处理语音...');
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `你是冒险者工会的AI助手。用户语音输入了任务描述。请转写语音内容，然后将其解析为RPG风格的结构化任务。
-
-命名规则（更像RPG游戏）：
-1. 标题格式：【任务类型】任务名称
-   - 任务类型示例：讨伐、收集、护送、调查、修炼、征服、探索
-2. 标题要有场景感和戏剧性，比如：
-   - 跑步 → 【修炼】晨曦长跑试炼
-   - 背单词 → 【收集】古语词汇宝库
-   - 发邮件 → 【护送】重要情报传递
-   - 打扫房间 → 【征服】混沌领域整顿
-   - 工作 → 【讨伐】代码之兽征服战
-3. 括号动作保持清晰实用，不要过度修饰
-
-示例：
-输入："明早7点跑步5公里，给Daisy发邮件确认看房"
-输出：
-{
-  "transcript": "明早7点跑步5公里，给Daisy发邮件确认看房",
-  "quests": [
-    {
-      "title": "【修炼】晨曦长跑试炼",
-      "actionHint": "跑步5km@07:00",
-      "dueDate": "明日07:00",
-      "tags": ["运动"],
-      "difficulty": "C",
-      "rarity": "Common"
-    },
-    {
-      "title": "【护送】房产情报传递",
-      "actionHint": "给Daisy发看房确认邮件",
-      "dueDate": "今日",
-      "tags": ["事务"],
-      "difficulty": "D",
-      "rarity": "Rare"
-    }
-  ]
-}
-
-请处理用户的语音输入。`,
-        file_urls: [file_url],
-        response_json_schema: {
-          type: "object",
-          properties: {
-            transcript: { type: "string" },
-            quests: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  title: { type: "string" },
-                  actionHint: { type: "string" },
-                  dueDate: { type: "string" },
-                  tags: { type: "array", items: { type: "string" } },
-                  difficulty: { type: "string", enum: ["F", "E", "D", "C", "B", "A", "S"] },
-                  rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
-                }
-              }
-            }
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
           }
         }
-      });
 
-      console.log('AI处理结果:', result);
-      setTranscript(result.transcript || '');
-      onQuestsGenerated(result.quests || []);
+        setTranscript(finalTranscript || interimTranscript);
+      };
+
+      recognition.onerror = (event) => {
+        console.error('语音识别错误:', event.error);
+        setIsRecording(false);
+        if (event.error === 'no-speech') {
+          alert('没有检测到语音，请重试');
+        } else if (event.error === 'not-allowed') {
+          alert('麦克风权限被拒绝，请在浏览器设置中允许使用麦克风');
+        } else {
+          alert(`语音识别失败：${event.error}`);
+        }
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+        console.log('语音识别已结束');
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
     } catch (error) {
-      console.error('语音处理错误:', error);
-      alert(`语音处理失败：${error.message || '请重试'}`);
+      console.error('启动语音识别失败:', error);
+      alert('无法启动语音识别，请检查浏览器权限');
     }
-    setIsProcessing(false);
+  };
+
+  const stopRecording = async () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+      
+      // Process the transcript if we have one
+      if (transcript.trim()) {
+        await handleTextSubmit(transcript);
+      }
+    }
   };
 
   const handleTextSubmit = async (text) => {
@@ -200,7 +143,7 @@ export default function VoiceInput({ onQuestsGenerated }) {
       setTranscript('');
     } catch (error) {
       console.error('文本处理错误:', error);
-      alert(`文本处理失败：${error.message || '请重试'}`);
+      alert(`任务解析失败：${error.message || '请重试'}`);
     }
     setIsProcessing(false);
   };

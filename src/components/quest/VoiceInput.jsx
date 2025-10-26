@@ -11,6 +11,7 @@ export default function VoiceInput({ onQuestsGenerated }) {
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const animationFrameRef = useRef(null);
+  const streamRef = useRef(null);
 
   useEffect(() => {
     return () => {
@@ -20,12 +21,17 @@ export default function VoiceInput({ onQuestsGenerated }) {
       if (audioContextRef.current) {
         audioContextRef.current.close();
       }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
     };
   }, []);
 
   const startAudioVisualization = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const analyser = audioContext.createAnalyser();
       const microphone = audioContext.createMediaStreamSource(stream);
@@ -39,14 +45,15 @@ export default function VoiceInput({ onQuestsGenerated }) {
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
       
       const updateLevels = () => {
-        analyser.getByteFrequencyData(dataArray);
+        if (!analyserRef.current) return;
         
-        // Sample 10 bars from the frequency data
+        analyserRef.current.getByteFrequencyData(dataArray);
+        
         const levels = [];
         const step = Math.floor(dataArray.length / 10);
         for (let i = 0; i < 10; i++) {
           const value = dataArray[i * step] / 255;
-          levels.push(Math.min(value * 1.5, 1)); // Amplify slightly
+          levels.push(Math.min(value * 1.5, 1));
         }
         
         setAudioLevels(levels);
@@ -62,10 +69,17 @@ export default function VoiceInput({ onQuestsGenerated }) {
   const stopAudioVisualization = () => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
     if (audioContextRef.current) {
       audioContextRef.current.close();
+      audioContextRef.current = null;
     }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    analyserRef.current = null;
     setAudioLevels([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
   };
 
@@ -94,11 +108,11 @@ export default function VoiceInput({ onQuestsGenerated }) {
         let finalTranscript = '';
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
+          const transcriptText = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscript += transcript;
+            finalTranscript += transcriptText;
           } else {
-            interimTranscript += transcript;
+            interimTranscript += transcriptText;
           }
         }
 
@@ -244,7 +258,6 @@ RPG标题命名规则：
       }}
     >
       {!isRecording ? (
-        // Default Input Mode
         <div className="flex gap-3 mb-3">
           <button
             onClick={startRecording}
@@ -300,7 +313,6 @@ RPG标题命名规则：
           </button>
         </div>
       ) : (
-        // Voice Recording Mode with Waveform
         <div className="mb-3">
           <div 
             className="p-6 mb-3"
@@ -310,7 +322,6 @@ RPG标题命名规则：
               boxShadow: '5px 5px 0px #000'
             }}
           >
-            {/* Waveform Visualization */}
             <div className="flex items-end justify-center gap-1 mb-4" style={{ height: '80px' }}>
               {audioLevels.map((level, i) => (
                 <div
@@ -327,7 +338,6 @@ RPG标题命名规则：
               ))}
             </div>
 
-            {/* Real-time Transcript */}
             <div className="min-h-[40px] flex items-center justify-center">
               {transcript ? (
                 <p className="font-bold text-lg text-center">{transcript}</p>
@@ -337,7 +347,6 @@ RPG标题命名规则：
             </div>
           </div>
 
-          {/* Stop Button */}
           <button
             onClick={stopRecording}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"

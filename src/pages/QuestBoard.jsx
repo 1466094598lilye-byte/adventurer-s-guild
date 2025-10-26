@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Filter, Loader2 } from 'lucide-react';
@@ -75,12 +75,10 @@ export default function QuestBoard() {
     });
     setSelectedQuest(quest);
 
-    // Check if all quests are done
     const updatedQuests = await base44.entities.Quest.filter({ date: today });
     const allDone = updatedQuests.every(q => q.status === 'done');
     
     if (allDone) {
-      // Check if chest already opened
       const chests = await base44.entities.DailyChest.filter({ date: today });
       if (chests.length === 0) {
         await base44.entities.DailyChest.create({ date: today, opened: false });
@@ -117,7 +115,6 @@ export default function QuestBoard() {
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
         <div 
           className="mb-6 p-4 transform -rotate-1"
           style={{
@@ -135,10 +132,8 @@ export default function QuestBoard() {
           </p>
         </div>
 
-        {/* Voice Input */}
         <VoiceInput onQuestsGenerated={handleQuestsGenerated} />
 
-        {/* Pending Quests Preview */}
         {pendingQuests.length > 0 && (
           <div 
             className="mb-6 p-4"
@@ -192,7 +187,6 @@ export default function QuestBoard() {
           </div>
         )}
 
-        {/* Filter */}
         <div className="flex gap-3 mb-6">
           {['all', 'todo', 'done'].map(f => (
             <button
@@ -211,7 +205,6 @@ export default function QuestBoard() {
           ))}
         </div>
 
-        {/* Quests List */}
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="w-12 h-12 animate-spin" strokeWidth={4} />
@@ -245,7 +238,6 @@ export default function QuestBoard() {
           </div>
         )}
 
-        {/* Praise Dialog */}
         {selectedQuest && (
           <PraiseDialog
             quest={selectedQuest}
@@ -256,7 +248,6 @@ export default function QuestBoard() {
           />
         )}
 
-        {/* Chest Opening */}
         {showChest && (
           <ChestOpening
             date={today}
@@ -268,7 +259,6 @@ export default function QuestBoard() {
         )}
       </div>
 
-      {/* Toast Notification */}
       {toast && (
         <div 
           className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 animate-fade-in-out"

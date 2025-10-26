@@ -10,7 +10,6 @@ export default function VoiceInput({ onQuestsGenerated }) {
 
   const startRecording = async () => {
     try {
-      // Check if browser supports speech recognition
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       
       if (!SpeechRecognition) {
@@ -74,7 +73,6 @@ export default function VoiceInput({ onQuestsGenerated }) {
       recognitionRef.current.stop();
       setIsRecording(false);
       
-      // Process the transcript if we have one
       if (transcript.trim()) {
         await handleTextSubmit(transcript);
       }
@@ -105,6 +103,12 @@ RPG标题命名规则：
    - 任务类型：讨伐、收集、护送、调查、修炼、征服、探索
 2. 标题要有场景感和戏剧性，但不要过度修饰
 
+难度评级（4个等级）：
+- C级：轻松任务（日常琐事、简单事项）
+- B级：中等挑战（需要一些努力和时间）
+- A级：高难度（突破舒适区、有挑战性）
+- S级：超级挑战（人生重大任务、极具难度）
+
 示例：
 输入："写周报"
 输出：
@@ -114,22 +118,22 @@ RPG标题命名规则：
       "title": "【记录】冒险周志编撰",
       "actionHint": "写周报",
       "tags": ["工作"],
-      "difficulty": "D",
+      "difficulty": "C",
       "rarity": "Common"
     }
   ]
 }
 
-输入："回复老板在工作群里的信息"
+输入："开始每天跑步5公里的习惯"
 输出：
 {
   "quests": [
     {
-      "title": "【护送】上级情报应答",
-      "actionHint": "回复老板工作群消息",
-      "tags": ["工作", "沟通"],
-      "difficulty": "D",
-      "rarity": "Common"
+      "title": "【修炼】晨曦长跑试炼",
+      "actionHint": "跑步5km",
+      "tags": ["运动", "习惯"],
+      "difficulty": "A",
+      "rarity": "Rare"
     }
   ]
 }
@@ -147,7 +151,7 @@ RPG标题命名规则：
                   actionHint: { type: "string" },
                   dueDate: { type: "string" },
                   tags: { type: "array", items: { type: "string" } },
-                  difficulty: { type: "string", enum: ["F", "E", "D", "C", "B", "A", "S"] },
+                  difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
                   rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
                 }
               }
@@ -175,7 +179,6 @@ RPG标题命名规则：
       }}
     >
       <div className="flex gap-3 mb-3">
-        {/* Voice Button */}
         <button
           onClick={isRecording ? stopRecording : startRecording}
           disabled={isProcessing}
@@ -196,7 +199,6 @@ RPG标题命名规则：
           )}
         </button>
 
-        {/* Text Input */}
         <div className="flex-1">
           <input
             type="text"
@@ -218,7 +220,6 @@ RPG标题命名规则：
           />
         </div>
 
-        {/* Submit Button */}
         <button
           onClick={() => handleTextSubmit(transcript)}
           disabled={isProcessing || !transcript.trim()}

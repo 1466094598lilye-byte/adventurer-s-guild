@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -132,12 +133,18 @@ export default function QuestBoard() {
    - 任务类型示例：讨伐、收集、护送、调查、修炼、征服、探索
 2. 标题要有场景感和戏剧性
 
+难度评级（4个等级）：
+- C级：轻松任务（日常琐事）
+- B级：中等挑战（需要些努力）
+- A级：高难度（突破舒适区）
+- S级：超级挑战（改变人生）
+
 示例：
 输入："跑步5km@07:00"
 输出：
 {
   "title": "【修炼】晨曦长跑试炼",
-  "difficulty": "C",
+  "difficulty": "B",
   "rarity": "Common",
   "tags": ["运动"]
 }
@@ -147,7 +154,7 @@ export default function QuestBoard() {
           type: "object",
           properties: {
             title: { type: "string" },
-            difficulty: { type: "string", enum: ["F", "E", "D", "C", "B", "A", "S"] },
+            difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
             rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] },
             tags: { type: "array", items: { type: "string" } }
           }
@@ -187,19 +194,13 @@ export default function QuestBoard() {
   });
 
   const difficultyColors = {
-    F: '#D4F1F4',
-    E: '#A7E9AF',
-    D: '#FFE66D',
-    C: '#FF6B35',
-    B: '#C44569',
-    A: '#9B59B6',
+    C: '#FFE66D',
+    B: '#FF6B35',
+    A: '#C44569',
     S: '#000'
   };
 
   const difficultyLabels = {
-    F: 'F',
-    E: 'E',
-    D: 'D',
     C: 'C',
     B: 'B',
     A: 'A',
@@ -305,8 +306,8 @@ export default function QuestBoard() {
                         <label className="block text-xs font-bold uppercase mb-2" style={{ color: '#666' }}>
                           难度评级：
                         </label>
-                        <div className="grid grid-cols-7 gap-2">
-                          {['F', 'E', 'D', 'C', 'B', 'A', 'S'].map(level => {
+                        <div className="grid grid-cols-4 gap-2">
+                          {['C', 'B', 'A', 'S'].map(level => {
                             const isSelected = quest.difficulty === level;
                             return (
                               <button
@@ -315,18 +316,24 @@ export default function QuestBoard() {
                                   e.stopPropagation();
                                   handleChangePendingDifficulty(i, level);
                                 }}
-                                className="py-2 font-black text-sm transition-all"
+                                className="py-3 font-black text-lg transition-all"
                                 style={{
                                   backgroundColor: isSelected ? difficultyColors[level] : '#F0F0F0',
                                   color: level === 'S' && isSelected ? '#FFE66D' : '#000',
                                   border: isSelected ? '3px solid #000' : '2px solid #000',
-                                  boxShadow: isSelected ? '2px 2px 0px #000' : 'none'
+                                  boxShadow: isSelected ? '3px 3px 0px #000' : 'none'
                                 }}
                               >
                                 {level}
                               </button>
                             );
                           })}
+                        </div>
+                        <div className="grid grid-cols-4 gap-2 mt-2">
+                          <p className="text-xs font-bold text-center" style={{ color: '#666' }}>轻松</p>
+                          <p className="text-xs font-bold text-center" style={{ color: '#666' }}>中等</p>
+                          <p className="text-xs font-bold text-center" style={{ color: '#666' }}>高难</p>
+                          <p className="text-xs font-bold text-center" style={{ color: '#666' }}>超级</p>
                         </div>
                       </div>
                     </div>

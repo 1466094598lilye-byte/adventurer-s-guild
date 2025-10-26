@@ -26,15 +26,12 @@
     "difficulty": {
       "type": "string",
       "enum": [
-        "F",
-        "E",
-        "D",
         "C",
         "B",
         "A",
         "S"
       ],
-      "default": "D",
+      "default": "C",
       "description": "Quest difficulty rank"
     },
     "rarity": {

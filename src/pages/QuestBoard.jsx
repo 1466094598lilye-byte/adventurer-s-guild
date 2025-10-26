@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -13,6 +14,7 @@ export default function QuestBoard() {
   const [selectedQuest, setSelectedQuest] = useState(null);
   const [showChest, setShowChest] = useState(false);
   const [pendingQuests, setPendingQuests] = useState([]);
+  const [toast, setToast] = useState(null); // Added: new state for toast notification
   const queryClient = useQueryClient();
 
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -86,6 +88,25 @@ export default function QuestBoard() {
         setTimeout(() => setShowChest(true), 1000);
       }
     }
+  };
+
+  // Added: handleReopen function
+  const handleReopen = async (quest) => {
+    await updateQuestMutation.mutateAsync({
+      id: quest.id,
+      data: { status: 'todo' }
+    });
+    
+    const messages = [
+      '已撤回报告，委托重新激活。',
+      '记录已改写，任务重新登记于工会任务板。',
+      '冒险者，请再次确认这份委托的准备情况。',
+      '报告撤回完毕，任务恢复至进行中状态。'
+    ];
+    
+    const message = messages[Math.floor(Math.random() * messages.length)];
+    setToast(message);
+    setTimeout(() => setToast(null), 2000);
   };
 
   const filteredQuests = quests.filter(quest => {
@@ -217,10 +238,10 @@ export default function QuestBoard() {
                 quest={quest}
                 onComplete={handleComplete}
                 onEdit={(q) => {
-                  // Edit functionality placeholder
                   alert('编辑功能开发中');
                 }}
                 onDelete={(id) => deleteQuestMutation.mutate(id)}
+                onReopen={handleReopen} {/* Added: onReopen prop */}
               />
             ))}
           </div>
@@ -248,6 +269,33 @@ export default function QuestBoard() {
           />
         )}
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div 
+          className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 animate-fade-in-out"
+          style={{
+            backgroundColor: '#4ECDC4',
+            border: '4px solid #000',
+            boxShadow: '6px 6px 0px #000',
+            maxWidth: '90%'
+          }}
+        >
+          <p className="font-black text-center">{toast}</p>
+        </div>
+      )}
+
+      {/* Toast Animation Style */}
+      <style>{`
+        @keyframes fade-in-out {
+          0% { opacity: 0; transform: translate(-50%, -10px); }
+          10%, 90% { opacity: 1; transform: translate(-50%, 0); }
+          100% { opacity: 0; transform: translate(-50%, -10px); }
+        }
+        .animate-fade-in-out {
+          animation: fade-in-out 2s ease-in-out;
+        }
+      `}</style>
     </div>
   );
 }

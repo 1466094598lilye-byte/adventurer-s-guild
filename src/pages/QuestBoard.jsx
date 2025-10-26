@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Filter, Loader2, Edit2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Filter, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import VoiceInput from '../components/quest/VoiceInput';
 import QuestCard from '../components/quest/QuestCard';
 import PraiseDialog from '../components/quest/PraiseDialog';
@@ -29,7 +29,7 @@ export default function QuestBoard() {
     }
   });
 
-  const { data: user } = useQuery({
+  useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me()
   });
@@ -122,7 +122,6 @@ export default function QuestBoard() {
 
   const handleEditQuestSave = async ({ actionHint, dueDate }) => {
     try {
-      // Call AI to regenerate RPG elements
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `你是冒险者工会的AI助手。冒险者修改了任务的实际行动描述。请根据新的行动描述，重新生成RPG风格的任务名称、难度、稀有度和标签。
 
@@ -155,7 +154,6 @@ export default function QuestBoard() {
         }
       });
 
-      // Merge AI-generated data with user input
       const updateData = {
         title: result.title,
         actionHint: actionHint,
@@ -165,20 +163,16 @@ export default function QuestBoard() {
         dueDate: dueDate
       };
 
-      // Update quest in database
       await updateQuestMutation.mutateAsync({
         id: editingQuest.id,
         data: updateData
       });
 
-      // Show success toast
       setToast('委托更新成功！');
       setTimeout(() => setToast(null), 2000);
 
-      // Close modal
       setEditingQuest(null);
 
-      // Refresh quest list
       queryClient.invalidateQueries(['quests']);
     } catch (error) {
       alert('更新失败，请重试');
@@ -254,7 +248,6 @@ export default function QuestBoard() {
                     border: '3px solid #000'
                   }}
                 >
-                  {/* Compact View */}
                   <div 
                     className="p-3 flex items-center justify-between cursor-pointer hover:bg-gray-50"
                     onClick={() => setEditingPendingIndex(editingPendingIndex === i ? null : i)}
@@ -286,7 +279,6 @@ export default function QuestBoard() {
                     </div>
                   </div>
 
-                  {/* Expanded Edit View */}
                   {editingPendingIndex === i && (
                     <div 
                       className="px-3 pb-3 pt-0"
@@ -294,7 +286,6 @@ export default function QuestBoard() {
                         borderTop: '2px solid #000'
                       }}
                     >
-                      {/* Action Hint Editor */}
                       <div className="mb-3 mt-3">
                         <label className="block text-xs font-bold uppercase mb-2" style={{ color: '#666' }}>
                           任务内容：
@@ -310,7 +301,6 @@ export default function QuestBoard() {
                         />
                       </div>
 
-                      {/* Difficulty Selector */}
                       <div>
                         <label className="block text-xs font-bold uppercase mb-2" style={{ color: '#666' }}>
                           难度评级：

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -81,6 +82,31 @@ export default function QuestBoard() {
     const updatedQuests = [...pendingQuests];
     updatedQuests[index] = { ...updatedQuests[index], actionHint: newActionHint };
     setPendingQuests(updatedQuests);
+  };
+
+  const handleAddManualQuest = () => {
+    const newQuest = {
+      title: '【新任务】待命名任务',
+      actionHint: '',
+      difficulty: 'C',
+      rarity: 'Common',
+      tags: []
+    };
+    setPendingQuests([...pendingQuests, newQuest]);
+    // Set editingPendingIndex to the index of the newly added quest
+    // which will be `pendingQuests.length` before the state updates
+    setEditingPendingIndex(pendingQuests.length);
+  };
+
+  const handleDeletePendingQuest = (index) => {
+    const updatedQuests = pendingQuests.filter((_, i) => i !== index);
+    setPendingQuests(updatedQuests);
+    if (editingPendingIndex === index) {
+      setEditingPendingIndex(null);
+    } else if (editingPendingIndex > index) {
+      // If a quest before the currently edited one is deleted, adjust the index
+      setEditingPendingIndex(editingPendingIndex - 1);
+    }
   };
 
   const handleComplete = async (quest) => {
@@ -237,7 +263,21 @@ export default function QuestBoard() {
               boxShadow: '6px 6px 0px #000'
             }}
           >
-            <h3 className="font-black uppercase mb-3">待确认委托 ({pendingQuests.length})</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-black uppercase">待确认委托 ({pendingQuests.length})</h3>
+              <button
+                onClick={handleAddManualQuest}
+                className="w-8 h-8 flex items-center justify-center font-black text-xl"
+                style={{
+                  backgroundColor: '#4ECDC4',
+                  border: '3px solid #000',
+                  boxShadow: '3px 3px 0px #000'
+                }}
+                title="手动添加任务"
+              >
+                +
+              </button>
+            </div>
             <div className="space-y-2 mb-4">
               {pendingQuests.map((quest, i) => (
                 <div 
@@ -256,7 +296,7 @@ export default function QuestBoard() {
                       <p className="font-black text-sm mb-1 truncate">{quest.title}</p>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-gray-600 truncate">
-                          ({quest.actionHint})
+                          ({quest.actionHint || '待填写'})
                         </span>
                         <span 
                           className="px-2 py-0.5 text-xs font-black flex-shrink-0"
@@ -294,6 +334,7 @@ export default function QuestBoard() {
                           type="text"
                           value={quest.actionHint}
                           onChange={(e) => handleChangePendingActionHint(i, e.target.value)}
+                          placeholder="请输入任务内容..."
                           className="w-full px-3 py-2 font-bold text-sm"
                           style={{
                             border: '2px solid #000'
@@ -301,7 +342,7 @@ export default function QuestBoard() {
                         />
                       </div>
 
-                      <div>
+                      <div className="mb-3">
                         <label className="block text-xs font-bold uppercase mb-2" style={{ color: '#666' }}>
                           难度评级：
                         </label>
@@ -335,6 +376,21 @@ export default function QuestBoard() {
                           <p className="text-xs font-bold text-center" style={{ color: '#666' }}>超级</p>
                         </div>
                       </div>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePendingQuest(i);
+                        }}
+                        className="w-full py-2 font-bold uppercase text-sm"
+                        style={{
+                          backgroundColor: '#FFF',
+                          color: '#FF6B35',
+                          border: '2px solid #FF6B35'
+                        }}
+                      >
+                        删除此任务
+                      </button>
                     </div>
                   )}
                 </div>

@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, Loader2, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -168,14 +169,20 @@ export default function VoiceInput({ onQuestsGenerated }) {
 
 请将其解析为RPG风格的结构化任务。
 
+【关键规则 - 任务拆分】：
+- 如果用户提到多个不同的事项，必须拆分成多个任务
+- 判断标准：
+  * 不同的动作（写、读、跑步、联系...）→ 拆分
+  * 不同的对象/人物 → 拆分
+  * 用"和"、"还有"、"以及"、"然后"连接的 → 拆分
+- 例如："写周报和准备会议" → 2个任务
+- 例如："给张三打电话，然后给李四发邮件" → 2个任务
+- 例如："跑步和冥想" → 2个任务
+
 【重要规则】actionHint（括号内容）必须忠实原话：
 - 保留所有关键词（人名、地点、具体事项、平台名称等）
 - 只做必要的简化，不要改写意思
 - 如果有时间信息，用@HH:MM格式标注
-- 例：
-  "回复群里的信息" → actionHint: "回复群消息"（保留"群"）
-  "给Daisy发邮件确认看房" → actionHint: "给Daisy发看房确认邮件"（保留人名和具体事项）
-  "明早7点跑步5公里" → actionHint: "跑步5km@07:00"
 
 RPG标题命名规则：
 1. 格式：【任务类型】任务名称
@@ -188,7 +195,7 @@ RPG标题命名规则：
 - A级：高难度（突破舒适区、有挑战性）
 - S级：超级挑战（人生重大任务、极具难度）
 
-示例：
+示例1（单任务）：
 输入："写周报"
 输出：
 {
@@ -203,16 +210,24 @@ RPG标题命名规则：
   ]
 }
 
-输入："开始每天跑步5公里的习惯"
+示例2（多任务）：
+输入："写周报和准备明天的会议"
 输出：
 {
   "quests": [
     {
-      "title": "【修炼】晨曦长跑试炼",
-      "actionHint": "跑步5km",
-      "tags": ["运动", "习惯"],
-      "difficulty": "A",
-      "rarity": "Rare"
+      "title": "【记录】冒险周志编撰",
+      "actionHint": "写周报",
+      "tags": ["工作"],
+      "difficulty": "C",
+      "rarity": "Common"
+    },
+    {
+      "title": "【准备】明日议会筹备",
+      "actionHint": "准备明天的会议",
+      "tags": ["工作"],
+      "difficulty": "C",
+      "rarity": "Common"
     }
   ]
 }

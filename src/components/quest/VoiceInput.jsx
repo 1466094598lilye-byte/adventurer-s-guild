@@ -12,7 +12,17 @@ export default function VoiceInput({ onQuestsGenerated }) {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      
+      // Try to use audio/wav or audio/mp4 if supported, otherwise fallback to webm
+      const mimeType = MediaRecorder.isTypeSupported('audio/wav') 
+        ? 'audio/wav' 
+        : MediaRecorder.isTypeSupported('audio/mp4') 
+        ? 'audio/mp4'
+        : 'audio/webm';
+      
+      console.log('使用音频格式:', mimeType);
+      
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
@@ -23,8 +33,10 @@ export default function VoiceInput({ onQuestsGenerated }) {
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        await processAudio(audioBlob);
+        // Get file extension based on mime type
+        const extension = mimeType.includes('wav') ? 'wav' : mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const audioBlob = new Blob(chunksRef.current, { type: mimeType });
+        await processAudio(audioBlob, extension, mimeType);
         stream.getTracks().forEach(track => track.stop());
       };
 
@@ -42,12 +54,12 @@ export default function VoiceInput({ onQuestsGenerated }) {
     }
   };
 
-  const processAudio = async (audioBlob) => {
+  const processAudio = async (audioBlob, extension, mimeType) => {
     setIsProcessing(true);
     try {
-      // Upload audio
-      const audioFile = new File([audioBlob], 'voice.webm', { type: 'audio/webm' });
-      console.log('上传音频文件...');
+      // Upload audio with correct extension
+      const audioFile = new File([audioBlob], `voice.${extension}`, { type: mimeType });
+      console.log('上传音频文件...', audioFile.name, audioFile.type);
       const { file_url } = await base44.integrations.Core.UploadFile({ file: audioFile });
       console.log('音频上传成功:', file_url);
 

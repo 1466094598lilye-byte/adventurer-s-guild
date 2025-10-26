@@ -32,7 +32,8 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
           border: '4px solid #000',
           boxShadow: isDone ? '3px 3px 0px #000' : '6px 6px 0px #000',
           transform: `rotate(${Math.random() * 2 - 1}deg)`,
-          animation: isGlowing ? 'glow 0.5s ease-in-out' : 'none'
+          animation: isGlowing ? 'glow 0.5s ease-in-out' : 'none',
+          overflow: 'visible'
         }}
       >
         <div className="flex gap-3">
@@ -63,51 +64,60 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
               </div>
 
               {/* Menu Button */}
-              <button
-                onClick={() => setShowMenu(!showMenu)}
-                className="p-2 hover:bg-gray-200 relative"
-                style={{ border: '3px solid #000' }}
-              >
-                <MoreVertical className="w-4 h-4" />
+              <div className="relative">
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="p-2 hover:bg-gray-200"
+                  style={{ border: '3px solid #000' }}
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
                 
                 {showMenu && (
-                  <div 
-                    className="absolute right-0 top-12 w-40 bg-white z-10"
-                    style={{
-                      border: '3px solid #000',
-                      boxShadow: '4px 4px 0px #000'
-                    }}
-                  >
-                    {isDone && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowMenu(false)}
+                    />
+                    <div 
+                      className="absolute right-0 top-full mt-2 w-40 bg-white z-50"
+                      style={{
+                        border: '3px solid #000',
+                        boxShadow: '4px 4px 0px #000'
+                      }}
+                    >
+                      {isDone && (
+                        <button
+                          onClick={handleReopen}
+                          className="w-full px-4 py-2 text-left font-bold hover:bg-gray-100 flex items-center gap-2"
+                          style={{ borderBottom: '3px solid #000' }}
+                        >
+                          <RotateCcw className="w-4 h-4" /> 返回待办
+                        </button>
+                      )}
                       <button
-                        onClick={handleReopen}
-                        className="w-full px-4 py-2 text-left font-bold hover:bg-gray-100 flex items-center gap-2 border-b-3 border-black"
+                        onClick={() => {
+                          onEdit(quest);
+                          setShowMenu(false);
+                        }}
+                        className="w-full px-4 py-2 text-left font-bold hover:bg-gray-100 flex items-center gap-2"
+                        style={{ borderBottom: '3px solid #000' }}
                       >
-                        <RotateCcw className="w-4 h-4" /> 返回待办
+                        <Edit className="w-4 h-4" /> 编辑
                       </button>
-                    )}
-                    <button
-                      onClick={() => {
-                        onEdit(quest);
-                        setShowMenu(false);
-                      }}
-                      className="w-full px-4 py-2 text-left font-bold hover:bg-gray-100 flex items-center gap-2"
-                      style={{ borderBottom: '3px solid #000' }}
-                    >
-                      <Edit className="w-4 h-4" /> 编辑
-                    </button>
-                    <button
-                      onClick={() => {
-                        onDelete(quest.id);
-                        setShowMenu(false);
-                      }}
-                      className="w-full px-4 py-2 text-left font-bold hover:bg-gray-100 flex items-center gap-2"
-                    >
-                      <Trash2 className="w-4 h-4" /> 删除
-                    </button>
-                  </div>
+                      <button
+                        onClick={() => {
+                          onDelete(quest.id);
+                          setShowMenu(false);
+                        }}
+                        className="w-full px-4 py-2 text-left font-bold hover:bg-gray-100 flex items-center gap-2"
+                      >
+                        <Trash2 className="w-4 h-4" /> 删除
+                      </button>
+                    </div>
+                  </>
                 )}
-              </button>
+              </div>
             </div>
 
             {/* Tags & Rarity */}

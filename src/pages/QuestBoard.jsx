@@ -78,6 +78,12 @@ export default function QuestBoard() {
     setEditingPendingIndex(null);
   };
 
+  const handleChangePendingDifficulty = (index, newDifficulty) => {
+    const updatedQuests = [...pendingQuests];
+    updatedQuests[index] = { ...updatedQuests[index], difficulty: newDifficulty };
+    setPendingQuests(updatedQuests);
+  };
+
   const handleComplete = async (quest) => {
     await updateQuestMutation.mutateAsync({
       id: quest.id,
@@ -187,6 +193,16 @@ export default function QuestBoard() {
     return true;
   });
 
+  const difficultyColors = {
+    F: '#D4F1F4',
+    E: '#A7E9AF',
+    D: '#FFE66D',
+    C: '#FF6B35',
+    B: '#C44569',
+    A: '#9B59B6',
+    S: '#000'
+  };
+
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
       <div className="max-w-2xl mx-auto">
@@ -219,7 +235,7 @@ export default function QuestBoard() {
             }}
           >
             <h3 className="font-black uppercase mb-3">待确认委托 ({pendingQuests.length})</h3>
-            <div className="space-y-2 mb-4">
+            <div className="space-y-3 mb-4">
               {pendingQuests.map((quest, i) => (
                 <div 
                   key={i}
@@ -230,8 +246,10 @@ export default function QuestBoard() {
                   }}
                 >
                   <p className="font-black text-sm mb-2">{quest.title}</p>
+                  
+                  {/* Action Hint Editor */}
                   {editingPendingIndex === i ? (
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mb-3">
                       <input
                         type="text"
                         value={quest.actionHint}
@@ -258,7 +276,7 @@ export default function QuestBoard() {
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-3">
                       <p className="text-xs font-bold text-gray-600">({quest.actionHint})</p>
                       <button
                         onClick={() => setEditingPendingIndex(i)}
@@ -269,6 +287,34 @@ export default function QuestBoard() {
                       </button>
                     </div>
                   )}
+
+                  {/* Difficulty Selector */}
+                  <div>
+                    <p className="text-xs font-bold uppercase mb-2" style={{ color: '#666' }}>
+                      难度评级：
+                    </p>
+                    <div className="flex gap-2">
+                      {['F', 'E', 'D', 'C', 'B', 'A', 'S'].map(level => {
+                        const isSelected = quest.difficulty === level;
+                        return (
+                          <button
+                            key={level}
+                            onClick={() => handleChangePendingDifficulty(i, level)}
+                            className="flex-1 py-2 font-black text-sm transition-all"
+                            style={{
+                              backgroundColor: isSelected ? difficultyColors[level] : '#FFF',
+                              color: level === 'S' && isSelected ? '#FFE66D' : '#000',
+                              border: isSelected ? '3px solid #000' : '2px solid #000',
+                              boxShadow: isSelected ? '3px 3px 0px #000' : 'none',
+                              transform: isSelected ? 'scale(1.05)' : 'scale(1)'
+                            }}
+                          >
+                            {level}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

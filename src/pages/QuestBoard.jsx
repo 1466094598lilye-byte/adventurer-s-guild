@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Filter, Loader2, Edit2, Check } from 'lucide-react';
+import { Filter, Loader2, Edit2, ChevronDown, ChevronUp } from 'lucide-react';
 import VoiceInput from '../components/quest/VoiceInput';
 import QuestCard from '../components/quest/QuestCard';
 import PraiseDialog from '../components/quest/PraiseDialog';
@@ -71,16 +71,15 @@ export default function QuestBoard() {
     });
   };
 
-  const handleEditPendingQuest = (index, newActionHint) => {
-    const updatedQuests = [...pendingQuests];
-    updatedQuests[index] = { ...updatedQuests[index], actionHint: newActionHint };
-    setPendingQuests(updatedQuests);
-    setEditingPendingIndex(null);
-  };
-
   const handleChangePendingDifficulty = (index, newDifficulty) => {
     const updatedQuests = [...pendingQuests];
     updatedQuests[index] = { ...updatedQuests[index], difficulty: newDifficulty };
+    setPendingQuests(updatedQuests);
+  };
+
+  const handleChangePendingActionHint = (index, newActionHint) => {
+    const updatedQuests = [...pendingQuests];
+    updatedQuests[index] = { ...updatedQuests[index], actionHint: newActionHint };
     setPendingQuests(updatedQuests);
   };
 
@@ -203,6 +202,16 @@ export default function QuestBoard() {
     S: '#000'
   };
 
+  const difficultyLabels = {
+    F: 'F',
+    E: 'E',
+    D: 'D',
+    C: 'C',
+    B: 'B',
+    A: 'A',
+    S: 'S'
+  };
+
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
       <div className="max-w-2xl mx-auto">
@@ -235,86 +244,103 @@ export default function QuestBoard() {
             }}
           >
             <h3 className="font-black uppercase mb-3">待确认委托 ({pendingQuests.length})</h3>
-            <div className="space-y-3 mb-4">
+            <div className="space-y-2 mb-4">
               {pendingQuests.map((quest, i) => (
                 <div 
                   key={i}
-                  className="p-3"
+                  className="overflow-hidden"
                   style={{
                     backgroundColor: '#FFF',
                     border: '3px solid #000'
                   }}
                 >
-                  <p className="font-black text-sm mb-2">{quest.title}</p>
-                  
-                  {/* Action Hint Editor */}
-                  {editingPendingIndex === i ? (
-                    <div className="flex gap-2 mb-3">
-                      <input
-                        type="text"
-                        value={quest.actionHint}
-                        onChange={(e) => {
-                          const updated = [...pendingQuests];
-                          updated[i] = { ...updated[i], actionHint: e.target.value };
-                          setPendingQuests(updated);
-                        }}
-                        className="flex-1 px-2 py-1 font-bold text-sm"
-                        style={{
-                          border: '2px solid #000'
-                        }}
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => setEditingPendingIndex(null)}
-                        className="px-3 py-1 font-bold text-sm"
-                        style={{
-                          backgroundColor: '#4ECDC4',
-                          border: '2px solid #000'
-                        }}
-                      >
-                        <Check className="w-4 h-4" strokeWidth={3} />
-                      </button>
+                  {/* Compact View */}
+                  <div 
+                    className="p-3 flex items-center justify-between cursor-pointer hover:bg-gray-50"
+                    onClick={() => setEditingPendingIndex(editingPendingIndex === i ? null : i)}
+                  >
+                    <div className="flex-1 min-w-0 pr-3">
+                      <p className="font-black text-sm mb-1 truncate">{quest.title}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-gray-600 truncate">
+                          ({quest.actionHint})
+                        </span>
+                        <span 
+                          className="px-2 py-0.5 text-xs font-black flex-shrink-0"
+                          style={{
+                            backgroundColor: difficultyColors[quest.difficulty],
+                            color: quest.difficulty === 'S' ? '#FFE66D' : '#000',
+                            border: '2px solid #000'
+                          }}
+                        >
+                          {difficultyLabels[quest.difficulty]}
+                        </span>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-xs font-bold text-gray-600">({quest.actionHint})</p>
-                      <button
-                        onClick={() => setEditingPendingIndex(i)}
-                        className="p-1 hover:bg-gray-100"
-                        style={{ border: '2px solid #000' }}
-                      >
-                        <Edit2 className="w-4 h-4" strokeWidth={3} />
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Difficulty Selector */}
-                  <div>
-                    <p className="text-xs font-bold uppercase mb-2" style={{ color: '#666' }}>
-                      难度评级：
-                    </p>
-                    <div className="flex gap-2">
-                      {['F', 'E', 'D', 'C', 'B', 'A', 'S'].map(level => {
-                        const isSelected = quest.difficulty === level;
-                        return (
-                          <button
-                            key={level}
-                            onClick={() => handleChangePendingDifficulty(i, level)}
-                            className="flex-1 py-2 font-black text-sm transition-all"
-                            style={{
-                              backgroundColor: isSelected ? difficultyColors[level] : '#FFF',
-                              color: level === 'S' && isSelected ? '#FFE66D' : '#000',
-                              border: isSelected ? '3px solid #000' : '2px solid #000',
-                              boxShadow: isSelected ? '3px 3px 0px #000' : 'none',
-                              transform: isSelected ? 'scale(1.05)' : 'scale(1)'
-                            }}
-                          >
-                            {level}
-                          </button>
-                        );
-                      })}
+                    <div className="flex-shrink-0">
+                      {editingPendingIndex === i ? (
+                        <ChevronUp className="w-5 h-5" strokeWidth={3} />
+                      ) : (
+                        <ChevronDown className="w-5 h-5" strokeWidth={3} />
+                      )}
                     </div>
                   </div>
+
+                  {/* Expanded Edit View */}
+                  {editingPendingIndex === i && (
+                    <div 
+                      className="px-3 pb-3 pt-0"
+                      style={{
+                        borderTop: '2px solid #000'
+                      }}
+                    >
+                      {/* Action Hint Editor */}
+                      <div className="mb-3 mt-3">
+                        <label className="block text-xs font-bold uppercase mb-2" style={{ color: '#666' }}>
+                          任务内容：
+                        </label>
+                        <input
+                          type="text"
+                          value={quest.actionHint}
+                          onChange={(e) => handleChangePendingActionHint(i, e.target.value)}
+                          className="w-full px-3 py-2 font-bold text-sm"
+                          style={{
+                            border: '2px solid #000'
+                          }}
+                        />
+                      </div>
+
+                      {/* Difficulty Selector */}
+                      <div>
+                        <label className="block text-xs font-bold uppercase mb-2" style={{ color: '#666' }}>
+                          难度评级：
+                        </label>
+                        <div className="grid grid-cols-7 gap-2">
+                          {['F', 'E', 'D', 'C', 'B', 'A', 'S'].map(level => {
+                            const isSelected = quest.difficulty === level;
+                            return (
+                              <button
+                                key={level}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleChangePendingDifficulty(i, level);
+                                }}
+                                className="py-2 font-black text-sm transition-all"
+                                style={{
+                                  backgroundColor: isSelected ? difficultyColors[level] : '#F0F0F0',
+                                  color: level === 'S' && isSelected ? '#FFE66D' : '#000',
+                                  border: isSelected ? '3px solid #000' : '2px solid #000',
+                                  boxShadow: isSelected ? '2px 2px 0px #000' : 'none'
+                                }}
+                              >
+                                {level}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

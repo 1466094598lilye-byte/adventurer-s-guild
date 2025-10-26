@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { Mic, MicOff, Loader2, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -48,9 +47,12 @@ export default function VoiceInput({ onQuestsGenerated }) {
     try {
       // Upload audio
       const audioFile = new File([audioBlob], 'voice.webm', { type: 'audio/webm' });
+      console.log('上传音频文件...');
       const { file_url } = await base44.integrations.Core.UploadFile({ file: audioFile });
+      console.log('音频上传成功:', file_url);
 
       // Get transcript and parse to quests
+      console.log('调用AI处理语音...');
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `你是冒险者工会的AI助手。用户语音输入了任务描述。请转写语音内容，然后将其解析为RPG风格的结构化任务。
 
@@ -68,24 +70,27 @@ export default function VoiceInput({ onQuestsGenerated }) {
 示例：
 输入："明早7点跑步5公里，给Daisy发邮件确认看房"
 输出：
-[
-  {
-    "title": "【修炼】晨曦长跑试炼",
-    "actionHint": "跑步5km@07:00",
-    "dueDate": "明日07:00",
-    "tags": ["运动"],
-    "difficulty": "C",
-    "rarity": "Common"
-  },
-  {
-    "title": "【护送】房产情报传递",
-    "actionHint": "给Daisy发看房确认邮件",
-    "dueDate": "今日",
-    "tags": ["事务"],
-    "difficulty": "D",
-    "rarity": "Rare"
-  }
-]
+{
+  "transcript": "明早7点跑步5公里，给Daisy发邮件确认看房",
+  "quests": [
+    {
+      "title": "【修炼】晨曦长跑试炼",
+      "actionHint": "跑步5km@07:00",
+      "dueDate": "明日07:00",
+      "tags": ["运动"],
+      "difficulty": "C",
+      "rarity": "Common"
+    },
+    {
+      "title": "【护送】房产情报传递",
+      "actionHint": "给Daisy发看房确认邮件",
+      "dueDate": "今日",
+      "tags": ["事务"],
+      "difficulty": "D",
+      "rarity": "Rare"
+    }
+  ]
+}
 
 请处理用户的语音输入。`,
         file_urls: [file_url],
@@ -111,10 +116,12 @@ export default function VoiceInput({ onQuestsGenerated }) {
         }
       });
 
-      setTranscript(result.transcript);
+      console.log('AI处理结果:', result);
+      setTranscript(result.transcript || '');
       onQuestsGenerated(result.quests || []);
     } catch (error) {
-      alert('语音处理失败，请重试');
+      console.error('语音处理错误:', error);
+      alert(`语音处理失败：${error.message || '请重试'}`);
     }
     setIsProcessing(false);
   };
@@ -144,11 +151,15 @@ export default function VoiceInput({ onQuestsGenerated }) {
 输入："写周报"
 输出：
 {
-  "title": "【记录】冒险周志编撰",
-  "actionHint": "完成本周工作周报",
-  "tags": ["工作"],
-  "difficulty": "D",
-  "rarity": "Common"
+  "quests": [
+    {
+      "title": "【记录】冒险周志编撰",
+      "actionHint": "完成本周工作周报",
+      "tags": ["工作"],
+      "difficulty": "D",
+      "rarity": "Common"
+    }
+  ]
 }
 
 请处理用户输入。`,
@@ -176,7 +187,8 @@ export default function VoiceInput({ onQuestsGenerated }) {
       onQuestsGenerated(result.quests || []);
       setTranscript('');
     } catch (error) {
-      alert('文本处理失败，请重试');
+      console.error('文本处理错误:', error);
+      alert(`文本处理失败：${error.message || '请重试'}`);
     }
     setIsProcessing(false);
   };

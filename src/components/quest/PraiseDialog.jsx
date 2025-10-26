@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { X, BookMarked, Star } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -24,12 +25,11 @@ export default function PraiseDialog({ quest, onClose, onAddNote }) {
 要求：
 1. 保持"工会评议官"口吻，不能OOC
 2. 明确指出努力过程（时间管理/拆解/坚持/复盘）
-3. 连接可迁移策略（下次如何更快/更稳/更省心）
-4. 少形容词堆砌，多具体证据
-5. 2-3句话，简洁有力
+3. 少形容词堆砌，多具体证据
+4. 2-3句话，简洁有力
 
 示例风格：
-"记录在案，冒险者！你把'跑步5km'拆成均匀配速并在设定时间内完成，这说明你对节奏有自觉控制。保持这套配速日志，三次后我们尝试加入间歇冲刺，预计你会把总用时再压缩3-5%。"
+"记录在案，冒险者！你把'跑步5km'拆成均匀配速并在设定时间内完成，这说明你对节奏有自觉控制。这份自律值得记录。"
 
 请生成赞美文案：`,
         response_json_schema: {

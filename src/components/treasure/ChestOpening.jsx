@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Gift, Sparkles, X } from 'lucide-react';
+import { Gift, Sparkles, X, Shield } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import RarityBadge from '../quest/RarityBadge';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function ChestOpening({ date, onClose, onLootGenerated }) {
   const [isOpening, setIsOpening] = useState(false);
   const [loot, setLoot] = useState(null);
+  const [gotFreezeToken, setGotFreezeToken] = useState(false);
   const [showLoot, setShowLoot] = useState(false);
+  const queryClient = useQueryClient();
 
   const openChest = async () => {
     setIsOpening(true);
@@ -14,31 +16,27 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
     // Simulate chest opening animation
     setTimeout(async () => {
       try {
-        // Generate loot with AI
-        const rarityRoll = Math.random() * 100;
-        let rarity = 'Common';
-        if (rarityRoll < 3) rarity = 'Legendary';
-        else if (rarityRoll < 15) rarity = 'Epic';
-        else if (rarityRoll < 40) rarity = 'Rare';
+        // 1% chance to get freeze token
+        const freezeTokenRoll = Math.random() * 100;
+        const wonFreezeToken = freezeTokenRoll < 1;
 
+        // Generate loot with AI
         const result = await base44.integrations.Core.InvokeLLM({
           prompt: `生成一个RPG风格的战利品道具。
 
-稀有度：${rarity}
-
 要求：
-1. 名称要有冒险/奇幻感
-2. 简介要有RPG风味，暗示实际作用但不直白
-3. 选择合适的emoji作为图标
+1. 名称要有冒险/奇幻感，简短有力
+2. 简介要有RPG风味，一句话描述这件物品的来历或象征意义
+3. 选择合适的emoji作为图标（建议使用：📿💎🗝️⚔️🛡️📜🔮🌟✨🏅🎖️等）
 
 示例：
 {
-  "name": "时守沙漏",
-  "flavorText": "传说中能让时间驻足的神器。持有者可获得一次时间保护，即使一日未行动，连胜之力仍不消散。（赠送冻结券×1）",
-  "icon": "⏳"
+  "name": "星陨碎片",
+  "flavorText": "陨落于工会庭院的流星残骸，见证了又一位冒险者的坚持。",
+  "icon": "💎"
 }
 
-请生成：`,
+请生成一件新的战利品：`,
           response_json_schema: {
             type: "object",
             properties: {
@@ -51,12 +49,21 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
 
         const newLoot = {
           ...result,
-          rarity,
+          rarity: 'Common',
           obtainedAt: new Date().toISOString()
         };
 
         // Save loot
         const savedLoot = await base44.entities.Loot.create(newLoot);
+
+        // If won freeze token, update user
+        if (wonFreezeToken) {
+          const currentUser = await base44.auth.me();
+          await base44.auth.updateMe({
+            freezeTokenCount: (currentUser?.freezeTokenCount || 0) + 1
+          });
+          queryClient.invalidateQueries(['user']);
+        }
 
         // Mark chest as opened
         const chests = await base44.entities.DailyChest.filter({ date });
@@ -68,6 +75,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
         }
 
         setLoot(savedLoot);
+        setGotFreezeToken(wonFreezeToken);
         setShowLoot(true);
         onLootGenerated(savedLoot);
       } catch (error) {
@@ -156,11 +164,26 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
 
             {/* Loot Display */}
             <div className="text-center">
+              {gotFreezeToken && (
+                <div 
+                  className="mb-4 p-4 animate-pulse"
+                  style={{
+                    backgroundColor: '#FFE66D',
+                    border: '4px solid #000',
+                    boxShadow: '6px 6px 0px #000'
+                  }}
+                >
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Shield className="w-8 h-8" strokeWidth={3} />
+                    <span className="text-2xl font-black">冻结券 +1</span>
+                  </div>
+                  <p className="text-sm font-bold">
+                    恭喜！你在宝箱中发现了稀有的冻结券！
+                  </p>
+                </div>
+              )}
+
               <div className="text-6xl mb-4">{loot.icon}</div>
-              
-              <div className="flex justify-center mb-3">
-                <RarityBadge rarity={loot.rarity} />
-              </div>
 
               <h3 
                 className="text-2xl font-black uppercase mb-4"

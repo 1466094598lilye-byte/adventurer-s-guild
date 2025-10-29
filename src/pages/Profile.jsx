@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -216,9 +217,21 @@ export default function Profile() {
             <Shield className="w-5 h-5" strokeWidth={3} />
             <h3 className="font-black uppercase">关于冻结券</h3>
           </div>
-          <p className="font-bold text-sm">
-            冻结券是稀有战利品，可在某天无法完成任务时使用，保护连胜不中断。从Rare及以上稀有度宝箱中有机会获得，达成连胜里程碑也会奖励冻结券。
+          <p className="font-bold text-sm mb-3">
+            冻结券是稀有战利品，可在某天无法完成任务时使用，保护连胜不中断。
           </p>
+          <div 
+            className="p-3"
+            style={{
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              border: '2px solid rgba(255,255,255,0.3)'
+            }}
+          >
+            <p className="font-bold text-xs">
+              📦 每日宝箱有1%概率开出冻结券<br/>
+              🏆 达成连胜里程碑也会奖励冻结券
+            </p>
+          </div>
         </div>
 
         {/* Privacy & Logout */}

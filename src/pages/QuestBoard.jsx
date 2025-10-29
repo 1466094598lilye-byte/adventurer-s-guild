@@ -18,6 +18,7 @@ export default function QuestBoard() {
   const [editingPendingIndex, setEditingPendingIndex] = useState(null);
   const [editingQuest, setEditingQuest] = useState(null);
   const [toast, setToast] = useState(null);
+  const [milestoneReward, setMilestoneReward] = useState(null);
   const queryClient = useQueryClient();
 
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -30,7 +31,7 @@ export default function QuestBoard() {
     }
   });
 
-  useQuery({
+  const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me()
   });
@@ -170,6 +171,74 @@ export default function QuestBoard() {
     }
   };
 
+  const checkAndAwardMilestone = async (newStreak) => {
+    const milestones = [
+      { days: 7, title: '新秀冒险家', tokens: 1, icon: '🌟' },
+      { days: 21, title: '精英挑战者', tokens: 2, icon: '⚔️' },
+      { days: 50, title: '连胜大师', tokens: 3, icon: '🏆' },
+      { days: 100, title: '传奇不灭', tokens: 5, icon: '👑' }
+    ];
+
+    const unlockedMilestones = user?.unlockedMilestones || [];
+    
+    for (const milestone of milestones) {
+      if (newStreak === milestone.days && !unlockedMilestones.includes(milestone.days)) {
+        // 生成特殊战利品
+        const lootResult = await base44.integrations.Core.InvokeLLM({
+          prompt: `你是【星陨纪元冒险者工会】的宝物铸造大师。一位冒险者达成了${milestone.days}天连胜的惊人成就，获得了「${milestone.title}」称号。请为这个里程碑铸造一件独一无二的纪念战利品。
+
+里程碑：${milestone.days}天连胜
+称号：${milestone.title}
+象征图标：${milestone.icon}
+
+要求：
+1. 名称：要体现"${milestone.days}天"和"连胜"的概念，并与称号呼应
+2. 简介：RPG风格，强调这是只有坚持${milestone.days}天才能获得的珍贵纪念品，暗示这份毅力的价值
+3. 图标：使用 ${milestone.icon} 作为基础，可以组合其他emoji
+
+示例风格：
+- 7天："七日辉光徽章" - "初入工会的冒险者，以七日不辍的意志证明了自己。这枚徽章闪烁着新星的光芒，预示着更长的征途。"
+- 21天："三周永恒印记" - "二十一个日升月落，见证了一位冒险者从稚嫩到坚韧的蜕变。佩戴此印记者，已掌握了恒心的奥义。"
+
+请生成：`,
+          response_json_schema: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              flavorText: { type: "string" },
+              icon: { type: "string" }
+            }
+          }
+        });
+
+        // 创建特殊战利品
+        await base44.entities.Loot.create({
+          ...lootResult,
+          rarity: 'Legendary',
+          obtainedAt: new Date().toISOString()
+        });
+
+        // 更新用户：冻结券、称号、已解锁里程碑
+        await base44.auth.updateMe({
+          freezeTokenCount: (user?.freezeTokenCount || 0) + milestone.tokens,
+          title: milestone.title,
+          unlockedMilestones: [...unlockedMilestones, milestone.days]
+        });
+
+        // 显示里程碑奖励提示
+        setMilestoneReward({
+          ...milestone,
+          loot: lootResult
+        });
+
+        queryClient.invalidateQueries(['user']);
+        queryClient.invalidateQueries(['loot']);
+        
+        break; // 只处理当前达到的里程碑
+      }
+    }
+  };
+
   const handleComplete = async (quest) => {
     console.log('=== 开始处理任务完成 ===');
     console.log('任务信息:', quest);
@@ -205,7 +274,25 @@ export default function QuestBoard() {
           console.log('是否全部完成:', allDone);
           
           if (allDone && updatedQuests.length > 0) {
-            console.log('=== 所有任务已完成，检查宝箱 ===');
+            console.log('=== 所有任务已完成 ===');
+            
+            // 更新连胜
+            const currentUser = await base44.auth.me();
+            const newStreak = (currentUser?.streakCount || 0) + 1;
+            const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
+            
+            await base44.auth.updateMe({
+              streakCount: newStreak,
+              longestStreak: newLongestStreak,
+              lastClearDate: today
+            });
+            
+            queryClient.invalidateQueries(['user']);
+            
+            // 检查里程碑奖励
+            await checkAndAwardMilestone(newStreak);
+            
+            // 检查宝箱
             const chests = await base44.entities.DailyChest.filter({ date: today });
             console.log('现有宝箱数量:', chests.length);
             console.log('宝箱详情:', chests);
@@ -666,6 +753,101 @@ export default function QuestBoard() {
             onSave={handleEditQuestSave}
             onClose={() => setEditingQuest(null)}
           />
+        )}
+
+        {/* Milestone Reward Dialog */}
+        {milestoneReward && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
+          >
+            <div 
+              className="relative max-w-lg w-full p-8 transform"
+              style={{
+                backgroundColor: '#FFE66D',
+                border: '6px solid #000',
+                boxShadow: '15px 15px 0px #000'
+              }}
+            >
+              <div className="text-center">
+                <div className="text-7xl mb-4 animate-bounce">{milestoneReward.icon}</div>
+                
+                <h2 
+                  className="text-3xl font-black uppercase mb-3"
+                  style={{ color: '#000' }}
+                >
+                  🎊 里程碑达成！🎊
+                </h2>
+
+                <div 
+                  className="mb-6 p-4"
+                  style={{
+                    backgroundColor: '#FFF',
+                    border: '4px solid #000'
+                  }}
+                >
+                  <p className="text-2xl font-black mb-3">{milestoneReward.days}天连胜</p>
+                  <p className="text-xl font-black uppercase mb-3" style={{ color: '#C44569' }}>
+                    「{milestoneReward.title}」
+                  </p>
+                  <p className="font-bold text-sm leading-relaxed mb-4">
+                    恭喜你达成{milestoneReward.days}天连续完成任务的非凡成就！
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <div 
+                      className="p-3"
+                      style={{
+                        backgroundColor: '#4ECDC4',
+                        border: '3px solid #000'
+                      }}
+                    >
+                      <p className="font-black">🎟️ 冻结券 +{milestoneReward.tokens}</p>
+                    </div>
+                    
+                    <div 
+                      className="p-3"
+                      style={{
+                        backgroundColor: '#FF6B35',
+                        border: '3px solid #000'
+                      }}
+                    >
+                      <p className="font-black text-white">🏅 {milestoneReward.title} 称号</p>
+                    </div>
+
+                    <div 
+                      className="p-3 text-left"
+                      style={{
+                        backgroundColor: '#C44569',
+                        border: '3px solid #000'
+                      }}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-3xl">{milestoneReward.loot.icon}</span>
+                        <p className="font-black text-white">{milestoneReward.loot.name}</p>
+                      </div>
+                      <p className="font-bold text-sm text-white leading-relaxed">
+                        {milestoneReward.loot.flavorText}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setMilestoneReward(null)}
+                  className="w-full py-4 font-black uppercase text-xl"
+                  style={{
+                    backgroundColor: '#000',
+                    color: '#FFE66D',
+                    border: '5px solid #FFE66D',
+                    boxShadow: '6px 6px 0px #FFE66D'
+                  }}
+                >
+                  收入囊中
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 

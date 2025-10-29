@@ -88,6 +88,20 @@ export default function Profile() {
             </div>
           </div>
 
+          {/* Title Display */}
+          {user?.title && (
+            <div 
+              className="mb-4 p-3 text-center"
+              style={{
+                backgroundColor: '#C44569',
+                border: '3px solid #000'
+              }}
+            >
+              <p className="text-xs font-bold uppercase text-white mb-1">当前称号</p>
+              <p className="text-xl font-black text-white">「{user.title}」</p>
+            </div>
+          )}
+
           <div className="mb-4">
             <p className="text-xs font-bold uppercase mb-1" style={{ color: '#666' }}>
               工会ID（邮箱）
@@ -140,11 +154,16 @@ export default function Profile() {
             <h3 className="font-black uppercase">连胜里程碑</h3>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            {[7, 21, 50, 100].map(milestone => {
-              const achieved = (user?.longestStreak || 0) >= milestone;
+            {[
+              { days: 7, title: '新秀冒险家', icon: '🌟' },
+              { days: 21, title: '精英挑战者', icon: '⚔️' },
+              { days: 50, title: '连胜大师', icon: '🏆' },
+              { days: 100, title: '传奇不灭', icon: '👑' }
+            ].map(milestone => {
+              const achieved = (user?.unlockedMilestones || []).includes(milestone.days);
               return (
                 <div 
-                  key={milestone}
+                  key={milestone.days}
                   className="p-3 text-center"
                   style={{
                     backgroundColor: achieved ? '#4ECDC4' : '#FFF',
@@ -152,8 +171,9 @@ export default function Profile() {
                     opacity: achieved ? 1 : 0.5
                   }}
                 >
-                  <div className="text-2xl mb-1">{achieved ? '🏆' : '○'}</div>
-                  <div className="font-black text-sm">{milestone}天</div>
+                  <div className="text-2xl mb-1">{achieved ? milestone.icon : '○'}</div>
+                  <div className="font-black text-sm mb-1">{milestone.days}天</div>
+                  <div className="font-bold text-xs">{milestone.title}</div>
                 </div>
               );
             })}
@@ -178,7 +198,7 @@ export default function Profile() {
             <p>• 每日清空任务列表，连胜+1</p>
             <p>• 未清空任务则连胜归零</p>
             <p>• 使用冻结券可跳过一天保持连胜</p>
-            <p>• 达到连胜里程碑获得特别表彰</p>
+            <p>• 达到连胜里程碑获得特别表彰和奖励</p>
           </div>
         </div>
 
@@ -197,7 +217,7 @@ export default function Profile() {
             <h3 className="font-black uppercase">关于冻结券</h3>
           </div>
           <p className="font-bold text-sm">
-            冻结券是稀有战利品，可在某天无法完成任务时使用，保护连胜不中断。从Rare及以上稀有度宝箱中有机会获得。
+            冻结券是稀有战利品，可在某天无法完成任务时使用，保护连胜不中断。从Rare及以上稀有度宝箱中有机会获得，达成连胜里程碑也会奖励冻结券。
           </p>
         </div>
 

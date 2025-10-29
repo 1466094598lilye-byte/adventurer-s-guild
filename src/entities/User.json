@@ -5,6 +5,18 @@
       "type": "string",
       "description": "Adventurer display name"
     },
+    "title": {
+      "type": "string",
+      "description": "Current title/badge earned from milestones"
+    },
+    "unlockedMilestones": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      },
+      "default": [],
+      "description": "Array of unlocked milestone streak days (e.g., [7, 21, 50])"
+    },
     "streakCount": {
       "type": "integer",
       "default": 0,
@@ -31,5 +43,9 @@
       "description": "Praise dialog tone"
     }
   },
-  "name": "User"
+  "name": "User",
+  "required": [
+    "displayName",
+    "lastClearDate"
+  ]
 }

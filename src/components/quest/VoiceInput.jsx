@@ -324,9 +324,9 @@ export default function VoiceInput({ onQuestsGenerated }) {
             }}
           >
             {isProcessing ? (
-              <Loader2 className="w-8 h-8 animate-spin" />
+              <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#000' }} />
             ) : (
-              <Mic className="w-8 h-8" strokeWidth={3} />
+              <Mic className="w-8 h-8" strokeWidth={3} style={{ color: '#000' }} />
             )}
           </button>
 
@@ -357,13 +357,12 @@ export default function VoiceInput({ onQuestsGenerated }) {
             className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
             style={{
               backgroundColor: '#C44569',
-              color: '#FFF',
-              border: '44px solid #000',
+              border: '4px solid #000',
               boxShadow: '5px 5px 0px #000',
               opacity: (!transcript.trim() || isProcessing) ? 0.5 : 1
             }}
           >
-            <Sparkles className="w-8 h-8" strokeWidth={3} />
+            <Sparkles className="w-8 h-8" strokeWidth={3} style={{ color: '#FFF', fill: 'none' }} />
           </button>
         </div>
       ) : (
@@ -411,7 +410,7 @@ export default function VoiceInput({ onQuestsGenerated }) {
               boxShadow: '5px 5px 0px #000'
             }}
           >
-            <MicOff className="w-6 h-6" strokeWidth={3} />
+            <MicOff className="w-6 h-6" strokeWidth={3} style={{ color: '#FFF' }} />
             完成录音
           </button>
         </div>
@@ -424,7 +423,7 @@ export default function VoiceInput({ onQuestsGenerated }) {
           border: '3px solid #000'
         }}
       >
-        <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" strokeWidth={3} />
+        <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" strokeWidth={3} style={{ color: '#000' }} />
         <p className="text-xs font-bold leading-relaxed">
           📢 书记官提醒：用自然语言描述你的任务即可，如"明天早上7点跑步5公里"、"去超市买菜"。即便语调各异（粤语、台普、地方口音），工会皆能听懂。
         </p>

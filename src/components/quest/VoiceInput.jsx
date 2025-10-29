@@ -1,6 +1,5 @@
-
 import { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { Mic, MicOff, Loader2, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 export default function VoiceInput({ onQuestsGenerated }) {
@@ -312,7 +311,7 @@ export default function VoiceInput({ onQuestsGenerated }) {
       }}
     >
       {!isRecording ? (
-        <div className="flex gap-3 mb-3">
+        <div className="flex gap-3">
           <button
             onClick={startRecording}
             disabled={isProcessing}
@@ -366,7 +365,7 @@ export default function VoiceInput({ onQuestsGenerated }) {
           </button>
         </div>
       ) : (
-        <div className="mb-3">
+        <div>
           <div 
             className="p-6 mb-3"
             style={{
@@ -415,19 +414,6 @@ export default function VoiceInput({ onQuestsGenerated }) {
           </button>
         </div>
       )}
-
-      <div 
-        className="flex items-start gap-2 p-3 mt-3"
-        style={{
-          backgroundColor: '#4ECDC4',
-          border: '3px solid #000'
-        }}
-      >
-        <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" strokeWidth={3} style={{ color: '#000' }} />
-        <p className="text-xs font-bold leading-relaxed">
-          📢 书记官提醒：用自然语言描述你的任务即可，如"明天早上7点跑步5公里"、"去超市买菜"。即便语调各异（粤语、台普、地方口音），工会皆能听懂。
-        </p>
-      </div>
     </div>
   );
 }

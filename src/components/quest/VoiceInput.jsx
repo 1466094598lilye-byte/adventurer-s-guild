@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, Loader2, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -178,12 +177,15 @@ export default function VoiceInput({ onQuestsGenerated }) {
   const handleTextSubmit = async (text, conf = 1) => {
     if (!text.trim()) return;
     
+    // 保存用户原始输入
+    const userOriginalText = text.trim();
+    
     setIsProcessing(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `为任务起一个8-10字的RPG名字。
 
-任务：${text}
+任务：${userOriginalText}
 
 规则：
 - 总字数8-10字
@@ -200,11 +202,11 @@ export default function VoiceInput({ onQuestsGenerated }) {
 ❌错误（太长）：
 【探索】智慧圣殿的秘密探寻
 
-⚠️重要：只生成RPG标题，不要修改或生成任务内容！`,
+只返回标题、难度、稀有度，不要返回任务内容。`,
         response_json_schema: {
           type: "object",
           properties: {
-            title: { type: "string", description: "RPG标题" },
+            title: { type: "string" },
             difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
             rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
           },
@@ -212,23 +214,19 @@ export default function VoiceInput({ onQuestsGenerated }) {
         }
       });
 
-      // 如果 LLM 返回了多个任务，取第一个；否则直接使用结果
-      const quest = result.title ? result : (result.quests && result.quests[0]);
-      
-      if (!quest) {
-        throw new Error('AI 未返回有效结果');
-      }
-
-      // 强制使用用户原文，完全忽略 AI 可能返回的任何 actionHint
-      const questWithOriginalText = {
-        title: quest.title,
-        actionHint: text.trim(),  // 强制使用用户输入的原文
-        difficulty: quest.difficulty,
-        rarity: quest.rarity,
+      // 完全忽略 AI 可能返回的任何其他字段，强制使用用户原文
+      const cleanQuest = {
+        title: result.title,
+        actionHint: userOriginalText,  // 强制使用保存的用户原文
+        difficulty: result.difficulty,
+        rarity: result.rarity,
         tags: []
       };
 
-      onQuestsGenerated([questWithOriginalText]);
+      console.log('生成的任务:', cleanQuest);  // 调试日志
+      console.log('用户原文:', userOriginalText);  // 调试日志
+
+      onQuestsGenerated([cleanQuest]);
       setTranscript('');
       setConfidence(1);
     } catch (error) {

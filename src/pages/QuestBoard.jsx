@@ -503,6 +503,17 @@ export default function QuestBoard() {
             </div>
             <div className="flex gap-3">
               <button
+                onClick={() => setPendingQuests([])}
+                className="flex-1 py-2 font-black uppercase"
+                style={{
+                  backgroundColor: '#FFF',
+                  border: '3px solid #000',
+                  boxShadow: '4px 4px 0px #000'
+                }}
+              >
+                取消
+              </button>
+              <button
                 onClick={confirmQuests}
                 className="flex-1 py-2 font-black uppercase"
                 style={{
@@ -512,18 +523,6 @@ export default function QuestBoard() {
                 }}
               >
                 确认接取
-              </button>
-              <button
-                onClick={() => setPendingQuests([])}
-                className="flex-1 py-2 font-black uppercase"
-                style={{
-                  backgroundColor: '#FF6B35',
-                  color: '#FFF',
-                  border: '3px solid #000',
-                  boxShadow: '4px 4px 0px #000'
-                }}
-              >
-                取消
               </button>
             </div>
           </div>

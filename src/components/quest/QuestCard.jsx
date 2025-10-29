@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Check, MoreVertical, Edit, Trash2, RotateCcw } from 'lucide-react';
 import DifficultyBadge from './DifficultyBadge';
-import RarityBadge from './RarityBadge';
 import { format } from 'date-fns';
 
 export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReopen }) {
@@ -26,27 +25,37 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
   return (
     <>
       <div 
-        className="relative mb-4 p-4 transform transition-all hover:translate-x-1 hover:-translate-y-1"
+        className="relative mb-3 p-3 transform transition-all hover:translate-x-1 hover:-translate-y-1"
         style={{
           backgroundColor: isDone ? '#F0F0F0' : '#FFF',
           border: '4px solid #000',
-          boxShadow: isDone ? '3px 3px 0px #000' : '6px 6px 0px #000',
+          boxShadow: isDone ? '3px 3px 0px #000' : '5px 5px 0px #000',
           transform: `rotate(${Math.random() * 2 - 1}deg)`,
           animation: isGlowing ? 'glow 0.5s ease-in-out' : 'none'
         }}
       >
-        <div className="flex gap-3">
-          {/* Difficulty Badge */}
+        <div className="flex gap-2">
+          {/* Difficulty Badge - Smaller */}
           <div className="flex-shrink-0">
-            <DifficultyBadge difficulty={quest.difficulty} />
+            <div 
+              className="flex items-center justify-center w-10 h-10 font-black text-lg transform -rotate-3"
+              style={{
+                backgroundColor: quest.difficulty === 'S' ? '#000' : quest.difficulty === 'A' ? '#C44569' : quest.difficulty === 'B' ? '#FF6B35' : '#FFE66D',
+                color: quest.difficulty === 'S' ? '#FFE66D' : '#000',
+                border: `3px solid ${quest.difficulty === 'S' ? '#FFE66D' : '#000'}`,
+                boxShadow: '3px 3px 0px rgba(0,0,0,1)'
+              }}
+            >
+              {quest.difficulty}
+            </div>
           </div>
 
           {/* Quest Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <div className="flex-1">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <div className="flex-1 min-w-0">
                 <h3 
-                  className="font-black text-lg uppercase leading-tight mb-1"
+                  className="font-black text-base uppercase leading-tight mb-1 line-clamp-2"
                   style={{ 
                     textDecoration: isDone ? 'line-through' : 'none',
                     color: isDone ? '#999' : '#000'
@@ -55,19 +64,19 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                   {quest.title}
                 </h3>
                 <p 
-                  className="text-sm font-bold"
-                  style={{ color: isDone ? '#999' : '#333' }}
+                  className="text-xs font-bold line-clamp-1"
+                  style={{ color: isDone ? '#999' : '#666' }}
                 >
                   ({quest.actionHint})
                 </p>
               </div>
 
               {/* Menu Button */}
-              <div className="relative">
+              <div className="relative flex-shrink-0">
                 <button
                   onClick={() => setShowMenu(!showMenu)}
-                  className="p-2 hover:bg-gray-200"
-                  style={{ border: '3px solid #000' }}
+                  className="p-1.5 hover:bg-gray-200"
+                  style={{ border: '2px solid #000' }}
                 >
                   <MoreVertical className="w-4 h-4" />
                 </button>
@@ -79,7 +88,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                       onClick={() => setShowMenu(false)}
                     />
                     <div 
-                      className="absolute right-0 bottom-full mb-2 w-40 bg-white"
+                      className="absolute right-0 bottom-full mb-2 w-36 bg-white"
                       style={{
                         border: '3px solid #000',
                         boxShadow: '4px 4px 0px #000',
@@ -89,10 +98,10 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                       {isDone && (
                         <button
                           onClick={handleReopen}
-                          className="w-full px-4 py-2 text-left font-bold hover:bg-gray-100 flex items-center gap-2"
-                          style={{ borderBottom: '3px solid #000' }}
+                          className="w-full px-3 py-2 text-left text-xs font-bold hover:bg-gray-100 flex items-center gap-2"
+                          style={{ borderBottom: '2px solid #000' }}
                         >
-                          <RotateCcw className="w-4 h-4" /> 返回待办
+                          <RotateCcw className="w-3 h-3" /> 返回待办
                         </button>
                       )}
                       <button
@@ -100,19 +109,19 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                           onEdit(quest);
                           setShowMenu(false);
                         }}
-                        className="w-full px-4 py-2 text-left font-bold hover:bg-gray-100 flex items-center gap-2"
-                        style={{ borderBottom: '3px solid #000' }}
+                        className="w-full px-3 py-2 text-left text-xs font-bold hover:bg-gray-100 flex items-center gap-2"
+                        style={{ borderBottom: '2px solid #000' }}
                       >
-                        <Edit className="w-4 h-4" /> 编辑
+                        <Edit className="w-3 h-3" /> 编辑
                       </button>
                       <button
                         onClick={() => {
                           onDelete(quest.id);
                           setShowMenu(false);
                         }}
-                        className="w-full px-4 py-2 text-left font-bold hover:bg-gray-100 flex items-center gap-2"
+                        className="w-full px-3 py-2 text-left text-xs font-bold hover:bg-gray-100 flex items-center gap-2"
                       >
-                        <Trash2 className="w-4 h-4" /> 删除
+                        <Trash2 className="w-3 h-3" /> 删除
                       </button>
                     </div>
                   </>
@@ -120,45 +129,27 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
               </div>
             </div>
 
-            {/* Tags & Rarity */}
-            <div className="flex flex-wrap gap-2 mb-2">
-              <RarityBadge rarity={quest.rarity} />
-              {quest.tags?.map((tag, i) => (
-                <span 
-                  key={i}
-                  className="px-2 py-1 text-xs font-bold uppercase"
-                  style={{
-                    backgroundColor: '#FF6B35',
-                    color: '#FFF',
-                    border: '2px solid #000'
-                  }}
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-
-            {/* Due Date */}
+            {/* Due Date - More Compact */}
             {quest.dueDate && (
-              <p className="text-xs font-bold" style={{ color: '#666' }}>
+              <p className="text-xs font-bold mt-1" style={{ color: '#666' }}>
                 ⏰ {format(new Date(quest.dueDate), 'MM/dd HH:mm')}
               </p>
             )}
           </div>
 
-          {/* Complete Button */}
+          {/* Complete Button - Smaller */}
           <button
             onClick={() => onComplete(quest)}
             disabled={isDone}
-            className="flex-shrink-0 w-12 h-12 flex items-center justify-center font-black transition-all"
+            className="flex-shrink-0 w-10 h-10 flex items-center justify-center font-black transition-all"
             style={{
               backgroundColor: isDone ? '#4ECDC4' : '#FFF',
-              border: '4px solid #000',
-              boxShadow: '4px 4px 0px #000',
+              border: '3px solid #000',
+              boxShadow: '3px 3px 0px #000',
               cursor: isDone ? 'not-allowed' : 'pointer'
             }}
           >
-            {isDone && <Check className="w-6 h-6" strokeWidth={4} />}
+            {isDone && <Check className="w-5 h-5" strokeWidth={4} />}
           </button>
         </div>
       </div>
@@ -227,8 +218,20 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
 
       <style>{`
         @keyframes glow {
-          0%, 100% { box-shadow: 6px 6px 0px #000; }
-          50% { box-shadow: 0 0 20px #4ECDC4, 6px 6px 0px #000; }
+          0%, 100% { box-shadow: 5px 5px 0px #000; }
+          50% { box-shadow: 0 0 20px #4ECDC4, 5px 5px 0px #000; }
+        }
+        .line-clamp-1 {
+          display: -webkit-box;
+          -webkit-line-clamp: 1;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
       `}</style>
     </>

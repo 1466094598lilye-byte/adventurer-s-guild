@@ -276,18 +276,67 @@ export default function QuestBoard() {
           if (allDone && updatedQuests.length > 0) {
             console.log('=== 所有任务已完成 ===');
             
-            // 更新连胜
+            // 获取最新用户数据
             const currentUser = await base44.auth.me();
-            const newStreak = (currentUser?.streakCount || 0) + 1;
-            const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
+            console.log('当前用户数据:', currentUser);
+            console.log('lastClearDate:', currentUser?.lastClearDate);
+            console.log('今日日期:', today);
             
+            // 检查今天是否已经完成过
+            if (currentUser?.lastClearDate === today) {
+              console.log('今天已经完成过所有任务，不重复增加连胜');
+              
+              // 依然检查宝箱
+              const chests = await base44.entities.DailyChest.filter({ date: today });
+              if (chests.length === 0) {
+                await base44.entities.DailyChest.create({ 
+                  date: today, 
+                  opened: false 
+                });
+                setTimeout(() => setShowChest(true), 500);
+              } else if (!chests[0].opened) {
+                setTimeout(() => setShowChest(true), 500);
+              }
+              
+              return; // Exit here, as streak and milestone already handled for today
+            }
+            
+            // 计算新的连胜数
+            let newStreak = 1;
+            const lastClearDate = currentUser?.lastClearDate;
+            
+            if (lastClearDate) {
+              const yesterday = format(new Date(Date.now() - 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+              console.log('昨天日期:', yesterday);
+              
+              if (lastClearDate === yesterday) {
+                // 连续的，连胜 +1
+                newStreak = (currentUser?.streakCount || 0) + 1;
+                console.log('连续完成，连胜 +1，新连胜:', newStreak);
+              } else {
+                // 不连续，重置为1 (e.g., missed a day, or last clear was two days ago)
+                console.log('中断了，连胜重置为1');
+                newStreak = 1;
+              }
+            } else {
+              // 第一次完成
+              console.log('第一次完成所有任务，连胜设为1');
+              newStreak = 1;
+            }
+            
+            const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
+            console.log('新的最长连胜:', newLongestStreak);
+            
+            // 更新用户数据
             await base44.auth.updateMe({
               streakCount: newStreak,
               longestStreak: newLongestStreak,
               lastClearDate: today
             });
+            console.log('用户连胜数据已更新');
             
-            queryClient.invalidateQueries(['user']);
+            // 刷新用户数据缓存
+            await queryClient.invalidateQueries(['user']);
             
             // 检查里程碑奖励
             await checkAndAwardMilestone(newStreak);

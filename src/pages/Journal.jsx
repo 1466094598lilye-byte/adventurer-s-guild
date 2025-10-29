@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, TrendingUp } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import StreakDisplay from '../components/profile/StreakDisplay';
 
@@ -92,7 +92,7 @@ export default function Journal() {
 
         {/* Completion Rate Chart */}
         <div 
-          className="mb-6 p-4"
+          className="p-4"
           style={{
             backgroundColor: '#FFE66D',
             border: '4px solid #000',
@@ -121,63 +121,9 @@ export default function Journal() {
           </div>
         </div>
 
-        {/* Quest History by Date */}
-        <div className="space-y-4">
-          {dates.map(date => {
-            const dayQuests = questsByDate[date];
-            const completed = dayQuests.filter(q => q.status === 'done').length;
-            const total = dayQuests.length;
-            const allDone = completed === total;
-
-            return (
-              <div 
-                key={date}
-                className="p-4"
-                style={{
-                  backgroundColor: allDone ? '#4ECDC4' : '#FFF',
-                  border: '4px solid #000',
-                  boxShadow: '5px 5px 0px #000'
-                }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5" strokeWidth={3} />
-                    <span className="font-black uppercase">
-                      {format(new Date(date), 'MM/dd')}
-                    </span>
-                  </div>
-                  <div className="font-black">
-                    {completed}/{total}
-                    {allDone && <span className="ml-2">🏆</span>}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  {dayQuests.map(quest => (
-                    <div 
-                      key={quest.id}
-                      className="p-2"
-                      style={{
-                        backgroundColor: quest.status === 'done' ? '#E8F5E9' : '#FFF',
-                        border: '2px solid #000',
-                        textDecoration: quest.status === 'done' ? 'line-through' : 'none'
-                      }}
-                    >
-                      <p className="font-bold text-sm">{quest.title}</p>
-                      <p className="text-xs font-bold text-gray-600">
-                        ({quest.actionHint})
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
         {dates.length === 0 && (
           <div 
-            className="p-8 text-center"
+            className="p-8 text-center mt-6"
             style={{
               backgroundColor: '#FFF',
               border: '4px solid #000',

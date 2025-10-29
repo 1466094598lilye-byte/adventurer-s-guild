@@ -512,13 +512,13 @@ export default function QuestBoard() {
       await base44.auth.updateMe({
         restDays: restDays.filter(d => d !== today)
       });
-      setToast('工会休息日已取消');
+      setToast('工会休憩已止，委托板重现光辉，新的挑战随时恭候。');
     } else {
       // 设置为休息日
       await base44.auth.updateMe({
         restDays: [...restDays, today]
       });
-      setToast('今日已设为工会休息日');
+      setToast('冒险者，你最近的英勇表现值得赞颂！工会为你特批今日休憩，在安宁中恢复，为下一次远征积蓄力量。');
     }
     
     queryClient.invalidateQueries(['user']);

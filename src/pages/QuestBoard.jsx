@@ -8,7 +8,7 @@ import QuestCard from '../components/quest/QuestCard';
 import PraiseDialog from '../components/quest/PraiseDialog';
 import ChestOpening from '../components/treasure/ChestOpening';
 import QuestEditFormModal from '../components/quest/QuestEditFormModal';
-import { format } from 'date-fns';
+import { format } = from 'date-fns';
 
 export default function QuestBoard() {
   const [filter, setFilter] = useState('all');

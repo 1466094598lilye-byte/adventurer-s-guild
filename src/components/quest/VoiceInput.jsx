@@ -1,12 +1,12 @@
-
 import { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Loader2, Sparkles } from 'lucide-react';
+import { Mic, MicOff, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 export default function VoiceInput({ onQuestsGenerated }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const [confidence, setConfidence] = useState(1);
   const [audioLevels, setAudioLevels] = useState([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
   const recognitionRef = useRef(null);
   const audioContextRef = useRef(null);
@@ -94,9 +94,12 @@ export default function VoiceInput({ onQuestsGenerated }) {
       }
 
       const recognition = new SpeechRecognition();
+      
+      // 配置多语言支持，提升口音识别
       recognition.lang = 'zh-CN';
       recognition.continuous = true;
       recognition.interimResults = true;
+      recognition.maxAlternatives = 3; // 获取多个候选结果
 
       recognition.onstart = () => {
         setIsRecording(true);
@@ -107,14 +110,29 @@ export default function VoiceInput({ onQuestsGenerated }) {
       recognition.onresult = (event) => {
         let interimTranscript = '';
         let finalTranscript = '';
+        let avgConfidence = 0;
+        let confidenceCount = 0;
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcriptText = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
+          const result = event.results[i];
+          const transcriptText = result[0].transcript;
+          
+          // 收集置信度
+          if (result[0].confidence !== undefined) {
+            avgConfidence += result[0].confidence;
+            confidenceCount++;
+          }
+          
+          if (result.isFinal) {
             finalTranscript += transcriptText;
           } else {
             interimTranscript += transcriptText;
           }
+        }
+
+        // 计算平均置信度
+        if (confidenceCount > 0) {
+          setConfidence(avgConfidence / confidenceCount);
         }
 
         setTranscript(finalTranscript || interimTranscript);
@@ -154,88 +172,89 @@ export default function VoiceInput({ onQuestsGenerated }) {
       stopAudioVisualization();
       
       if (transcript.trim()) {
-        await handleTextSubmit(transcript);
+        await handleTextSubmit(transcript, confidence);
       }
     }
   };
 
-  const handleTextSubmit = async (text) => {
+  const handleTextSubmit = async (text, conf = 1) => {
     if (!text.trim()) return;
     
     setIsProcessing(true);
     try {
+      // 使用LLM进行语义理解和口音纠正
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `你是冒险者工会的AI助手。用户输入了任务描述："${text}"
+        prompt: `你是冒险者工会的AI书记官，负责记录委托。用户通过语音输入任务，可能带有口音或发音不标准。
 
-请将其解析为RPG风格的结构化任务。
+【原始语音文本】："${text}"
+【识别置信度】：${(conf * 100).toFixed(0)}%
 
-【关键规则 - 任务拆分】：
-- 如果用户提到多个不同的事项，必须拆分成多个任务
-- 判断标准：
-  * 不同的动作（写、读、跑步、联系...）→ 拆分
-  * 不同的对象/人物 → 拆分
-  * 用"和"、"还有"、"以及"、"然后"连接的 → 拆分
-- 例如："写周报和准备会议" → 2个任务
-- 例如："给张三打电话，然后给李四发邮件" → 2个任务
-- 例如："跑步和冥想" → 2个任务
+【你的任务】：
+1. **语义优先**：理解用户真正想表达的任务意图，不要被发音错误干扰
+2. **口音容错**：
+   - 常见音变：sh/s、l/n、in/ing、f/h、z/zh、c/ch
+   - 粤语用词：买嘢→买东西、做嘢→做事、睇→看
+   - 台普用词：等一下下→等一下、有够→很
+   - 地方口语：吃饭咯→吃饭了、搞定了噻→搞定了
+3. **智能拆分**：如果提到多个任务（用"和"、"还有"、"然后"、"以及"连接），拆分成多个任务
+4. **保留关键词**：人名、地点、时间、具体数字必须保留
 
-【重要规则】actionHint（括号内容）必须忠实原话：
-- 保留所有关键词（人名、地点、具体事项、平台名称等）
-- 只做必要的简化，不要改写意思
-- 如果有时间信息，用@HH:MM格式标注
+【输出格式】：
+- rawText: 原始识别文本（原封不动）
+- correctedText: 纠正后的文本（如果不需要纠正则与原文相同）
+- needsCorrection: 是否进行了纠正（true/false）
+- quests: 任务列表
 
-RPG标题命名规则：
-1. 格式：【任务类型】任务名称
-   - 任务类型：讨伐、收集、护送、调查、修炼、征服、探索
-2. 标题要有场景感和戏剧性，但不要过度修饰
-
-难度评级（4个等级）：
-- C级：轻松任务（日常琐事、简单事项）
-- B级：中等挑战（需要一些努力和时间）
-- A级：高难度（突破舒适区、有挑战性）
-- S级：超级挑战（人生重大任务、极具难度）
-
-示例1（单任务）：
-输入："写周报"
+【示例1】（口音识别错误）：
+输入："明早七点跑不五公里"
 输出：
 {
+  "rawText": "明早七点跑不五公里",
+  "correctedText": "明早七点跑步五公里",
+  "needsCorrection": true,
   "quests": [
     {
-      "title": "【记录】冒险周志编撰",
-      "actionHint": "写周报",
-      "tags": ["工作"],
-      "difficulty": "C",
+      "title": "【修炼】晨曦长跑试炼",
+      "actionHint": "跑步5km@07:00",
+      "tags": ["运动"],
+      "difficulty": "B",
       "rarity": "Common"
     }
   ]
 }
 
-示例2（多任务）：
-输入："写周报和准备明天的会议"
+【示例2】（粤语词汇）：
+输入："今日要买嘢同做运动"
 输出：
 {
+  "rawText": "今日要买嘢同做运动",
+  "correctedText": "今天要买东西和做运动",
+  "needsCorrection": true,
   "quests": [
     {
-      "title": "【记录】冒险周志编撰",
-      "actionHint": "写周报",
-      "tags": ["工作"],
+      "title": "【收集】市集采购行动",
+      "actionHint": "买东西",
+      "tags": ["生活"],
       "difficulty": "C",
       "rarity": "Common"
     },
     {
-      "title": "【准备】明日议会筹备",
-      "actionHint": "准备明天的会议",
-      "tags": ["工作"],
+      "title": "【修炼】日常锻炼计划",
+      "actionHint": "做运动",
+      "tags": ["运动"],
       "difficulty": "C",
       "rarity": "Common"
     }
   ]
 }
 
-请处理用户输入。`,
+请处理用户输入：`,
         response_json_schema: {
           type: "object",
           properties: {
+            rawText: { type: "string" },
+            correctedText: { type: "string" },
+            needsCorrection: { type: "boolean" },
             quests: {
               type: "array",
               items: {
@@ -254,8 +273,17 @@ RPG标题命名规则：
         }
       });
 
-      onQuestsGenerated(result.quests || []);
+      // 在任务中附加原始语音文本和纠正信息
+      const questsWithMetadata = result.quests.map(q => ({
+        ...q,
+        voiceRawText: result.rawText,
+        voiceCorrectedText: result.needsCorrection ? result.correctedText : null,
+        voiceConfidence: conf
+      }));
+
+      onQuestsGenerated(questsWithMetadata);
       setTranscript('');
+      setConfidence(1);
     } catch (error) {
       console.error('文本处理错误:', error);
       alert(`任务解析失败：${error.message || '请重试'}`);
@@ -299,7 +327,7 @@ RPG标题命名规则：
               onChange={(e) => setTranscript(e.target.value)}
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
-                  handleTextSubmit(transcript);
+                  handleTextSubmit(transcript, 1);
                 }
               }}
               disabled={isProcessing}
@@ -313,7 +341,7 @@ RPG标题命名规则：
           </div>
 
           <button
-            onClick={() => handleTextSubmit(transcript)}
+            onClick={() => handleTextSubmit(transcript, 1)}
             disabled={isProcessing || !transcript.trim()}
             className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
             style={{
@@ -355,7 +383,17 @@ RPG标题命名规则：
 
             <div className="min-h-[40px] flex items-center justify-center">
               {transcript ? (
-                <p className="font-bold text-lg text-center">{transcript}</p>
+                <div>
+                  <p className="font-bold text-lg text-center mb-2">{transcript}</p>
+                  {confidence < 0.75 && (
+                    <div className="flex items-center justify-center gap-2 text-orange-600">
+                      <AlertCircle className="w-4 h-4" />
+                      <span className="text-xs font-bold">
+                        置信度较低，AI将智能理解语义
+                      </span>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <p className="font-bold text-gray-400 text-center">正在聆听...</p>
               )}
@@ -378,9 +416,18 @@ RPG标题命名规则：
         </div>
       )}
 
-      <p className="text-xs font-bold uppercase tracking-wide" style={{ color: '#000' }}>
-        💡 说出你的任务，工会AI将为你整理！
-      </p>
+      <div 
+        className="flex items-start gap-2 p-3 mt-3"
+        style={{
+          backgroundColor: '#4ECDC4',
+          border: '3px solid #000'
+        }}
+      >
+        <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" strokeWidth={3} />
+        <p className="text-xs font-bold leading-relaxed">
+          📢 书记官提醒：即便语调各异（粤语、台普、地方口音），工会皆能听懂你的委托，请尽管开口叙述。
+        </p>
+      </div>
     </div>
   );
 }

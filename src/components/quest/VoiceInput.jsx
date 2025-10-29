@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, Loader2, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -183,26 +184,39 @@ export default function VoiceInput({ onQuestsGenerated }) {
     setIsProcessing(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `为任务起一个8-10字的RPG名字。
+        prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官，擅长为平凡任务注入奇幻色彩。
 
 任务：${userOriginalText}
 
 规则：
-- 总字数8-10字
-- 格式：【类型】+标题
-- 类型：修炼/采集/探索/讨伐/试炼/谈判/淬炼/磨砺/夺回/寻回
-- 禁用词：的/之/冒号
+1. 总字数：8-10字
+2. 格式：【任务类型】+奇幻标题
+3. 类型词库：修炼/采集/探索/讨伐/试炼/谈判/淬炼/磨砺/夺回/寻回/护送/调查/狩猎/救援
+4. 奇幻化词汇：
+   - 超市→集市/市集
+   - 跑步→疾行/晨跑
+   - 读书→研读/阅卷
+   - 退货→夺回/寻回
+   - 开会→议事/会谈
+   - 健身→修炼/锻体
+   - 写作→笔录/记录
+5. 禁用词：的/之/冒号
+6. 风格：简洁有力、略带戏剧感
 
-✓正确（8-10字）：
+✓ 优秀示例（有RPG味）：
 【修炼】破晓疾行
 【采集】集市寻觅
 【探索】古籍研读
 【夺回】遗失之物
+【试炼】晨曦锻体
+【调查】星辰观测
 
-❌错误（太长）：
-【探索】智慧圣殿的秘密探寻
+❌ 错误示例：
+【探索】智慧圣殿的秘密探寻（太长）
+【修炼】跑步（太直白，无RPG味）
+【收集】买东西（太现代化）
 
-只返回标题、难度、稀有度，不要返回任务内容。`,
+只返回标题、难度、稀有度，不要生成任务内容。`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -223,8 +237,8 @@ export default function VoiceInput({ onQuestsGenerated }) {
         tags: []
       };
 
-      console.log('生成的任务:', cleanQuest);  // 调试日志
-      console.log('用户原文:', userOriginalText);  // 调试日志
+      console.log('生成的任务:', cleanQuest);
+      console.log('用户原文:', userOriginalText);
 
       onQuestsGenerated([cleanQuest]);
       setTranscript('');

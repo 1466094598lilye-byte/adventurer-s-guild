@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -182,36 +183,27 @@ export default function VoiceInput({ onQuestsGenerated }) {
     
     setIsProcessing(true);
     try {
-      // 使用LLM进行语义理解和口音纠正
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `你是冒险者工会的AI书记官，负责记录委托。用户通过语音输入任务，可能带有口音或发音不标准。
+        prompt: `你是冒险者工会的AI助手。用户输入了任务描述，请将其转换为RPG风格的任务。
 
-【原始语音文本】："${text}"
-【识别置信度】：${(conf * 100).toFixed(0)}%
+用户输入："${text}"
 
-【你的任务】：
-1. **语义优先**：理解用户真正想表达的任务意图，不要被发音错误干扰
-2. **口音容错**：
-   - 常见音变：sh/s、l/n、in/ing、f/h、z/zh、c/ch
-   - 粤语用词：买嘢→买东西、做嘢→做事、睇→看
-   - 台普用词：等一下下→等一下、有够→很
-   - 地方口语：吃饭咯→吃饭了、搞定了噻→搞定了
-3. **智能拆分**：如果提到多个任务（用"和"、"还有"、"然后"、"以及"连接），拆分成多个任务
-4. **保留关键词**：人名、地点、时间、具体数字必须保留
+要求：
+1. 如果输入包含多个任务（用"和"、"还有"、"然后"等连接），拆分成多个任务
+2. 为每个任务生成RPG风格的标题、难度、稀有度和标签
+3. 标题格式：【任务类型】任务名称（类型如：讨伐、收集、护送、调查、修炼、征服、探索）
+4. 保留关键信息：时间、地点、数字等
 
-【输出格式】：
-- rawText: 原始识别文本（原封不动）
-- correctedText: 纠正后的文本（如果不需要纠正则与原文相同）
-- needsCorrection: 是否进行了纠正（true/false）
-- quests: 任务列表
+难度评级：
+- C级：轻松任务
+- B级：中等挑战
+- A级：高难度
+- S级：超级挑战
 
-【示例1】（口音识别错误）：
-输入："明早七点跑不五公里"
+示例：
+输入："明早7点跑步5公里，然后买菜"
 输出：
 {
-  "rawText": "明早七点跑不五公里",
-  "correctedText": "明早七点跑步五公里",
-  "needsCorrection": true,
   "quests": [
     {
       "title": "【修炼】晨曦长跑试炼",
@@ -219,42 +211,21 @@ export default function VoiceInput({ onQuestsGenerated }) {
       "tags": ["运动"],
       "difficulty": "B",
       "rarity": "Common"
-    }
-  ]
-}
-
-【示例2】（粤语词汇）：
-输入："今日要买嘢同做运动"
-输出：
-{
-  "rawText": "今日要买嘢同做运动",
-  "correctedText": "今天要买东西和做运动",
-  "needsCorrection": true,
-  "quests": [
+    },
     {
       "title": "【收集】市集采购行动",
-      "actionHint": "买东西",
+      "actionHint": "买菜",
       "tags": ["生活"],
       "difficulty": "C",
       "rarity": "Common"
-    },
-    {
-      "title": "【修炼】日常锻炼计划",
-      "actionHint": "做运动",
-      "tags": ["运动"],
-      "difficulty": "C",
-      "rarity": "Common"
     }
   ]
 }
 
-请处理用户输入：`,
+请生成：`,
         response_json_schema: {
           type: "object",
           properties: {
-            rawText: { type: "string" },
-            correctedText: { type: "string" },
-            needsCorrection: { type: "boolean" },
             quests: {
               type: "array",
               items: {
@@ -273,15 +244,7 @@ export default function VoiceInput({ onQuestsGenerated }) {
         }
       });
 
-      // 在任务中附加原始语音文本和纠正信息
-      const questsWithMetadata = result.quests.map(q => ({
-        ...q,
-        voiceRawText: result.rawText,
-        voiceCorrectedText: result.needsCorrection ? result.correctedText : null,
-        voiceConfidence: conf
-      }));
-
-      onQuestsGenerated(questsWithMetadata);
+      onQuestsGenerated(result.quests);
       setTranscript('');
       setConfidence(1);
     } catch (error) {
@@ -383,17 +346,7 @@ export default function VoiceInput({ onQuestsGenerated }) {
 
             <div className="min-h-[40px] flex items-center justify-center">
               {transcript ? (
-                <div>
-                  <p className="font-bold text-lg text-center mb-2">{transcript}</p>
-                  {confidence < 0.75 && (
-                    <div className="flex items-center justify-center gap-2 text-orange-600">
-                      <AlertCircle className="w-4 h-4" />
-                      <span className="text-xs font-bold">
-                        置信度较低，AI将智能理解语义
-                      </span>
-                    </div>
-                  )}
-                </div>
+                <p className="font-bold text-lg text-center">{transcript}</p>
               ) : (
                 <p className="font-bold text-gray-400 text-center">正在聆听...</p>
               )}

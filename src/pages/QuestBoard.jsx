@@ -171,38 +171,75 @@ export default function QuestBoard() {
   };
 
   const handleComplete = async (quest) => {
-    await updateQuestMutation.mutateAsync({
-      id: quest.id,
-      data: { status: 'done' }
-    });
-    setSelectedQuest(quest);
-
-    // 等待查询缓存更新
-    await queryClient.invalidateQueries(['quests']);
+    console.log('=== 开始处理任务完成 ===');
+    console.log('任务信息:', quest);
     
-    // 稍微延迟后检查，确保数据已更新
-    setTimeout(async () => {
-      const updatedQuests = await base44.entities.Quest.filter({ date: today });
-      console.log('当前日期:', today);
-      console.log('所有任务:', updatedQuests);
-      console.log('任务状态:', updatedQuests.map(q => ({ title: q.title, status: q.status })));
+    try {
+      await updateQuestMutation.mutateAsync({
+        id: quest.id,
+        data: { status: 'done' }
+      });
+      console.log('任务状态更新成功');
       
-      const allDone = updatedQuests.every(q => q.status === 'done');
-      console.log('是否全部完成:', allDone);
+      setSelectedQuest(quest);
+
+      // 等待查询缓存更新
+      await queryClient.invalidateQueries(['quests']);
+      console.log('查询缓存已刷新');
       
-      if (allDone) {
-        const chests = await base44.entities.DailyChest.filter({ date: today });
-        console.log('现有宝箱:', chests);
+      // 稍微延迟后检查，确保数据已更新
+      setTimeout(async () => {
+        console.log('=== 开始检查是否全部完成 ===');
+        console.log('今日日期:', today);
         
-        if (chests.length === 0) {
-          await base44.entities.DailyChest.create({ date: today, opened: false });
-          console.log('创建宝箱成功，准备显示');
-          setTimeout(() => setShowChest(true), 500);
-        } else {
-          console.log('今日宝箱已存在');
+        try {
+          const updatedQuests = await base44.entities.Quest.filter({ date: today });
+          console.log('找到的任务数量:', updatedQuests.length);
+          console.log('任务列表:', updatedQuests.map(q => ({ 
+            title: q.title, 
+            status: q.status,
+            date: q.date 
+          })));
+          
+          const allDone = updatedQuests.every(q => q.status === 'done');
+          console.log('是否全部完成:', allDone);
+          
+          if (allDone && updatedQuests.length > 0) {
+            console.log('=== 所有任务已完成，检查宝箱 ===');
+            const chests = await base44.entities.DailyChest.filter({ date: today });
+            console.log('现有宝箱:', chests);
+            
+            if (chests.length === 0) {
+              console.log('创建新宝箱...');
+              const newChest = await base44.entities.DailyChest.create({ 
+                date: today, 
+                opened: false 
+              });
+              console.log('宝箱创建成功:', newChest);
+              
+              setTimeout(() => {
+                console.log('显示宝箱界面');
+                setShowChest(true);
+              }, 500);
+            } else {
+              console.log('今日宝箱已存在，ID:', chests[0].id);
+              if (!chests[0].opened) {
+                console.log('宝箱未开启，显示开箱界面');
+                setTimeout(() => setShowChest(true), 500);
+              } else {
+                console.log('宝箱已开启过');
+              }
+            }
+          } else {
+            console.log('还有任务未完成或任务列表为空');
+          }
+        } catch (error) {
+          console.error('检查任务时出错:', error);
         }
-      }
-    }, 300);
+      }, 500);
+    } catch (error) {
+      console.error('更新任务状态失败:', error);
+    }
   };
 
   const handleReopen = async (quest) => {
@@ -522,8 +559,8 @@ export default function QuestBoard() {
                 onClick={() => setPendingQuests([])}
                 className="flex-1 py-2 font-black uppercase"
                 style={{
-                  backgroundColor: '#FF6B35', // Changed from '#FFF'
-                  color: '#FFF', // Added new color property
+                  backgroundColor: '#FF6B35', 
+                  color: '#FFF', 
                   border: '3px solid #000',
                   boxShadow: '4px 4px 0px #000'
                 }}

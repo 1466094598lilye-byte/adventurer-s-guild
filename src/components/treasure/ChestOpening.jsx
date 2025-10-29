@@ -20,23 +20,32 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
         const freezeTokenRoll = Math.random() * 100;
         const wonFreezeToken = freezeTokenRoll < 1;
 
+        // Determine rarity (70% Common, 20% Rare, 8% Epic, 2% Legendary)
+        const rarityRoll = Math.random() * 100;
+        let rarity;
+        if (rarityRoll < 70) rarity = 'Common';
+        else if (rarityRoll < 90) rarity = 'Rare';
+        else if (rarityRoll < 98) rarity = 'Epic';
+        else rarity = 'Legendary';
+
         // Generate loot with AI
         const result = await base44.integrations.Core.InvokeLLM({
           prompt: `生成一个RPG风格的战利品道具。
 
+稀有度：${rarity}（${rarity === 'Common' ? '普通' : rarity === 'Rare' ? '稀有' : rarity === 'Epic' ? '史诗' : '传说'}）
+
 要求：
-1. 名称要有冒险/奇幻感，简短有力
-2. 简介要有RPG风味，一句话描述这件物品的来历或象征意义
-3. 选择合适的emoji作为图标（建议使用：📿💎🗝️⚔️🛡️📜🔮🌟✨🏅🎖️等）
+1. 名称要符合该稀有度，${rarity === 'Common' ? '简单朴素' : rarity === 'Rare' ? '有些特别' : rarity === 'Epic' ? '强大华丽' : '传奇神话'}
+2. 简介要有RPG风味，体现该稀有度的价值和来历
+3. 选择合适的emoji作为图标
 
 示例：
-{
-  "name": "星陨碎片",
-  "flavorText": "陨落于工会庭院的流星残骸，见证了又一位冒险者的坚持。",
-  "icon": "💎"
-}
+- Common: "风化的石板" / "记录着冒险者日常足迹的普通石板。"
+- Rare: "月光水晶" / "在月圆之夜才会发光的神秘水晶。"
+- Epic: "不灭之炎" / "传说中永不熄灭的圣火碎片，象征着永恒的意志。"
+- Legendary: "时空之钥" / "据说能开启任意时空之门的神器，只有真正的英雄才配拥有。"
 
-请生成一件新的战利品：`,
+请生成：`,
           response_json_schema: {
             type: "object",
             properties: {
@@ -49,7 +58,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
 
         const newLoot = {
           ...result,
-          rarity: 'Common',
+          rarity: rarity,
           obtainedAt: new Date().toISOString()
         };
 
@@ -83,6 +92,13 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
       }
       setIsOpening(false);
     }, 2000);
+  };
+
+  const rarityColors = {
+    Common: { bg: '#E8E8E8', text: '#333' },
+    Rare: { bg: '#4ECDC4', text: '#000' },
+    Epic: { bg: '#C44569', text: '#FFF' },
+    Legendary: { bg: '#FFE66D', text: '#000' }
   };
 
   return (
@@ -182,6 +198,23 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
                   </p>
                 </div>
               )}
+
+              {/* Rarity Badge */}
+              <div className="flex justify-center mb-4">
+                <div 
+                  className="px-4 py-2 font-black uppercase"
+                  style={{
+                    backgroundColor: rarityColors[loot.rarity].bg,
+                    color: rarityColors[loot.rarity].text,
+                    border: '4px solid #000',
+                    boxShadow: '4px 4px 0px #000'
+                  }}
+                >
+                  {loot.rarity === 'Common' ? '普通' : 
+                   loot.rarity === 'Rare' ? '稀有' : 
+                   loot.rarity === 'Epic' ? '史诗' : '传说'}
+                </div>
+              </div>
 
               <div className="text-6xl mb-4">{loot.icon}</div>
 

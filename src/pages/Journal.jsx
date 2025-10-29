@@ -40,7 +40,7 @@ export default function Journal() {
       date,
       total,
       completed,
-      rate: total > 0 ? (completed / total * 100).toFixed(0) : 0
+      rate: total > 0 ? Math.round((completed / total) * 100) : 0
     };
   });
 
@@ -104,20 +104,22 @@ export default function Journal() {
             <h3 className="font-black uppercase">完成率趋势</h3>
           </div>
           <div className="flex items-end gap-2 h-40">
-            {streakData.slice(0, period === 7 ? 7 : 30).reverse().map((day, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                <div 
-                  className="w-full"
-                  style={{
-                    height: `${day.rate}%`,
-                    backgroundColor: day.rate === 100 ? '#4ECDC4' : day.rate >= 50 ? '#FFE66D' : '#FF6B35',
-                    border: '2px solid #000',
-                    minHeight: '8px'
-                  }}
-                />
-                <span className="text-xs font-bold">{day.rate}%</span>
-              </div>
-            ))}
+            {streakData.slice(0, period === 7 ? 7 : 30).reverse().map((day, i) => {
+              const heightPx = Math.max((day.rate / 100) * 160, 8);
+              return (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                  <div 
+                    className="w-full"
+                    style={{
+                      height: `${heightPx}px`,
+                      backgroundColor: day.rate === 100 ? '#4ECDC4' : day.rate >= 50 ? '#FFE66D' : '#FF6B35',
+                      border: '2px solid #000'
+                    }}
+                  />
+                  <span className="text-xs font-bold">{day.rate}%</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 

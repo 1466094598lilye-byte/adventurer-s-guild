@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,7 +7,7 @@ import QuestCard from '../components/quest/QuestCard';
 import PraiseDialog from '../components/quest/PraiseDialog';
 import ChestOpening from '../components/treasure/ChestOpening';
 import QuestEditFormModal from '../components/quest/QuestEditFormModal';
-import { format } = from 'date-fns';
+import { format } from 'date-fns';
 
 export default function QuestBoard() {
   const [filter, setFilter] = useState('all');

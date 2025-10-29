@@ -506,7 +506,8 @@ export default function QuestBoard() {
                 onClick={() => setPendingQuests([])}
                 className="flex-1 py-2 font-black uppercase"
                 style={{
-                  backgroundColor: '#FFF',
+                  backgroundColor: '#FF6B35', // Changed from '#FFF'
+                  color: '#FFF', // Added new color property
                   border: '3px solid #000',
                   boxShadow: '4px 4px 0px #000'
                 }}

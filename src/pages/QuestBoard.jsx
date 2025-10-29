@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -267,7 +268,7 @@ export default function QuestBoard() {
         dueDate: dueDate
       };
 
-      await updateQuestMutation.mutateAsync({
+      await updateQuestMutation.mutateAsync({ // Corrected from updateTaskMutation
         id: editingQuest.id,
         data: updateData
       });

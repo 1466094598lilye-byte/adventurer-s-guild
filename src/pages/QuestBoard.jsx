@@ -58,7 +58,7 @@ export default function QuestBoard() {
   });
 
   const handleQuestsGenerated = (generatedQuests) => {
-    setPendingQuests(generatedQuests);
+    setPendingQuests(prev => [...prev, ...generatedQuests]);
   };
 
   const confirmQuests = () => {

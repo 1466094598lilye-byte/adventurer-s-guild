@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -92,7 +93,7 @@ export default function Journal() {
 
         {/* Completion Rate Chart */}
         <div 
-          className="p-4"
+          className="p-4 mb-4"
           style={{
             backgroundColor: '#FFE66D',
             border: '4px solid #000',
@@ -103,7 +104,7 @@ export default function Journal() {
             <TrendingUp className="w-5 h-5" strokeWidth={3} />
             <h3 className="font-black uppercase">完成率趋势</h3>
           </div>
-          <div className="flex items-end gap-2 h-40">
+          <div className="flex items-end gap-2 h-40 mb-3">
             {streakData.slice(0, period === 7 ? 7 : 30).reverse().map((day, i) => {
               const heightPx = Math.max((day.rate / 100) * 160, 8);
               return (
@@ -121,11 +122,53 @@ export default function Journal() {
               );
             })}
           </div>
+          
+          {/* Legend */}
+          <div 
+            className="p-3"
+            style={{
+              backgroundColor: '#FFF',
+              border: '3px solid #000'
+            }}
+          >
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-4 h-4 flex-shrink-0"
+                  style={{
+                    backgroundColor: '#4ECDC4',
+                    border: '2px solid #000'
+                  }}
+                />
+                <span className="font-bold">100% 完美</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-4 h-4 flex-shrink-0"
+                  style={{
+                    backgroundColor: '#FFE66D',
+                    border: '2px solid #000'
+                  }}
+                />
+                <span className="font-bold">50-99% 良好</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-4 h-4 flex-shrink-0"
+                  style={{
+                    backgroundColor: '#FF6B35',
+                    border: '2px solid #000'
+                  }}
+                />
+                <span className="font-bold">&lt;50% 待提升</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {dates.length === 0 && (
           <div 
-            className="p-8 text-center mt-6"
+            className="p-8 text-center"
             style={{
               backgroundColor: '#FFF',
               border: '4px solid #000',

@@ -221,17 +221,50 @@ export default function Profile() {
             冻结券是稀有战利品，可在某天无法完成任务时使用，保护连胜不中断。
           </p>
           <div 
-            className="p-3"
+            className="p-3 mb-3"
             style={{
               backgroundColor: 'rgba(255,255,255,0.2)',
               border: '2px solid rgba(255,255,255,0.3)'
             }}
           >
-            <p className="font-bold text-xs">
+            <p className="font-bold text-xs mb-2">
               📦 每日宝箱有1%概率开出冻结券<br/>
+              🎊 累积开启60个宝箱必定获得1张（保底）<br/>
               🏆 达成连胜里程碑也会奖励冻结券
             </p>
           </div>
+          {user && (
+            <div 
+              className="p-3"
+              style={{
+                backgroundColor: '#FFE66D',
+                color: '#000',
+                border: '3px solid #000'
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-sm">距离保底还需：</span>
+                <span className="font-black text-lg">
+                  {Math.max(0, 60 - (user?.chestOpenCounter || 0))} 个宝箱
+                </span>
+              </div>
+              <div className="mt-2 h-3 relative"
+                style={{
+                  backgroundColor: '#FFF',
+                  border: '2px solid #000'
+                }}
+              >
+                <div 
+                  className="h-full transition-all duration-300"
+                  style={{
+                    width: `${Math.min(100, ((user?.chestOpenCounter || 0) / 60 * 100))}%`,
+                    backgroundColor: '#FF6B35',
+                    border: 'none'
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Privacy & Logout */}

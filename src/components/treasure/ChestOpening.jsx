@@ -7,6 +7,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
   const [isOpening, setIsOpening] = useState(false);
   const [loot, setLoot] = useState(null);
   const [gotFreezeToken, setGotFreezeToken] = useState(false);
+  const [isPity, setIsPity] = useState(false);
   const [showLoot, setShowLoot] = useState(false);
   const queryClient = useQueryClient();
 
@@ -16,9 +17,24 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
     // Simulate chest opening animation
     setTimeout(async () => {
       try {
-        // 1% chance to get freeze token
-        const freezeTokenRoll = Math.random() * 100;
-        const wonFreezeToken = freezeTokenRoll < 1;
+        // Get current user
+        const currentUser = await base44.auth.me();
+        const currentCounter = currentUser?.chestOpenCounter || 0;
+        const newCounter = currentCounter + 1;
+
+        // Check pity system (60 chests = guaranteed freeze token)
+        let wonFreezeToken = false;
+        let hitPity = false;
+        
+        if (newCounter >= 60) {
+          // Pity triggered - guaranteed freeze token
+          wonFreezeToken = true;
+          hitPity = true;
+        } else {
+          // Normal 1% chance
+          const freezeTokenRoll = Math.random() * 100;
+          wonFreezeToken = freezeTokenRoll < 1;
+        }
 
         // Determine rarity (70% Common, 20% Rare, 8% Epic, 2% Legendary)
         const rarityRoll = Math.random() * 100;
@@ -65,14 +81,17 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
         // Save loot
         const savedLoot = await base44.entities.Loot.create(newLoot);
 
-        // If won freeze token, update user
+        // Update user: freeze token count and counter
+        const updateData = {
+          chestOpenCounter: wonFreezeToken ? 0 : newCounter
+        };
+
         if (wonFreezeToken) {
-          const currentUser = await base44.auth.me();
-          await base44.auth.updateMe({
-            freezeTokenCount: (currentUser?.freezeTokenCount || 0) + 1
-          });
-          queryClient.invalidateQueries(['user']);
+          updateData.freezeTokenCount = (currentUser?.freezeTokenCount || 0) + 1;
         }
+
+        await base44.auth.updateMe(updateData);
+        queryClient.invalidateQueries(['user']);
 
         // Mark chest as opened
         const chests = await base44.entities.DailyChest.filter({ date });
@@ -85,6 +104,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
 
         setLoot(savedLoot);
         setGotFreezeToken(wonFreezeToken);
+        setIsPity(hitPity);
         setShowLoot(true);
         onLootGenerated(savedLoot);
       } catch (error) {
@@ -184,7 +204,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
                 <div 
                   className="mb-4 p-4 animate-pulse"
                   style={{
-                    backgroundColor: '#FFE66D',
+                    backgroundColor: isPity ? '#FF6B35' : '#FFE66D',
                     border: '4px solid #000',
                     boxShadow: '6px 6px 0px #000'
                   }}
@@ -194,7 +214,9 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
                     <span className="text-2xl font-black">冻结券 +1</span>
                   </div>
                   <p className="text-sm font-bold">
-                    恭喜！你在宝箱中发现了稀有的冻结券！
+                    {isPity 
+                      ? '🎊 保底触发！你已累积开启60个宝箱，获得保底冻结券！'
+                      : '恭喜！你在宝箱中发现了稀有的冻结券！'}
                   </p>
                 </div>
               )}

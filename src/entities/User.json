@@ -37,6 +37,11 @@
       "default": 0,
       "description": "Number of freeze tokens available"
     },
+    "chestOpenCounter": {
+      "type": "integer",
+      "default": 0,
+      "description": "Counter for chest opens towards freeze token pity (resets at 60)"
+    },
     "praiseTone": {
       "type": "string",
       "default": "guild",

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -346,7 +347,7 @@ export default function QuestBoard() {
                   >
                     <div className="flex-1 min-w-0 pr-3">
                       <p className="font-black text-sm mb-1 truncate">{quest.title}</p>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-bold text-gray-600 truncate">
                           ({quest.actionHint || '待填写'})
                         </span>
@@ -361,6 +362,39 @@ export default function QuestBoard() {
                           {difficultyLabels[quest.difficulty]}
                         </span>
                       </div>
+                      
+                      {/* Voice metadata */}
+                      {quest.voiceRawText && (
+                        <div className="mt-2 space-y-1">
+                          <div 
+                            className="text-xs font-bold px-2 py-1"
+                            style={{
+                              backgroundColor: '#F0F0F0',
+                              border: '2px solid #000',
+                              color: '#666'
+                            }}
+                          >
+                            🎤 原始语音：{quest.voiceRawText}
+                          </div>
+                          {quest.voiceCorrectedText && (
+                            <div 
+                              className="text-xs font-bold px-2 py-1"
+                              style={{
+                                backgroundColor: '#E8F5E9',
+                                border: '2px solid #4ECDC4',
+                                color: '#2E7D32'
+                              }}
+                            >
+                              ✓ AI理解为：{quest.voiceCorrectedText}
+                            </div>
+                          )}
+                          {quest.voiceConfidence !== undefined && quest.voiceConfidence < 0.75 && (
+                            <div className="text-xs font-bold" style={{ color: '#FF6B35' }}>
+                              ⚠ 置信度 {(quest.voiceConfidence * 100).toFixed(0)}% - 请确认任务内容
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex-shrink-0">
                       {editingPendingIndex === i ? (
@@ -392,6 +426,11 @@ export default function QuestBoard() {
                             border: '2px solid #000'
                           }}
                         />
+                        {quest.voiceRawText && (
+                          <p className="text-xs font-bold mt-2" style={{ color: '#666' }}>
+                            💡 若口音导致识别错误，可手动修改委托内容
+                          </p>
+                        )}
                       </div>
 
                       <div className="mb-3">

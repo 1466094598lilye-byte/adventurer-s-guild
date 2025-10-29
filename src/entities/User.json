@@ -42,6 +42,14 @@
       "default": 0,
       "description": "Counter for chest opens towards freeze token pity (resets at 60)"
     },
+    "restDays": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Array of dates marked as guild rest days (format: yyyy-MM-dd)"
+    },
     "praiseTone": {
       "type": "string",
       "default": "guild",

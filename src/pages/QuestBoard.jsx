@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Filter, Loader2, ChevronDown, ChevronUp, Plus } from 'lucide-react';
+import { Filter, Loader2, ChevronDown, ChevronUp, Plus, Coffee } from 'lucide-react';
 import VoiceInput from '../components/quest/VoiceInput';
 import QuestCard from '../components/quest/QuestCard';
 import PraiseDialog from '../components/quest/PraiseDialog';
@@ -19,6 +19,7 @@ export default function QuestBoard() {
   const [editingQuest, setEditingQuest] = useState(null);
   const [toast, setToast] = useState(null);
   const [milestoneReward, setMilestoneReward] = useState(null);
+  const [showRestDayDialog, setShowRestDayDialog] = useState(false);
   const queryClient = useQueryClient();
 
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -38,9 +39,21 @@ export default function QuestBoard() {
 
   const createQuestMutation = useMutation({
     mutationFn: (questData) => base44.entities.Quest.create(questData),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries(['quests']);
       setPendingQuests([]);
+      
+      // 如果今天是休息日，创建任务后自动取消休息日标记
+      const currentUser = await base44.auth.me();
+      const restDays = currentUser?.restDays || [];
+      if (restDays.includes(today)) {
+        await base44.auth.updateMe({
+          restDays: restDays.filter(d => d !== today)
+        });
+        queryClient.invalidateQueries(['user']);
+        setToast('已添加任务，工会休息日已自动取消');
+        setTimeout(() => setToast(null), 2000);
+      }
     }
   });
 
@@ -141,7 +154,6 @@ export default function QuestBoard() {
             difficulty: result.difficulty,
             rarity: result.rarity,
             tags: []
-            // actionHint 保持不变
           };
           return updated;
         });
@@ -183,7 +195,6 @@ export default function QuestBoard() {
     
     for (const milestone of milestones) {
       if (newStreak === milestone.days && !unlockedMilestones.includes(milestone.days)) {
-        // 生成特殊战利品
         const lootResult = await base44.integrations.Core.InvokeLLM({
           prompt: `你是【星陨纪元冒险者工会】的宝物铸造大师。一位冒险者达成了${milestone.days}天连胜的惊人成就，获得了「${milestone.title}」称号。请为这个里程碑铸造一件独一无二的纪念战利品。
 
@@ -211,21 +222,18 @@ export default function QuestBoard() {
           }
         });
 
-        // 创建特殊战利品
         await base44.entities.Loot.create({
           ...lootResult,
           rarity: 'Legendary',
           obtainedAt: new Date().toISOString()
         });
 
-        // 更新用户：冻结券、称号、已解锁里程碑
         await base44.auth.updateMe({
           freezeTokenCount: (user?.freezeTokenCount || 0) + milestone.tokens,
           title: milestone.title,
           unlockedMilestones: [...unlockedMilestones, milestone.days]
         });
 
-        // 显示里程碑奖励提示
         setMilestoneReward({
           ...milestone,
           loot: lootResult
@@ -234,7 +242,7 @@ export default function QuestBoard() {
         queryClient.invalidateQueries(['user']);
         queryClient.invalidateQueries(['loot']);
         
-        break; // 只处理当前达到的里程碑
+        break;
       }
     }
   };
@@ -252,11 +260,9 @@ export default function QuestBoard() {
       
       setSelectedQuest(quest);
 
-      // 等待查询缓存更新
       await queryClient.invalidateQueries(['quests']);
       console.log('查询缓存已刷新');
       
-      // 稍微延迟后检查，确保数据已更新
       setTimeout(async () => {
         console.log('=== 开始检查是否全部完成 ===');
         console.log('今日日期:', today);
@@ -276,17 +282,14 @@ export default function QuestBoard() {
           if (allDone && updatedQuests.length > 0) {
             console.log('=== 所有任务已完成 ===');
             
-            // 获取最新用户数据
             const currentUser = await base44.auth.me();
             console.log('当前用户数据:', currentUser);
             console.log('lastClearDate:', currentUser?.lastClearDate);
             console.log('今日日期:', today);
             
-            // 检查今天是否已经完成过
             if (currentUser?.lastClearDate === today) {
               console.log('今天已经完成过所有任务，不重复增加连胜');
               
-              // 依然检查宝箱
               const chests = await base44.entities.DailyChest.filter({ date: today });
               if (chests.length === 0) {
                 await base44.entities.DailyChest.create({ 
@@ -298,28 +301,50 @@ export default function QuestBoard() {
                 setTimeout(() => setShowChest(true), 500);
               }
               
-              return; // Exit here, as streak and milestone already handled for today
+              return;
             }
             
-            // 计算新的连胜数
+            // 计算新的连胜数 - 考虑休息日
             let newStreak = 1;
             const lastClearDate = currentUser?.lastClearDate;
+            const restDays = currentUser?.restDays || [];
             
             if (lastClearDate) {
-              const yesterday = format(new Date(Date.now() - 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
-              console.log('昨天日期:', yesterday);
+              // 找到上一个非休息日的工作日
+              let checkDate = new Date();
+              checkDate.setDate(checkDate.getDate() - 1); // 从昨天开始
               
-              if (lastClearDate === yesterday) {
-                // 连续的，连胜 +1
-                newStreak = (currentUser?.streakCount || 0) + 1;
-                console.log('连续完成，连胜 +1，新连胜:', newStreak);
-              } else {
-                // 不连续，重置为1 (e.g., missed a day, or last clear was two days ago)
-                console.log('中断了，连胜重置为1');
+              let daysBack = 0;
+              let foundLastWorkDay = false;
+              
+              // 往前找，跳过所有休息日，直到找到第一个工作日
+              while (daysBack < 365 && !foundLastWorkDay) {
+                const checkDateStr = format(checkDate, 'yyyy-MM-dd');
+                
+                if (!restDays.includes(checkDateStr)) {
+                  // 这是一个工作日
+                  if (checkDateStr === lastClearDate) {
+                    // 找到了上次完成任务的日期，说明连续
+                    newStreak = (currentUser?.streakCount || 0) + 1;
+                    console.log('连续完成（跳过了休息日），连胜 +1，新连胜:', newStreak);
+                  } else {
+                    // 找到的第一个工作日不是lastClearDate，说明中断了
+                    console.log('中断了，连胜重置为1');
+                    newStreak = 1;
+                  }
+                  foundLastWorkDay = true;
+                }
+                
+                daysBack++;
+                checkDate.setDate(checkDate.getDate() - 1);
+              }
+              
+              if (!foundLastWorkDay) {
+                // 没找到上一个工作日（理论上不应该发生）
+                console.log('未找到上一个工作日，连胜设为1');
                 newStreak = 1;
               }
             } else {
-              // 第一次完成
               console.log('第一次完成所有任务，连胜设为1');
               newStreak = 1;
             }
@@ -327,7 +352,6 @@ export default function QuestBoard() {
             const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
             console.log('新的最长连胜:', newLongestStreak);
             
-            // 更新用户数据
             await base44.auth.updateMe({
               streakCount: newStreak,
               longestStreak: newLongestStreak,
@@ -335,13 +359,10 @@ export default function QuestBoard() {
             });
             console.log('用户连胜数据已更新');
             
-            // 刷新用户数据缓存
             await queryClient.invalidateQueries(['user']);
             
-            // 检查里程碑奖励
             await checkAndAwardMilestone(newStreak);
             
-            // 检查宝箱
             const chests = await base44.entities.DailyChest.filter({ date: today });
             console.log('现有宝箱数量:', chests.length);
             console.log('宝箱详情:', chests);
@@ -454,7 +475,7 @@ export default function QuestBoard() {
 
       const updateData = {
         title: result.title,
-        actionHint: actionHint,  // 保持用户输入的原文
+        actionHint: actionHint,
         difficulty: result.difficulty,
         rarity: result.rarity,
         tags: [],
@@ -475,6 +496,34 @@ export default function QuestBoard() {
     } catch (error) {
       alert('更新失败，请重试');
     }
+  };
+
+  const handleToggleRestDay = async () => {
+    if (quests.length > 0) {
+      alert('今日已有任务，无法设置为休息日');
+      return;
+    }
+    
+    const restDays = user?.restDays || [];
+    const isRestDay = restDays.includes(today);
+    
+    if (isRestDay) {
+      // 取消休息日
+      await base44.auth.updateMe({
+        restDays: restDays.filter(d => d !== today)
+      });
+      setToast('工会休息日已取消');
+    } else {
+      // 设置为休息日
+      await base44.auth.updateMe({
+        restDays: [...restDays, today]
+      });
+      setToast('今日已设为工会休息日');
+    }
+    
+    queryClient.invalidateQueries(['user']);
+    setShowRestDayDialog(false);
+    setTimeout(() => setToast(null), 2000);
   };
 
   const filteredQuests = quests.filter(quest => {
@@ -498,6 +547,8 @@ export default function QuestBoard() {
     S: 'S'
   };
 
+  const isRestDay = (user?.restDays || []).includes(today);
+
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
       <div className="max-w-2xl mx-auto">
@@ -517,6 +568,26 @@ export default function QuestBoard() {
             {format(new Date(), 'yyyy年MM月dd日')}
           </p>
         </div>
+
+        {/* Rest Day Banner */}
+        {isRestDay && (
+          <div 
+            className="mb-6 p-4"
+            style={{
+              backgroundColor: '#4ECDC4',
+              border: '4px solid #000',
+              boxShadow: '6px 6px 0px #000'
+            }}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <Coffee className="w-6 h-6" strokeWidth={3} />
+              <p className="font-black uppercase">今日为工会休息日</p>
+            </div>
+            <p className="text-center text-sm font-bold mt-2">
+              连胜不会中断，但也不会累积
+            </p>
+          </div>
+        )}
 
         <VoiceInput onQuestsGenerated={handleQuestsGenerated} />
 
@@ -776,6 +847,25 @@ export default function QuestBoard() {
           </div>
         )}
 
+        {/* Rest Day Button */}
+        <div className="mt-6">
+          <button
+            onClick={() => setShowRestDayDialog(true)}
+            disabled={quests.length > 0 && !isRestDay}
+            className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
+            style={{
+              backgroundColor: isRestDay ? '#FF6B35' : '#4ECDC4',
+              color: isRestDay ? '#FFF' : '#000',
+              border: '4px solid #000',
+              boxShadow: '6px 6px 0px #000',
+              opacity: (quests.length > 0 && !isRestDay) ? 0.5 : 1
+            }}
+          >
+            <Coffee className="w-6 h-6" strokeWidth={3} />
+            {isRestDay ? '取消工会休息日' : '设为工会休息日'}
+          </button>
+        </div>
+
         {selectedQuest && (
           <PraiseDialog
             quest={selectedQuest}
@@ -804,7 +894,6 @@ export default function QuestBoard() {
           />
         )}
 
-        {/* Milestone Reward Dialog */}
         {milestoneReward && (
           <div 
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -893,6 +982,82 @@ export default function QuestBoard() {
                   }}
                 >
                   收入囊中
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Rest Day Dialog */}
+        {showRestDayDialog && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}
+            onClick={() => setShowRestDayDialog(false)}
+          >
+            <div 
+              className="relative max-w-lg w-full p-6 transform rotate-1"
+              style={{
+                backgroundColor: '#4ECDC4',
+                border: '5px solid #000',
+                boxShadow: '12px 12px 0px #000'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 
+                className="text-2xl font-black uppercase text-center mb-4"
+                style={{ color: '#000' }}
+              >
+                {isRestDay ? '取消工会休息日？' : '设为工会休息日？'}
+              </h2>
+
+              <div 
+                className="mb-6 p-4"
+                style={{
+                  backgroundColor: '#FFF',
+                  border: '3px solid #000'
+                }}
+              >
+                {isRestDay ? (
+                  <div className="space-y-3 font-bold text-sm">
+                    <p>✓ 取消后，今天将恢复为正常任务日</p>
+                    <p>✓ 如果之前有完成任务，连胜会正常计算</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 font-bold text-sm">
+                    <p>✓ 设为休息日后，今天不计入连胜天数</p>
+                    <p>✓ 连胜不会因为今天未完成任务而中断</p>
+                    <p>✓ 如果今天添加了任务，休息日会自动取消</p>
+                    <p className="text-xs" style={{ color: '#666' }}>
+                      💡 建议：如果确定今天不工作，可以提前设为休息日。这样既不会影响连胜，也不需要消耗冻结券。
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowRestDayDialog(false)}
+                  className="flex-1 py-3 font-black uppercase"
+                  style={{
+                    backgroundColor: '#FFF',
+                    border: '4px solid #000',
+                    boxShadow: '4px 4px 0px #000'
+                  }}
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleToggleRestDay}
+                  className="flex-1 py-3 font-black uppercase"
+                  style={{
+                    backgroundColor: isRestDay ? '#FF6B35' : '#FFE66D',
+                    color: isRestDay ? '#FFF' : '#000',
+                    border: '4px solid #000',
+                    boxShadow: '4px 4px 0px #000'
+                  }}
+                >
+                  确认
                 </button>
               </div>
             </div>

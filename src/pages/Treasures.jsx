@@ -15,11 +15,6 @@ export default function Treasures() {
     queryFn: () => base44.entities.Loot.list('-obtainedAt')
   });
 
-  const { data: chests = [] } = useQuery({
-    queryKey: ['chests'],
-    queryFn: () => base44.entities.DailyChest.list('-date')
-  });
-
   const filteredLoot = rarityFilter === 'all' 
     ? loot 
     : loot.filter(item => item.rarity === rarityFilter);
@@ -164,7 +159,7 @@ export default function Treasures() {
                 <p className="font-bold text-gray-600">尝试其他筛选条件</p>
               </div>
             ) : (
-              <div className="grid gap-4 mb-6">
+              <div className="grid gap-4">
                 {filteredLoot.map(item => (
                   <div 
                     key={item.id}
@@ -203,42 +198,6 @@ export default function Treasures() {
               </div>
             )}
           </>
-        )}
-
-        {/* Chest History */}
-        {chests.length > 0 && (
-          <div 
-            className="p-4 mb-6"
-            style={{
-              backgroundColor: '#4ECDC4',
-              border: '4px solid #000',
-              boxShadow: '6px 6px 0px #000'
-            }}
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <Package className="w-5 h-5" strokeWidth={3} />
-              <h3 className="font-black uppercase">开箱记录</h3>
-            </div>
-            <div className="space-y-2">
-              {chests.slice(0, 10).map(chest => (
-                <div 
-                  key={chest.id}
-                  className="flex items-center justify-between p-2"
-                  style={{
-                    backgroundColor: '#FFF',
-                    border: '2px solid #000'
-                  }}
-                >
-                  <span className="font-bold text-sm">
-                    {format(new Date(chest.date), 'yyyy/MM/dd')}
-                  </span>
-                  <span className="font-black uppercase text-xs">
-                    {chest.opened ? '✓ 已开启' : '○ 未开启'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
         )}
       </div>
     </div>

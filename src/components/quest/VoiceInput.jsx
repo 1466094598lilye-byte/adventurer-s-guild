@@ -181,55 +181,54 @@ export default function VoiceInput({ onQuestsGenerated }) {
     setIsProcessing(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `为任务起一个8-10字的RPG名字（必须包含【类型】）。
+        prompt: `为任务起一个8-10字的RPG名字。
 
 任务：${text}
 
 规则：
 - 总字数8-10字
 - 格式：【类型】+标题
-- 类型选择：修炼/采集/探索/讨伐/试炼/谈判/淬炼/磨砺
+- 类型：修炼/采集/探索/讨伐/试炼/谈判/淬炼/磨砺/夺回/寻回
 - 禁用词：的/之/冒号
 
-✓正确示例（8-10字）：
+✓正确（8-10字）：
 【修炼】破晓疾行
 【采集】集市寻觅
 【探索】古籍研读
+【夺回】遗失之物
 
-❌错误示例（太长）：
+❌错误（太长）：
 【探索】智慧圣殿的秘密探寻
-【收集】星月交辉之沐浴露
 
-只返回标题、难度、稀有度。`,
+⚠️重要：只生成RPG标题，不要修改或生成任务内容！`,
         response_json_schema: {
           type: "object",
           properties: {
-            quests: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  title: { type: "string" },
-                  difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
-                  rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
-                },
-                required: ["title", "difficulty", "rarity"]
-              }
-            }
-          }
+            title: { type: "string", description: "RPG标题" },
+            difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
+            rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
+          },
+          required: ["title", "difficulty", "rarity"]
         }
       });
 
-      // 强制使用用户原文作为 actionHint
-      const questsWithOriginalText = result.quests.map(quest => ({
+      // 如果 LLM 返回了多个任务，取第一个；否则直接使用结果
+      const quest = result.title ? result : (result.quests && result.quests[0]);
+      
+      if (!quest) {
+        throw new Error('AI 未返回有效结果');
+      }
+
+      // 强制使用用户原文，完全忽略 AI 可能返回的任何 actionHint
+      const questWithOriginalText = {
         title: quest.title,
-        actionHint: text.trim(),
+        actionHint: text.trim(),  // 强制使用用户输入的原文
         difficulty: quest.difficulty,
         rarity: quest.rarity,
         tags: []
-      }));
+      };
 
-      onQuestsGenerated(questsWithOriginalText);
+      onQuestsGenerated([questWithOriginalText]);
       setTranscript('');
       setConfidence(1);
     } catch (error) {

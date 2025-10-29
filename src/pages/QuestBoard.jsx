@@ -88,34 +88,35 @@ export default function QuestBoard() {
     if (newActionHint.trim()) {
       try {
         const result = await base44.integrations.Core.InvokeLLM({
-          prompt: `你是工会书记官，为任务起简短的RPG风格名字。
+          prompt: `为任务起一个8-10字的RPG名字（必须包含【类型】）。
 
-用户输入："${newActionHint}"
+任务：${newActionHint}
 
-要求：
-1. 格式：【2字类型】+空格+4-6字标题
-2. 总长度：8-12字（含标点）
-3. 禁止：冒号、之、的、等连接词
-4. 类型词：修炼/采集/探索/讨伐/试炼/谈判
+规则：
+- 总字数8-10字
+- 格式：【类型】+标题
+- 类型选择：修炼/采集/探索/讨伐/试炼/谈判/淬炼/磨砺
+- 禁用词：的/之/冒号
 
-示例：
-✓ 【修炼】破晓疾行
-✓ 【采集】集市寻觅  
-✓ 【探索】古籍研读
-✓ 【谈判】商会议事
+✓正确示例（8-10字）：
+【修炼】破晓疾行
+【采集】集市寻觅
+【探索】古籍研读
 
-❌ 【收集】星月交辉之沐浴露
-❌ 【修炼】破晓风语者的晨曦疾行
+❌错误示例（太长）：
+【探索】智慧圣殿的秘密探寻
+❌错误示例（不合规的类型）：
+【收集】星月交辉之沐浴露
 
-生成标题：`,
+只返回标题、难度、稀有度。`,
           response_json_schema: {
             type: "object",
             properties: {
               title: { type: "string" },
               difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
-              rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] },
-              tags: { type: "array", items: { type: "string" } }
-            }
+              rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
+            },
+            required: ["title", "difficulty", "rarity"]
           }
         });
 
@@ -126,7 +127,7 @@ export default function QuestBoard() {
             title: result.title,
             difficulty: result.difficulty,
             rarity: result.rarity,
-            tags: result.tags || []
+            tags: []
             // actionHint 保持不变
           };
           return updated;
@@ -197,34 +198,35 @@ export default function QuestBoard() {
   const handleEditQuestSave = async ({ actionHint, dueDate }) => {
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `你是工会书记官，为任务起简短的RPG风格名字。
+        prompt: `为任务起一个8-10字的RPG名字（必须包含【类型】）。
 
-用户输入："${actionHint}"
+任务：${actionHint}
 
-要求：
-1. 格式：【2字类型】+空格+4-6字标题
-2. 总长度：8-12字（含标点）
-3. 禁止：冒号、之、的、等连接词
-4. 类型词：修炼/采集/探索/讨伐/试炼/谈判
+规则：
+- 总字数8-10字
+- 格式：【类型】+标题
+- 类型选择：修炼/采集/探索/讨伐/试炼/谈判/淬炼/磨砺
+- 禁用词：的/之/冒号
 
-示例：
-✓ 【修炼】破晓疾行
-✓ 【采集】集市寻觅  
-✓ 【探索】古籍研读
-✓ 【谈判】商会议事
+✓正确示例（8-10字）：
+【修炼】破晓疾行
+【采集】集市寻觅
+【探索】古籍研读
 
-❌ 【收集】星月交辉之沐浴露
-❌ 【修炼】破晓风语者的晨曦疾行
+❌错误示例（太长）：
+【探索】智慧圣殿的秘密探寻
+❌错误示例（不合规的类型）：
+【收集】星月交辉之沐浴露
 
-生成标题：`,
+只返回标题、难度、稀有度。`,
         response_json_schema: {
           type: "object",
           properties: {
             title: { type: "string" },
             difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
-            rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] },
-            tags: { type: "array", items: { type: "string" } }
-          }
+            rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
+          },
+          required: ["title", "difficulty", "rarity"]
         }
       });
 
@@ -233,7 +235,7 @@ export default function QuestBoard() {
         actionHint: actionHint,  // 保持用户输入的原文
         difficulty: result.difficulty,
         rarity: result.rarity,
-        tags: result.tags || [],
+        tags: [],
         dueDate: dueDate
       };
 

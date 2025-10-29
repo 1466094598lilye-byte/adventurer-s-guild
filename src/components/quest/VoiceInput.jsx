@@ -181,26 +181,26 @@ export default function VoiceInput({ onQuestsGenerated }) {
     setIsProcessing(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `你是工会书记官，为任务起简短的RPG风格名字。
+        prompt: `为任务起一个8-10字的RPG名字（必须包含【类型】）。
 
-用户输入："${text}"
+任务：${text}
 
-要求：
-1. 格式：【2字类型】+空格+4-6字标题
-2. 总长度：8-12字（含标点）
-3. 禁止：冒号、之、的、等连接词
-4. 类型词：修炼/采集/探索/讨伐/试炼/谈判
+规则：
+- 总字数8-10字
+- 格式：【类型】+标题
+- 类型选择：修炼/采集/探索/讨伐/试炼/谈判/淬炼/磨砺
+- 禁用词：的/之/冒号
 
-示例：
-✓ 【修炼】破晓疾行
-✓ 【采集】集市寻觅  
-✓ 【探索】古籍研读
-✓ 【谈判】商会议事
+✓正确示例（8-10字）：
+【修炼】破晓疾行
+【采集】集市寻觅
+【探索】古籍研读
 
-❌ 【收集】星月交辉之沐浴露
-❌ 【修炼】破晓风语者的晨曦疾行
+❌错误示例（太长）：
+【探索】智慧圣殿的秘密探寻
+【收集】星月交辉之沐浴露
 
-生成标题：`,
+只返回标题、难度、稀有度。`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -211,9 +211,9 @@ export default function VoiceInput({ onQuestsGenerated }) {
                 properties: {
                   title: { type: "string" },
                   difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
-                  rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] },
-                  tags: { type: "array", items: { type: "string" } }
-                }
+                  rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
+                },
+                required: ["title", "difficulty", "rarity"]
               }
             }
           }
@@ -223,10 +223,10 @@ export default function VoiceInput({ onQuestsGenerated }) {
       // 强制使用用户原文作为 actionHint
       const questsWithOriginalText = result.quests.map(quest => ({
         title: quest.title,
-        actionHint: text.trim(),  // 强制使用用户原文
+        actionHint: text.trim(),
         difficulty: quest.difficulty,
         rarity: quest.rarity,
-        tags: quest.tags || []
+        tags: []
       }));
 
       onQuestsGenerated(questsWithOriginalText);

@@ -177,16 +177,32 @@ export default function QuestBoard() {
     });
     setSelectedQuest(quest);
 
-    const updatedQuests = await base44.entities.Quest.filter({ date: today });
-    const allDone = updatedQuests.every(q => q.status === 'done');
+    // 等待查询缓存更新
+    await queryClient.invalidateQueries(['quests']);
     
-    if (allDone) {
-      const chests = await base44.entities.DailyChest.filter({ date: today });
-      if (chests.length === 0) {
-        await base44.entities.DailyChest.create({ date: today, opened: false });
-        setTimeout(() => setShowChest(true), 1000);
+    // 稍微延迟后检查，确保数据已更新
+    setTimeout(async () => {
+      const updatedQuests = await base44.entities.Quest.filter({ date: today });
+      console.log('当前日期:', today);
+      console.log('所有任务:', updatedQuests);
+      console.log('任务状态:', updatedQuests.map(q => ({ title: q.title, status: q.status })));
+      
+      const allDone = updatedQuests.every(q => q.status === 'done');
+      console.log('是否全部完成:', allDone);
+      
+      if (allDone) {
+        const chests = await base44.entities.DailyChest.filter({ date: today });
+        console.log('现有宝箱:', chests);
+        
+        if (chests.length === 0) {
+          await base44.entities.DailyChest.create({ date: today, opened: false });
+          console.log('创建宝箱成功，准备显示');
+          setTimeout(() => setShowChest(true), 500);
+        } else {
+          console.log('今日宝箱已存在');
+        }
       }
-    }
+    }, 300);
   };
 
   const handleReopen = async (quest) => {

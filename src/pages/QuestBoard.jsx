@@ -207,7 +207,8 @@ export default function QuestBoard() {
           if (allDone && updatedQuests.length > 0) {
             console.log('=== 所有任务已完成，检查宝箱 ===');
             const chests = await base44.entities.DailyChest.filter({ date: today });
-            console.log('现有宝箱:', chests);
+            console.log('现有宝箱数量:', chests.length);
+            console.log('宝箱详情:', chests);
             
             if (chests.length === 0) {
               console.log('创建新宝箱...');
@@ -222,12 +223,20 @@ export default function QuestBoard() {
                 setShowChest(true);
               }, 500);
             } else {
-              console.log('今日宝箱已存在，ID:', chests[0].id);
-              if (!chests[0].opened) {
+              const chest = chests[0];
+              console.log('今日宝箱已存在');
+              console.log('宝箱ID:', chest.id);
+              console.log('宝箱opened状态:', chest.opened);
+              console.log('宝箱opened类型:', typeof chest.opened);
+              
+              if (!chest.opened) {
                 console.log('宝箱未开启，显示开箱界面');
-                setTimeout(() => setShowChest(true), 500);
+                setTimeout(() => {
+                  console.log('执行 setShowChest(true)');
+                  setShowChest(true);
+                }, 500);
               } else {
-                console.log('宝箱已开启过');
+                console.log('宝箱已开启过，不显示');
               }
             }
           } else {

@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -244,11 +245,15 @@ export default function VoiceInput({ onQuestsGenerated }) {
 ✓ **史诗级RPG**："【淬炼】钢铁意志：力量圣所的肉体磨砺"
    → 画面：在充满力量气息的修炼场，挥洒汗水，锻造如钢铁般的体魄
 
-【ActionHint 简洁规则】：
-- 保留关键信息：时间、地点、数字、具体内容
-- 去除冗余词汇
-- 格式：核心行动@时间/地点
-- 示例："跑步5km@07:00" "买生鲜食材@晨市" "阅读《人类简史》1h"
+【ActionHint（任务内容）提取规则】：
+- **从自然语言中提取关键信息**：保留时间、地点、数字、具体内容
+- **简洁清晰**：去除冗余词汇，保留核心行动
+- **自然表达**：用户可以说"早上7点跑步5公里"、"跑步5公里，早上7点"、"明天早上去超市买菜"等各种自然语言
+- **示例转化**：
+  - 用户说："早上7点跑步5公里" → actionHint: "跑步5公里，早上7点"
+  - 用户说："去超市买点菜" → actionHint: "超市购买食材"
+  - 用户说："读《人类简史》1小时" → actionHint: "阅读《人类简史》1小时"
+  - 用户说："下午3点开会讨论项目" → actionHint: "项目会议，下午3点"
 
 【难度评级标准】：
 - **C级（日常维护）**：10分钟内轻松完成，无需克服舒适区
@@ -328,7 +333,7 @@ export default function VoiceInput({ onQuestsGenerated }) {
           <div className="flex-1">
             <input
               type="text"
-              placeholder="输入任务或点击麦克风说话..."
+              placeholder="说出你的任务，如：明天早上7点跑步5公里..."
               value={transcript}
               onChange={(e) => setTranscript(e.target.value)}
               onKeyPress={(e) => {
@@ -353,7 +358,7 @@ export default function VoiceInput({ onQuestsGenerated }) {
             style={{
               backgroundColor: '#C44569',
               color: '#FFF',
-              border: '4px solid #000',
+              border: '44px solid #000',
               boxShadow: '5px 5px 0px #000',
               opacity: (!transcript.trim() || isProcessing) ? 0.5 : 1
             }}
@@ -421,7 +426,7 @@ export default function VoiceInput({ onQuestsGenerated }) {
       >
         <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" strokeWidth={3} />
         <p className="text-xs font-bold leading-relaxed">
-          📢 书记官提醒：即便语调各异（粤语、台普、地方口音），工会皆能听懂你的委托，请尽管开口叙述。
+          📢 书记官提醒：用自然语言描述你的任务即可，如"明天早上7点跑步5公里"、"去超市买菜"。即便语调各异（粤语、台普、地方口音），工会皆能听懂。
         </p>
       </div>
     </div>

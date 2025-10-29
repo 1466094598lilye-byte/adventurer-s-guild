@@ -181,51 +181,26 @@ export default function VoiceInput({ onQuestsGenerated }) {
     setIsProcessing(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
+        prompt: `你是工会书记官，为任务起简短的RPG风格名字。
 
-【冒险者的委托原文】："${text}"
+用户输入："${text}"
 
-【你的使命】：
-为这个委托生成一个**简洁有力**的RPG风格标题。
+要求：
+1. 格式：【2字类型】+空格+4-6字标题
+2. 总长度：8-12字（含标点）
+3. 禁止：冒号、之、的、等连接词
+4. 类型词：修炼/采集/探索/讨伐/试炼/谈判
 
-【标题格式】：【任务类型】+ 4-8字的奇幻标题
+示例：
+✓ 【修炼】破晓疾行
+✓ 【采集】集市寻觅  
+✓ 【探索】古籍研读
+✓ 【谈判】商会议事
 
-【任务类型（2字）】：
-讨伐、狩猎、探索、调查、收集、采集、修炼、试炼、护送、救援、谈判、磨砺、淬炼、特训、拜访
+❌ 【收集】星月交辉之沐浴露
+❌ 【修炼】破晓风语者的晨曦疾行
 
-【标题主体（4-8字）】：
-- 必须简短、有力、易读
-- 可以包含：奇幻地点、时间、元素等
-- 禁止使用冒号、顿号等标点符号
-- 总长度（含【任务类型】）不超过15字
-
-【示例对照】：
-✓ 好的标题（简洁）：
-- 【修炼】破晓疾行 (8字)
-- 【采集】集市寻觅 (8字)
-- 【探索】古籍研读 (8字)
-- 【谈判】商会议事 (8字)
-- 【淬炼】力量修行 (8字)
-
-❌ 不好的标题（太长）：
-- 【修炼】破晓风语者的晨曦疾行 (14字，太长)
-- 【采集】月光集市食材寻觅之旅 (14字，太长)
-- 【收集】被遗忘的香气：灼热荒原 (15字，太长)
-
-【奇幻化词汇】：
-- 超市→集市
-- 开会→议事
-- 跑步→疾行
-- 读书→研读
-- 健身→修行
-
-【难度评级】：
-- C级：10分钟内完成
-- B级：30分钟以上
-- A级：需突破舒适区
-- S级：重大挑战
-
-请生成简洁标题（≤15字）：`,
+生成标题：`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -245,10 +220,13 @@ export default function VoiceInput({ onQuestsGenerated }) {
         }
       });
 
-      // 使用用户原文作为 actionHint，不使用 AI 生成的
+      // 强制使用用户原文作为 actionHint
       const questsWithOriginalText = result.quests.map(quest => ({
-        ...quest,
-        actionHint: text  // 直接使用用户输入的原文
+        title: quest.title,
+        actionHint: text.trim(),  // 强制使用用户原文
+        difficulty: quest.difficulty,
+        rarity: quest.rarity,
+        tags: quest.tags || []
       }));
 
       onQuestsGenerated(questsWithOriginalText);

@@ -186,9 +186,20 @@ export default function VoiceInput({ onQuestsGenerated }) {
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官，擅长为平凡任务注入奇幻色彩。
 
-任务：${userOriginalText}
+用户输入：${userOriginalText}
 
-规则：
+你的任务：
+1. **识别并拆分**用户输入中的所有独立任务
+2. 为每个任务生成RPG风格的标题、评定难度和稀有度
+3. 保留用户的原始任务描述作为 actionHint
+
+任务识别规则：
+- 如果用户说了多个任务（例如："跑步5km，然后去超市买菜，下午开会"），需要拆分成3个独立任务
+- 每个任务都要有清晰的行动内容
+- 常见分隔符：逗号、然后、接着、还有、以及、和、另外等
+- 如果只有一个任务，就返回一个任务
+
+RPG标题生成规则：
 1. 标题主体：7个字
 2. 格式：【2字类型】+ 7字标题
 3. 类型词库：修炼/采集/探索/讨伐/试炼/谈判/淬炼/磨砺/夺回/寻回/护送/调查/狩猎/救援
@@ -209,38 +220,46 @@ export default function VoiceInput({ onQuestsGenerated }) {
 【探索】古卷深夜研读
 【夺回】失落宝物归还
 【试炼】黎明前夕锻体
-【调查】星辰运行观测
-【护送】珍贵物品归途
 
 ❌ 错误示例：
 【修炼】跑步（太短）
 【探索】智慧圣殿的秘密探寻（太长）
 
-只返回标题、难度、稀有度，不要生成任务内容。`,
+请返回一个任务数组，每个任务包含：title（RPG标题）、actionHint（用户原始任务内容）、difficulty、rarity`,
         response_json_schema: {
           type: "object",
           properties: {
-            title: { type: "string" },
-            difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
-            rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
+            tasks: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  actionHint: { type: "string" },
+                  difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
+                  rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
+                },
+                required: ["title", "actionHint", "difficulty", "rarity"]
+              }
+            }
           },
-          required: ["title", "difficulty", "rarity"]
+          required: ["tasks"]
         }
       });
 
-      // 完全忽略 AI 可能返回的任何其他字段，强制使用用户原文
-      const cleanQuest = {
-        title: result.title,
-        actionHint: userOriginalText,  // 强制使用保存的用户原文
-        difficulty: result.difficulty,
-        rarity: result.rarity,
+      // 处理返回的任务数组
+      const generatedQuests = result.tasks.map(task => ({
+        title: task.title,
+        actionHint: task.actionHint,
+        difficulty: task.difficulty,
+        rarity: task.rarity,
         tags: []
-      };
+      }));
 
-      console.log('生成的任务:', cleanQuest);
-      console.log('用户原文:', userOriginalText);
+      console.log('生成的任务数量:', generatedQuests.length);
+      console.log('生成的任务:', generatedQuests);
 
-      onQuestsGenerated([cleanQuest]);
+      onQuestsGenerated(generatedQuests);
       setTranscript('');
       setConfidence(1);
     } catch (error) {

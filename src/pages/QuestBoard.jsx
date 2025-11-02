@@ -1,14 +1,15 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Filter, Loader2, ChevronDown, ChevronUp, Plus, Coffee } from 'lucide-react';
+import { Filter, Loader2, ChevronDown, ChevronUp, Plus, Coffee, Calendar } from 'lucide-react';
 import VoiceInput from '../components/quest/VoiceInput';
 import QuestCard from '../components/quest/QuestCard';
 import PraiseDialog from '../components/quest/PraiseDialog';
 import ChestOpening from '../components/treasure/ChestOpening';
 import QuestEditFormModal from '../components/quest/QuestEditFormModal';
-import { format } from 'date-fns';
+import EndOfDaySummaryAndPlanning from '../components/quest/EndOfDaySummaryAndPlanning';
+import { format, subDays } from 'date-fns';
 
 export default function QuestBoard() {
   const [filter, setFilter] = useState('all');
@@ -20,9 +21,12 @@ export default function QuestBoard() {
   const [toast, setToast] = useState(null);
   const [milestoneReward, setMilestoneReward] = useState(null);
   const [showRestDayDialog, setShowRestDayDialog] = useState(false);
+  const [showPlanningDialog, setShowPlanningDialog] = useState(false);
+  const [showCelebrationInPlanning, setShowCelebrationInPlanning] = useState(false);
   const queryClient = useQueryClient();
 
   const today = format(new Date(), 'yyyy-MM-dd');
+  const currentHour = new Date().getHours();
 
   const { data: quests = [], isLoading } = useQuery({
     queryKey: ['quests', today],
@@ -37,13 +41,68 @@ export default function QuestBoard() {
     queryFn: () => base44.auth.me()
   });
 
+  // 日更逻辑：未完成任务顺延 + 明日规划任务创建
+  useEffect(() => {
+    const handleDayRollover = async () => {
+      if (!user) return;
+
+      try {
+        // 1. 处理昨天未完成的任务（顺延到今天）
+        const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+        const oldQuests = await base44.entities.Quest.filter({ date: yesterday, status: 'todo' });
+        
+        if (oldQuests.length > 0) {
+          console.log(`发现 ${oldQuests.length} 项昨日未完成任务，开始顺延...`);
+          
+          for (const quest of oldQuests) {
+            await base44.entities.Quest.update(quest.id, { date: today });
+          }
+          
+          queryClient.invalidateQueries(['quests']);
+          setToast(`昨日 ${oldQuests.length} 项委托已顺延至今日`);
+          setTimeout(() => setToast(null), 3000);
+        }
+
+        // 2. 处理明日规划任务（创建为今日任务）
+        const nextDayPlanned = user.nextDayPlannedQuests || [];
+        const lastPlanned = user.lastPlannedDate;
+
+        if (nextDayPlanned.length > 0 && lastPlanned && lastPlanned < today) {
+          console.log(`发现 ${nextDayPlanned.length} 项已规划任务，开始创建...`);
+          
+          for (const plannedQuest of nextDayPlanned) {
+            await base44.entities.Quest.create({
+              ...plannedQuest,
+              date: today,
+              status: 'todo',
+              source: 'ai'
+            });
+          }
+
+          await base44.auth.updateMe({
+            nextDayPlannedQuests: [],
+            lastPlannedDate: today // Mark today as planned, even if just by rolling over old plans
+          });
+
+          queryClient.invalidateQueries(['quests']);
+          queryClient.invalidateQueries(['user']);
+          setToast(`已加载 ${nextDayPlanned.length} 项预先规划的委托`);
+          setTimeout(() => setToast(null), 3000);
+        }
+      } catch (error) {
+        console.error('日更处理失败:', error);
+      }
+    };
+
+    handleDayRollover();
+  }, [user, today, queryClient]);
+
   const createQuestMutation = useMutation({
     mutationFn: (questData) => base44.entities.Quest.create(questData),
     onSuccess: async () => {
       queryClient.invalidateQueries(['quests']);
       setPendingQuests([]);
       
-      // 如果今天是休息日，创建任务后自动取消休息日标记
       const currentUser = await base44.auth.me();
       const restDays = currentUser?.restDays || [];
       if (restDays.includes(today)) {
@@ -528,13 +587,11 @@ export default function QuestBoard() {
     const isRestDay = restDays.includes(today);
     
     if (isRestDay) {
-      // 取消休息日
       await base44.auth.updateMe({
         restDays: restDays.filter(d => d !== today)
       });
       setToast('工会休憩已止，委托板重现光辉，新的挑战随时恭候。');
     } else {
-      // 设置为休息日
       await base44.auth.updateMe({
         restDays: [...restDays, today]
       });
@@ -544,6 +601,38 @@ export default function QuestBoard() {
     queryClient.invalidateQueries(['user']);
     setShowRestDayDialog(false);
     setTimeout(() => setToast(null), 2000);
+  };
+
+  const handleChestClose = () => {
+    setShowChest(false);
+    
+    // 开箱关闭后，检查是否需要显示规划弹窗
+    const lastPlanned = user?.lastPlannedDate;
+    if (lastPlanned !== today) { // If planning hasn't been done for today yet
+      setShowCelebrationInPlanning(true);
+      setShowPlanningDialog(true);
+    }
+  };
+
+  const handlePlanSaved = async (plannedQuests) => {
+    try {
+      await base44.auth.updateMe({
+        nextDayPlannedQuests: plannedQuests,
+        lastPlannedDate: today
+      });
+      
+      queryClient.invalidateQueries(['user']);
+      setToast(`已成功登记明日 ${plannedQuests.length} 项委托`);
+      setTimeout(() => setToast(null), 3000);
+    } catch (error) {
+      console.error('保存规划失败:', error);
+      alert('保存失败，请重试');
+    }
+  };
+
+  const handleOpenPlanning = () => {
+    setShowCelebrationInPlanning(false); // If opened manually, no celebration
+    setShowPlanningDialog(true);
   };
 
   const filteredQuests = quests.filter(quest => {
@@ -568,6 +657,10 @@ export default function QuestBoard() {
   };
 
   const isRestDay = (user?.restDays || []).includes(today);
+  const nextDayPlannedCount = (user?.nextDayPlannedQuests || []).length;
+  // Show planning button if it's 9 PM (21:00) or later AND planning hasn't been done for today yet
+  const canShowPlanningButton = currentHour >= 21 && user?.lastPlannedDate !== today;
+
 
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
@@ -610,6 +703,42 @@ export default function QuestBoard() {
         )}
 
         <VoiceInput onQuestsGenerated={handleQuestsGenerated} />
+
+        {/* Next Day Planned Quests Display + Planning Button */}
+        {(nextDayPlannedCount > 0 || canShowPlanningButton) && (
+          <div 
+            className="mb-6 p-4"
+            style={{
+              backgroundColor: '#C44569',
+              border: '4px solid #000',
+              boxShadow: '6px 6px 0px #000'
+            }}
+          >
+            {nextDayPlannedCount > 0 && (
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Calendar className="w-5 h-5 text-white" strokeWidth={3} />
+                <p className="font-black uppercase text-white">
+                  工会已登记明日 {nextDayPlannedCount} 项委托
+                </p>
+              </div>
+            )}
+            
+            {canShowPlanningButton && (
+              <button
+                onClick={handleOpenPlanning}
+                className="w-full py-3 font-black uppercase flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: '#FFE66D',
+                  border: '3px solid #000',
+                  boxShadow: '4px 4px 0px #000'
+                }}
+              >
+                <Calendar className="w-5 h-5" strokeWidth={3} />
+                规划明日委托
+              </button>
+            )}
+          </div>
+        )}
 
         {pendingQuests.length > 0 && (
           <div 
@@ -899,7 +1028,7 @@ export default function QuestBoard() {
         {showChest && (
           <ChestOpening
             date={today}
-            onClose={() => setShowChest(false)}
+            onClose={handleChestClose}
             onLootGenerated={() => {
               queryClient.invalidateQueries(['loot']);
             }}
@@ -911,6 +1040,18 @@ export default function QuestBoard() {
             quest={editingQuest}
             onSave={handleEditQuestSave}
             onClose={() => setEditingQuest(null)}
+          />
+        )}
+
+        {showPlanningDialog && (
+          <EndOfDaySummaryAndPlanning
+            showCelebration={showCelebrationInPlanning}
+            currentStreak={user?.streakCount || 0}
+            onClose={() => {
+              setShowPlanningDialog(false);
+              setShowCelebrationInPlanning(false);
+            }}
+            onPlanSaved={handlePlanSaved}
           />
         )}
 
@@ -949,7 +1090,7 @@ export default function QuestBoard() {
                     「{milestoneReward.title}」
                   </p>
                   <p className="font-bold text-sm leading-relaxed mb-4">
-                    恭喜你达成${milestoneReward.days}天连续完成任务的非凡成就！
+                    恭喜你达成{milestoneReward.days}天连续完成任务的非凡成就！
                   </p>
                   
                   <div className="space-y-3">
@@ -1008,7 +1149,6 @@ export default function QuestBoard() {
           </div>
         )}
 
-        {/* Rest Day Dialog */}
         {showRestDayDialog && (
           <div 
             className="fixed inset-0 z-50 flex items-center justify-center p-4"

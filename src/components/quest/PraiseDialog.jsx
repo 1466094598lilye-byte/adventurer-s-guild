@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { X, BookMarked, Star } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -185,7 +186,7 @@ S级：
           }}
         >
           {loading ? (
-            <p className="text-center font-bold text-gray-500">正在记录...</p>
+            <p className="text-center font-bold text-gray-500">工会评议官正在记录中...</p>
           ) : (
             <>
               {praiser && (

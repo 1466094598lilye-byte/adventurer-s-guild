@@ -140,12 +140,19 @@ export default function VoiceInput({ onQuestsGenerated }) {
         console.error('语音识别错误:', event.error);
         setIsRecording(false);
         stopAudioVisualization();
-        if (event.error === 'no-speech') {
+        
+        // 根据不同错误类型给出具体提示
+        if (event.error === 'network') {
+          alert('网络连接失败，语音识别需要稳定的网络连接。\n\n建议：\n1. 检查网络连接\n2. 使用文本输入框输入任务\n3. 刷新页面后重试');
+        } else if (event.error === 'no-speech') {
           alert('没有检测到语音，请重试');
         } else if (event.error === 'not-allowed') {
-          alert('麦克风权限被拒绝，请在浏览器设置中允许使用麦克风');
+          alert('麦克风权限被拒绝。\n\n请在浏览器设置中允许使用麦克风，或直接使用文本输入框输入任务。');
+        } else if (event.error === 'aborted') {
+          // 用户主动停止，不显示错误
+          console.log('用户停止录音');
         } else {
-          alert(`语音识别失败：${event.error}`);
+          alert(`语音识别失败：${event.error}\n\n建议使用下方文本输入框直接输入任务`);
         }
       };
 

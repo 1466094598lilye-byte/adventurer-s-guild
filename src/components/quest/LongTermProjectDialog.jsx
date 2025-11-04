@@ -28,9 +28,17 @@ ${textInput.trim()}
    - 如果文本中明确提到日期（如"周一"、"12月25日"、"明天"），解析并转换为具体日期
    - 如果没有明确日期，根据上下文推断（如连续的任务可能是连续的日期）
    - 日期格式统一为：yyyy-MM-dd
-3. 为每个任务生成RPG风格标题（【2字类型】+ 7字标题）
-4. 保留原始任务描述作为 actionHint
+3. **为每个任务生成专属的RPG风格标题**：
+   - 格式：【2字类型】+ 7字史诗标题
+   - 类型示例：【征讨】【探索】【铸造】【研习】【护送】【调查】【收集】【锻造】
+   - 必须把原始任务内容转化为充满幻想色彩的史诗描述
+   - 例如："准备会议PPT" → "【铸造】炼制议会演说宝典"
+   - 例如："写周报" → "【记录】编撰冒险周志卷轴"
+   - 例如："联系客户" → "【外交】觐见商贸联盟使节"
+4. 保留原始任务描述作为 actionHint（这个保持原样）
 5. 这些是"大项目"任务，难度统一设为 S，稀有度设为 Epic
+
+**重要**：title 必须是RPG风格的幻想描述，不能是"【任务】xxxx"这种格式！
 
 请返回任务数组（按日期排序）：`,
         response_json_schema: {
@@ -41,8 +49,8 @@ ${textInput.trim()}
               items: {
                 type: "object",
                 properties: {
-                  title: { type: "string" },
-                  actionHint: { type: "string" },
+                  title: { type: "string", description: "RPG style epic title, e.g. 【征讨】讨伐暗影深渊巨兽" },
+                  actionHint: { type: "string", description: "Original task description" },
                   date: { type: "string", description: "Format: yyyy-MM-dd" },
                   difficulty: { type: "string", enum: ["S"] },
                   rarity: { type: "string", enum: ["Epic"] }
@@ -183,7 +191,7 @@ ${textInput.trim()}
         ) : (
           <>
             <div 
-              className="mb-4 p-4"
+              className="mb-4 p-4 max-h-[500px] overflow-y-auto"
               style={{
                 backgroundColor: '#FFE66D',
                 border: '4px solid #000'
@@ -191,7 +199,7 @@ ${textInput.trim()}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-black uppercase">
-                  识别到 {parsedQuests.length} 项任务
+                  识别到 {parsedQuests.length} 项史诗委托
                 </h3>
                 <button
                   onClick={() => {
@@ -204,7 +212,7 @@ ${textInput.trim()}
                 </button>
               </div>
 
-              <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              <div className="space-y-3">
                 {parsedQuests.map((quest, i) => (
                   <div 
                     key={i}
@@ -230,24 +238,25 @@ ${textInput.trim()}
                         </div>
                         <div>
                           <label className="block text-xs font-bold uppercase mb-1">
-                            任务内容：
+                            RPG 史诗标题：
                           </label>
                           <input
                             type="text"
-                            value={quest.actionHint}
-                            onChange={(e) => handleEditQuest(i, 'actionHint', e.target.value)}
+                            value={quest.title}
+                            onChange={(e) => handleEditQuest(i, 'title', e.target.value)}
+                            placeholder="例如：【征讨】讨伐暗影深渊巨兽"
                             className="w-full px-3 py-2 font-bold"
                             style={{ border: '2px solid #000' }}
                           />
                         </div>
                         <div>
                           <label className="block text-xs font-bold uppercase mb-1">
-                            RPG 标题：
+                            原始任务内容：
                           </label>
                           <input
                             type="text"
-                            value={quest.title}
-                            onChange={(e) => handleEditQuest(i, 'title', e.target.value)}
+                            value={quest.actionHint}
+                            onChange={(e) => handleEditQuest(i, 'actionHint', e.target.value)}
                             className="w-full px-3 py-2 font-bold"
                             style={{ border: '2px solid #000' }}
                           />
@@ -265,9 +274,9 @@ ${textInput.trim()}
                       </div>
                     ) : (
                       <>
-                        <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-2">
                               <Calendar className="w-4 h-4 flex-shrink-0" strokeWidth={3} />
                               <span className="font-black text-sm">
                                 {format(new Date(quest.date), 'MM月dd日')}
@@ -284,9 +293,9 @@ ${textInput.trim()}
                                 S
                               </div>
                             </div>
-                            <p className="font-black text-base mb-1">{quest.title}</p>
+                            <p className="font-black text-base mb-1 text-purple-800">{quest.title}</p>
                             <p className="text-sm font-bold text-gray-600">
-                              ({quest.actionHint})
+                              任务内容：{quest.actionHint}
                             </p>
                           </div>
                           <div className="flex gap-1 flex-shrink-0">

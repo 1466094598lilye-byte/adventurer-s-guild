@@ -279,10 +279,66 @@ export default function QuestBoard() {
     setIsProcessing(false);
   };
 
-  const handleUpdatePendingQuest = (tempId, field, value) => {
+  const handleUpdatePendingQuest = async (tempId, field, value) => {
+    // 立即更新UI
     setPendingQuests(prev => prev.map(q => 
       q.tempId === tempId ? { ...q, [field]: value } : q
     ));
+    
+    // 如果修改的是 actionHint，自动重新生成 RPG 标题
+    if (field === 'actionHint' && value.trim()) {
+      try {
+        const result = await base44.integrations.Core.InvokeLLM({
+          prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
+
+用户输入：${value.trim()}
+
+你的任务：
+1. 把整个输入作为**单个任务**处理
+2. **为这个任务生成专属的RPG史诗风格标题**：
+
+【标题生成规则】（必须严格遵守）：
+- 格式：【2字动作类型】+ 7字幻想描述
+- 动作类型必须从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
+- 7字描述必须充满幻想色彩，把现实任务转化为史诗叙事
+- **绝对禁止使用"任务"二字！**
+
+【标题转化示例】：
+"跑步5km" → "【征讨】踏破晨曦五里征途"
+"写周报" → "【记录】编撰冒险周志卷轴"
+"开会" → "【议会】召开圆桌战术会议"
+"买菜" → "【收集】前往集市采购补给"
+
+3. 评定难度和稀有度
+
+请返回任务：`,
+          response_json_schema: {
+            type: "object",
+            properties: {
+              title: { 
+                type: "string",
+                description: "必须是RPG幻想风格！格式：【2字动作类型】+7字幻想描述。"
+              },
+              difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
+              rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
+            },
+            required: ["title", "difficulty", "rarity"]
+          }
+        });
+
+        // 更新生成的标题和难度
+        setPendingQuests(prev => prev.map(q => 
+          q.tempId === tempId ? {
+            ...q,
+            title: result.title,
+            difficulty: result.difficulty,
+            rarity: result.rarity
+          } : q
+        ));
+      } catch (error) {
+        console.error('重新生成RPG标题失败:', error);
+      }
+    }
   };
 
   const handleDeletePendingQuest = (tempId) => {

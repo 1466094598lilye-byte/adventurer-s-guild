@@ -221,51 +221,33 @@ export default function QuestBoard() {
 用户输入：${textInput.trim()}
 
 你的任务：
-1. **判断用户输入**：
-   - 如果用户用逗号、分号、顿号、"然后"、"接着"、换行等明确分隔符分开了多个任务，则识别为多个独立任务
-   - 如果用户只是输入了一个任务描述（即使看起来很复杂），则视为单个任务，不要拆分！
-   
-2. 为每个任务生成RPG风格标题（【2字类型】+ 7字标题）
+1. 把整个输入作为**单个任务**处理（不要拆分！）
+2. 为这个任务生成RPG风格标题（【2字类型】+ 7字标题）
+3. 评定难度和稀有度
+4. 保留用户的完整输入作为 actionHint
 
-3. 保留用户的原始输入作为 actionHint
+**重要**：无论输入多长或多复杂，都只返回1个任务！
 
-**示例**：
-- 输入"跑步5km"→ 1个任务
-- 输入"开投资战略会议" → 1个任务（不要拆分成多个子任务！）
-- 输入"跑步5km，然后买菜" → 2个任务
-- 输入"早上跑步\\n下午开会" → 2个任务
-
-请返回任务数组：`,
+请返回任务：`,
         response_json_schema: {
           type: "object",
           properties: {
-            tasks: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  title: { type: "string" },
-                  actionHint: { type: "string" },
-                  difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
-                  rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
-                },
-                required: ["title", "actionHint", "difficulty", "rarity"]
-              }
-            }
+            title: { type: "string" },
+            actionHint: { type: "string" },
+            difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
+            rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
           },
-          required: ["tasks"]
+          required: ["title", "actionHint", "difficulty", "rarity"]
         }
       });
 
-      for (const task of result.tasks) {
-        await createQuestMutation.mutateAsync({
-          ...task,
-          date: today,
-          status: 'todo',
-          source: 'text',
-          tags: []
-        });
-      }
+      await createQuestMutation.mutateAsync({
+        ...result,
+        date: today,
+        status: 'todo',
+        source: 'text',
+        tags: []
+      });
 
       setTextInput('');
     } catch (error) {
@@ -934,7 +916,7 @@ export default function QuestBoard() {
                     「{milestoneReward.title}」
                   </p>
                   <p className="font-bold text-sm leading-relaxed mb-4">
-                    恭喜你达成{milestoneReward.days}天连续完成任务的非凡成就！
+                    恭喜你达成${milestoneReward.days}天连续完成任务的非凡成就！
                   </p>
                   
                   <div className="space-y-3">

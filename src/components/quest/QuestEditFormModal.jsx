@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { X, Save } from 'lucide-react';
-import { format, parse } from 'date-fns';
+import { format } from 'date-fns';
 
 export default function QuestEditFormModal({ quest, onSave, onClose }) {
   const [actionHint, setActionHint] = useState(quest.actionHint || '');
+  const [isRoutine, setIsRoutine] = useState(quest.isRoutine || false);
   
   // Parse initial date and time
   const initialDate = quest.dueDate ? format(new Date(quest.dueDate), 'yyyy-MM-dd') : '';
@@ -32,7 +33,9 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
     setIsSaving(true);
     await onSave({
       actionHint: actionHint.trim(),
-      dueDate: dueDate
+      dueDate: dueDate,
+      isRoutine: isRoutine,
+      originalActionHint: isRoutine ? actionHint.trim() : quest.originalActionHint
     });
     setIsSaving(false);
   };
@@ -112,6 +115,33 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
             <p className="text-xs font-bold mt-2" style={{ color: '#666' }}>
               💡 保存后AI将重新生成RPG风格的任务名称和评级
             </p>
+          </div>
+
+          {/* Routine Checkbox */}
+          <div 
+            className="p-4"
+            style={{
+              backgroundColor: '#4ECDC4',
+              border: '3px solid #000'
+            }}
+          >
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isRoutine}
+                onChange={(e) => setIsRoutine(e.target.checked)}
+                className="w-6 h-6"
+                style={{
+                  accentColor: '#000'
+                }}
+              />
+              <div>
+                <span className="font-black uppercase">设为每日修炼</span>
+                <p className="text-xs font-bold mt-1">
+                  勾选后，此任务将每天自动出现在任务板上
+                </p>
+              </div>
+            </label>
           </div>
 
           {/* Due Date Input */}

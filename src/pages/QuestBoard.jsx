@@ -2,8 +2,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Filter, Loader2, ChevronDown, ChevronUp, Plus, Coffee, Calendar } from 'lucide-react';
-import VoiceInput from '../components/quest/VoiceInput';
+import { Filter, Loader2, Sparkles, Coffee, Calendar } from 'lucide-react';
 import QuestCard from '../components/quest/QuestCard';
 import PraiseDialog from '../components/quest/PraiseDialog';
 import ChestOpening from '../components/treasure/ChestOpening';
@@ -15,8 +14,8 @@ export default function QuestBoard() {
   const [filter, setFilter] = useState('all');
   const [selectedQuest, setSelectedQuest] = useState(null);
   const [showChest, setShowChest] = useState(false);
-  const [pendingQuests, setPendingQuests] = useState([]);
-  const [editingPendingIndex, setEditingPendingIndex] = useState(null);
+  const [textInput, setTextInput] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const [editingQuest, setEditingQuest] = useState(null);
   const [toast, setToast] = useState(null);
   const [milestoneReward, setMilestoneReward] = useState(null);
@@ -41,7 +40,7 @@ export default function QuestBoard() {
     queryFn: () => base44.auth.me()
   });
 
-  // 日更逻辑：未完成任务顺延 + 明日规划任务创建
+  // 日更逻辑：未完成任务顺延 + 明日规划任务创建 + 每日修炼任务生成
   useEffect(() => {
     const handleDayRollover = async () => {
       if (!user) return;
@@ -54,13 +53,20 @@ export default function QuestBoard() {
         if (oldQuests.length > 0) {
           console.log(`发现 ${oldQuests.length} 项昨日未完成任务，开始顺延...`);
           
+          let nonRoutineCount = 0;
           for (const quest of oldQuests) {
-            await base44.entities.Quest.update(quest.id, { date: today });
+            // 如果是每日修炼任务，不顺延（因为会重新生成）
+            if (!quest.isRoutine) {
+              await base44.entities.Quest.update(quest.id, { date: today });
+              nonRoutineCount++;
+            }
           }
           
           queryClient.invalidateQueries(['quests']);
-          setToast(`昨日 ${oldQuests.length} 项委托已顺延至今日`);
-          setTimeout(() => setToast(null), 3000);
+          if (nonRoutineCount > 0) {
+            setToast(`昨日 ${nonRoutineCount} 项委托已顺延至今日`);
+            setTimeout(() => setToast(null), 3000);
+          }
         }
 
         // 2. 处理明日规划任务（创建为今日任务）
@@ -89,19 +95,99 @@ export default function QuestBoard() {
           setToast(`已加载 ${nextDayPlanned.length} 项预先规划的委托`);
           setTimeout(() => setToast(null), 3000);
         }
+
+        // 3. 处理每日修炼任务（自动生成今日任务）
+        // Fetch all existing routine quest templates (regardless of date, as they define the recurring task)
+        const allRoutineQuestTemplates = await base44.entities.Quest.filter({ isRoutine: true, date: null }); // Assuming templates have date: null
+        console.log(`找到 ${allRoutineQuestTemplates.length} 个每日修炼任务模板`);
+        
+        if (allRoutineQuestTemplates.length > 0) {
+          const todayQuests = await base44.entities.Quest.filter({ date: today });
+          let createdRoutineCount = 0;
+
+          for (const routineTemplate of allRoutineQuestTemplates) {
+            // Check today's quests if this specific routine task already exists
+            const alreadyExistsToday = todayQuests.some(
+              q => q.isRoutine && q.originalActionHint === routineTemplate.originalActionHint
+            );
+            
+            if (!alreadyExistsToday) {
+              console.log(`为每日修炼任务生成今日版本: ${routineTemplate.originalActionHint}`);
+              
+              // Use LLM to re-generate RPG title, difficulty, and rarity for today's instance
+              const result = await base44.integrations.Core.InvokeLLM({
+                prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
+
+**当前冒险者委托内容：** ${routineTemplate.originalActionHint}
+
+请为这个每日修炼任务生成**全新的**RPG风格标题、难度和稀有度。
+要求：
+1. 标题要有变化，不要每天都一样（但核心内容要体现任务本质）
+2. 标题主体：7个字
+3. 格式：【2字类型】+ 7字标题
+4. 类型词库：修炼/采集/探索/讨伐/试炼/谈判/淬炼/磨砺/夺回/寻回/护送/调查/狩猎/救援/喂养/秩序/交易/传讯/净化/整顿
+5. 奇幻化词汇（结合具体任务）：
+   - 超市→集市/市集
+   - 跑步→疾行/晨跑
+   - 读书→研读/阅卷
+   - 退货→夺回/寻回
+   - 开会→议事/会谈
+   - 健身→修炼/锻体
+   - 写作→笔录/记录
+   - 猫/狗→魔宠/灵兽
+   - 妈妈→远方羁绊
+6. 禁用词：的/之/冒号
+7. 风格：简洁有力、略带戏剧感，标题要有节奏感和画面感，更要体现任务的独特性
+
+只返回标题、难度、稀有度。`,
+                response_json_schema: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
+                    rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
+                  },
+                  required: ["title", "difficulty", "rarity"]
+                }
+              });
+
+              // Create today's daily routine quest
+              await base44.entities.Quest.create({
+                title: result.title,
+                actionHint: routineTemplate.originalActionHint, // Use original actionHint for consistency
+                difficulty: result.difficulty,
+                rarity: result.rarity,
+                date: today,
+                status: 'todo',
+                source: 'routine',
+                isRoutine: true,
+                originalActionHint: routineTemplate.originalActionHint, // Store original hint to match templates
+                tags: []
+              });
+              createdRoutineCount++;
+            }
+          }
+          if (createdRoutineCount > 0) {
+            queryClient.invalidateQueries(['quests']);
+            setToast(`已加载 ${createdRoutineCount} 项每日修炼委托`);
+            setTimeout(() => setToast(null), 3000);
+          }
+        }
       } catch (error) {
         console.error('日更处理失败:', error);
       }
     };
 
-    handleDayRollover();
+    // Only run if user data is loaded and available
+    if (user) {
+      handleDayRollover();
+    }
   }, [user, today, queryClient]);
 
   const createQuestMutation = useMutation({
     mutationFn: (questData) => base44.entities.Quest.create(questData),
     onSuccess: async () => {
       queryClient.invalidateQueries(['quests']);
-      setPendingQuests([]);
       
       const currentUser = await base44.auth.me();
       const restDays = currentUser?.restDays || [];
@@ -130,48 +216,25 @@ export default function QuestBoard() {
     }
   });
 
-  const handleQuestsGenerated = (generatedQuests) => {
-    setPendingQuests(prev => [...prev, ...generatedQuests]);
-  };
-
-  const confirmQuests = () => {
-    pendingQuests.forEach(quest => {
-      createQuestMutation.mutate({
-        ...quest,
-        date: today,
-        status: 'todo',
-        source: 'ai'
-      });
-    });
-  };
-
-  const handleChangePendingDifficulty = (index, newDifficulty) => {
-    const updatedQuests = [...pendingQuests];
-    updatedQuests[index] = { ...updatedQuests[index], difficulty: newDifficulty };
-    setPendingQuests(updatedQuests);
-  };
-
-  const handleChangePendingActionHint = async (index, newActionHint) => {
-    setPendingQuests(prevQuests => {
-      const updated = [...prevQuests];
-      updated[index] = { ...updated[index], actionHint: newActionHint };
-      return updated;
-    });
+  const handleTextSubmit = async () => {
+    if (!textInput.trim() || isProcessing) return;
     
-    if (newActionHint.trim()) {
-      try {
-        const result = await base44.integrations.Core.InvokeLLM({
-          prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官，你不仅擅长为平凡任务注入奇幻色彩，更能从每个委托的细节中提炼其核心精髓，铸造出独一无二的专属称号。
+    setIsProcessing(true);
+    try {
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官，你不仅擅长为平凡任务注入奇幻色彩，更能从每个委托的细节中提炼其核心精髓，铸造出独一无二的专属称号。
 
-**当前冒险者委托内容：** ${newActionHint}
+**用户输入：** ${textInput.trim()}
 
 **你的任务：**
-1. **深入分析**委托内容，提取其**核心动词、名词和关键情境**
-2. **结合分析结果**，创作一个**专属的RPG风格标题**，使其既有奇幻感，又**精准映射**委托内容的具体行动
-3. 评定难度和稀有度
+1. **识别并拆分**用户输入中的所有独立任务。如果用户输入的是一个单独的任务，则只处理这一个。
+2. **深入分析**每个任务，提取其**核心动词、名词和关键情境**。
+3. **结合分析结果**，为每个任务创作一个**专属的RPG风格标题**，使其既有奇幻感，又**精准映射**委托内容的具体行动。
+4. 评定难度和稀有度，保留用户的原始任务描述或你提炼出的具体行动描述作为 actionHint。
+5. 所有任务的 date 设定为今日，status 设定为 'todo'，source 设定为 'text'。
 
 **标题创作细则：**
-1. **专属感优先**：标题必须从"${newActionHint}"中提炼元素，体现出为这个特定任务量身定制的感觉
+1. **专属感优先**：标题必须从任务内容中提炼元素，体现出为这个特定任务量身定制的感觉。
    - 例如："给猫喂食" → 【喂养】唤醒沉睡魔宠（突出"猫"→"魔宠"）
    - 例如："整理房间" → 【秩序】净化混乱居所（突出"房间"+"整理"）
    - 例如："去超市买菜" → 【采集】市集寻觅鲜蔬（具体到"买菜"）
@@ -203,53 +266,44 @@ export default function QuestBoard() {
 【喂养】驯化异兽（太通用）
 【整顿】收拾空间（太普通）
 
-只返回标题、难度、稀有度。`,
-          response_json_schema: {
-            type: "object",
-            properties: {
-              title: { type: "string" },
-              difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
-              rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
-            },
-            required: ["title", "difficulty", "rarity"]
-          }
-        });
+请只返回 JSON 数组，包含所有拆分出的任务对象。`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            tasks: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  actionHint: { type: "string" },
+                  difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
+                  rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
+                },
+                required: ["title", "actionHint", "difficulty", "rarity"]
+              }
+            }
+          },
+          required: ["tasks"]
+        }
+      });
 
-        setPendingQuests(prevQuests => {
-          const updated = [...prevQuests];
-          updated[index] = {
-            ...updated[index],
-            title: result.title,
-            difficulty: result.difficulty,
-            rarity: result.rarity,
-            tags: []
-          };
-          return updated;
+      for (const task of result.tasks) {
+        await createQuestMutation.mutateAsync({
+          ...task,
+          date: today,
+          status: 'todo',
+          source: 'text',
+          tags: []
         });
-      } catch (error) {
-        console.error('生成任务标题失败:', error);
       }
-    }
-  };
 
-  const handleAddManualQuest = () => {
-    const newQuest = {
-      title: '【新任务】待命名任务',
-      actionHint: '',
-      difficulty: 'C',
-      rarity: 'Common',
-      tags: []
-    };
-    setPendingQuests([...pendingQuests, newQuest]);
-    setEditingPendingIndex(pendingQuests.length);
-  };
-
-  const handleDeletePendingQuest = (index) => {
-    const updatedQuests = pendingQuests.filter((_, i) => i !== index);
-    setPendingQuests(updatedQuests);
-    if (editingPendingIndex === index) {
-      setEditingPendingIndex(null);
+      setTextInput('');
+    } catch (error) {
+      console.error('任务处理错误:', error);
+      alert(`任务解析失败：${error.message || '请重试'}`);
     }
+    setIsProcessing(false);
   };
 
   const checkAndAwardMilestone = async (newStreak) => {
@@ -275,10 +329,6 @@ export default function QuestBoard() {
 1. 名称：要体现"${milestone.days}天"和"连胜"的概念，并与称号呼应
 2. 简介：RPG风格，强调这是只有坚持${milestone.days}天才能获得的珍贵纪念品，暗示这份毅力的价值
 3. 图标：使用 ${milestone.icon} 作为基础，可以组合其他emoji
-
-示例风格：
-- 7天："七日辉光徽章" - "初入工会的冒险者，以七日不辍的意志证明了自己。这枚徽章闪烁着新星的光芒，预示着更长的征途。"
-- 21天："三周永恒印记" - "二十一个日升月落，见证了一位冒险者从稚嫩到坚韧的蜕变。佩戴此印记者，已掌握了恒心的奥义。"
 
 请生成：`,
           response_json_schema: {
@@ -495,24 +545,22 @@ export default function QuestBoard() {
     setTimeout(() => setToast(null), 2000);
   };
 
-  const handleEditQuestSave = async ({ actionHint, dueDate }) => {
+  const handleEditQuestSave = async ({ actionHint, dueDate, isRoutine, originalActionHint }) => {
     try {
+      // If setting as routine, the originalActionHint is critical for daily generation
+      // If not routine, originalActionHint can be null or same as actionHint
+      const effectiveOriginalActionHint = isRoutine ? (originalActionHint || actionHint) : null;
+      
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官，你不仅擅长为平凡任务注入奇幻色彩，更能从每个委托的细节中提炼其核心精髓，铸造出独一无二的专属称号。
+        prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
 
 **当前冒险者委托内容：** ${actionHint}
 
-**你的任务：**
-1. **深入分析**委托内容，提取其**核心动词、名词和关键情境**
-2. **结合分析结果**，创作一个**专属的RPG风格标题**，使其既有奇幻感，又**精准映射**委托内容的具体行动
-3. 评定难度和稀有度
+请为这个任务生成RPG风格标题、难度和稀有度。
+如果这是每日修炼任务，请确保标题依然具有奇幻和冒险色彩，但不必每次都完全不同。
 
 **标题创作细则：**
-1. **专属感优先**：标题必须从"${actionHint}"中提炼元素，体现出为这个特定任务量身定制的感觉
-   - 例如："给猫喂食" → 【喂养】唤醒沉睡魔宠（突出"猫"→"魔宠"）
-   - 例如："整理房间" → 【秩序】净化混乱居所（突出"房间"+"整理"）
-   - 例如："去超市买菜" → 【采集】市集寻觅鲜蔬（具体到"买菜"）
-
+1. **专属感优先**：标题必须从任务内容中提炼元素，体现出为这个特定任务量身定制的感觉。
 2. **标题主体**：7个字
 3. **格式**：【2字类型】+ 7字标题
 4. **类型词库**：修炼/采集/探索/讨伐/试炼/谈判/淬炼/磨砺/夺回/寻回/护送/调查/狩猎/救援/喂养/秩序/交易/传讯/净化/整顿
@@ -528,17 +576,6 @@ export default function QuestBoard() {
    - 妈妈→远方羁绊
 6. **禁用词**：的/之/冒号
 7. **风格**：简洁有力、略带戏剧感，标题要有节奏感和画面感，更要体现任务的独特性
-
-✓ 优秀示例（专属感强，7字标题）：
-【喂养】唤醒沉睡魔宠
-【传讯】连接远方羁绊
-【净化】扫除腐败源头
-【修炼】破晓五里疾行
-【采集】市集寻觅鲜蔬
-
-❌ 避免通用化（专属感弱）：
-【喂养】驯化异兽（太通用）
-【整顿】收拾空间（太普通）
 
 只返回标题、难度、稀有度。`,
         response_json_schema: {
@@ -557,29 +594,72 @@ export default function QuestBoard() {
         actionHint: actionHint,
         difficulty: result.difficulty,
         rarity: result.rarity,
-        tags: [],
-        dueDate: dueDate
+        tags: [], // Tags are not managed through this modal currently
+        dueDate: dueDate,
+        isRoutine: isRoutine,
+        originalActionHint: effectiveOriginalActionHint,
+        // If a quest is set as routine and it had a specific date, it should now have date: null
+        // If it's being set as non-routine, and it was a template (date: null), it should now have today's date.
+        // This logic needs to be handled carefully. For simplicity, if editing a routine template, keep date null.
+        // If editing a daily quest, keep its date.
+        date: isRoutine && editingQuest.date ? null : editingQuest.date // If making an existing dated quest routine, set its date to null (template)
       };
 
-      await updateQuestMutation.mutateAsync({
-        id: editingQuest.id,
-        data: updateData
-      });
+      // Special handling for routine templates:
+      // If an existing quest (which had a specific date) is now marked as `isRoutine: true`:
+      // 1. Its `date` should be cleared (set to `null`) so it becomes a template.
+      // 2. A new instance of this routine quest should be created for `today`.
+      if (isRoutine && editingQuest.date !== null) {
+        // Update the existing quest to be the template
+        await updateQuestMutation.mutateAsync({
+          id: editingQuest.id,
+          data: { ...updateData, date: null } // Clear date for template
+        });
+        
+        // Create a new instance for today
+        await createQuestMutation.mutateAsync({
+          ...updateData,
+          date: today,
+          status: 'todo',
+          source: 'routine',
+          originalActionHint: effectiveOriginalActionHint // ensure this is set for today's instance
+        });
 
-      setToast('委托更新成功！');
+        setToast('委托已设为每日修炼！今日份已生成。');
+
+      } else if (!isRoutine && editingQuest.isRoutine && editingQuest.date === null) {
+         // If a routine template is being changed to non-routine:
+         // It should now apply to today.
+         await updateQuestMutation.mutateAsync({
+          id: editingQuest.id,
+          data: { ...updateData, date: today }
+        });
+        setToast('每日修炼委托已转为普通委托。');
+
+      } else {
+        // Standard update for non-routine or routine instance
+        await updateQuestMutation.mutateAsync({
+          id: editingQuest.id,
+          data: updateData
+        });
+        setToast(isRoutine ? '每日修炼委托模板已更新！' : '委托更新成功！');
+      }
+
       setTimeout(() => setToast(null), 2000);
-
       setEditingQuest(null);
-
       queryClient.invalidateQueries(['quests']);
+      queryClient.invalidateQueries(['user']); // User data might be affected if routine state changes.
     } catch (error) {
+      console.error("更新失败", error);
       alert('更新失败，请重试');
     }
   };
 
   const handleToggleRestDay = async () => {
-    if (quests.length > 0) {
-      alert('今日已有任务，无法设置为休息日');
+    // Cannot set as rest day if there are *any* non-routine quests today
+    const activeQuestsToday = quests.filter(q => !q.isRoutine);
+    if (activeQuestsToday.length > 0) {
+      alert('今日已有非修炼任务，无法设置为休息日。请先完成或删除它们。');
       return;
     }
     
@@ -642,25 +722,10 @@ export default function QuestBoard() {
     return true;
   });
 
-  const difficultyColors = {
-    C: '#FFE66D',
-    B: '#FF6B35',
-    A: '#C44569',
-    S: '#000'
-  };
-
-  const difficultyLabels = {
-    C: 'C',
-    B: 'B',
-    A: 'A',
-    S: 'S'
-  };
-
   const isRestDay = (user?.restDays || []).includes(today);
   const nextDayPlannedCount = (user?.nextDayPlannedQuests || []).length;
   // Show planning button if it's 9 PM (21:00) or later AND planning hasn't been done for today yet
   const canShowPlanningButton = currentHour >= 21 && user?.lastPlannedDate !== today;
-
 
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
@@ -702,7 +767,54 @@ export default function QuestBoard() {
           </div>
         )}
 
-        <VoiceInput onQuestsGenerated={handleQuestsGenerated} />
+        {/* Text Input (替代语音输入) */}
+        <div 
+          className="p-4 mb-6"
+          style={{
+            backgroundColor: '#FFE66D',
+            border: '4px solid #000',
+            boxShadow: '6px 6px 0px #000'
+          }}
+        >
+          <div className="flex gap-3">
+            <input
+              type="text"
+              placeholder="输入今日任务，如：跑步5km，然后去超市买菜..."
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleTextSubmit();
+                }
+              }}
+              disabled={isProcessing}
+              className="flex-1 h-16 px-4 font-bold text-lg"
+              style={{
+                backgroundColor: '#FFF',
+                border: '4px solid #000',
+                boxShadow: '5px 5px 0px #000'
+              }}
+            />
+
+            <button
+              onClick={handleTextSubmit}
+              disabled={isProcessing || !textInput.trim()}
+              className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
+              style={{
+                backgroundColor: '#C44569',
+                border: '4px solid #000',
+                boxShadow: '5px 5px 0px #000',
+                opacity: (!textInput.trim() || isProcessing) ? 0.5 : 1
+              }}
+            >
+              {isProcessing ? (
+                <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#FFF' }} />
+              ) : (
+                <Sparkles className="w-8 h-8" strokeWidth={3} style={{ color: '#FFF', fill: 'none' }} />
+              )}
+            </button>
+          </div>
+        </div>
 
         {/* Next Day Planned Quests Display + Planning Button */}
         {(nextDayPlannedCount > 0 || canShowPlanningButton) && (
@@ -740,213 +852,6 @@ export default function QuestBoard() {
           </div>
         )}
 
-        {pendingQuests.length > 0 && (
-          <div 
-            className="mb-6 p-4"
-            style={{
-              backgroundColor: '#FFE66D',
-              border: '4px solid #000',
-              boxShadow: '6px 6px 0px #000'
-            }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-black uppercase">待确认委托 ({pendingQuests.length})</h3>
-              <button
-                onClick={handleAddManualQuest}
-                className="w-8 h-8 flex items-center justify-center font-black"
-                style={{
-                  backgroundColor: '#4ECDC4',
-                  border: '3px solid #000',
-                  boxShadow: '3px 3px 0px #000'
-                }}
-                title="手动添加任务"
-              >
-                <Plus className="w-5 h-5" strokeWidth={3} />
-              </button>
-            </div>
-            <div className="space-y-2 mb-4">
-              {pendingQuests.map((quest, i) => (
-                <div 
-                  key={i}
-                  className="overflow-hidden"
-                  style={{
-                    backgroundColor: '#FFF',
-                    border: '3px solid #000'
-                  }}
-                >
-                  <div 
-                    className="p-3 flex items-center justify-between cursor-pointer hover:bg-gray-50"
-                    onClick={() => setEditingPendingIndex(editingPendingIndex === i ? null : i)}
-                  >
-                    <div className="flex-1 min-w-0 pr-3">
-                      <p className="font-black text-sm mb-1 truncate">{quest.title}</p>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-gray-600 truncate">
-                          ({quest.actionHint || '待填写'})
-                        </span>
-                        <span 
-                          className="px-2 py-0.5 text-xs font-black flex-shrink-0"
-                          style={{
-                            backgroundColor: difficultyColors[quest.difficulty],
-                            color: quest.difficulty === 'S' ? '#FFE66D' : '#000',
-                            border: '2px solid #000'
-                          }}
-                        >
-                          {difficultyLabels[quest.difficulty]}
-                        </span>
-                      </div>
-                      
-                      {quest.voiceRawText && (
-                        <div className="mt-2 space-y-1">
-                          <div 
-                            className="text-xs font-bold px-2 py-1"
-                            style={{
-                              backgroundColor: '#F0F0F0',
-                              border: '2px solid #000',
-                              color: '#666'
-                            }}
-                          >
-                            🎤 原始语音：{quest.voiceRawText}
-                          </div>
-                          {quest.voiceCorrectedText && (
-                            <div 
-                              className="text-xs font-bold px-2 py-1"
-                              style={{
-                                backgroundColor: '#E8F5E9',
-                                border: '2px solid #4ECDC4',
-                                color: '#2E7D32'
-                              }}
-                            >
-                              ✓ AI理解为：{quest.voiceCorrectedText}
-                            </div>
-                          )}
-                          {quest.voiceConfidence !== undefined && quest.voiceConfidence < 0.75 && (
-                            <div className="text-xs font-bold" style={{ color: '#FF6B35' }}>
-                              ⚠ 置信度 {(quest.voiceConfidence * 100).toFixed(0)}% - 请确认任务内容
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-shrink-0">
-                      {editingPendingIndex === i ? (
-                        <ChevronUp className="w-5 h-5" strokeWidth={3} />
-                      ) : (
-                        <ChevronDown className="w-5 h-5" strokeWidth={3} />
-                      )}
-                    </div>
-                  </div>
-
-                  {editingPendingIndex === i && (
-                    <div 
-                      className="px-3 pb-3 pt-0"
-                      style={{
-                        borderTop: '2px solid #000'
-                      }}
-                    >
-                      <div className="mb-3 mt-3">
-                        <label className="block text-xs font-bold uppercase mb-2" style={{ color: '#666' }}>
-                          任务内容：
-                        </label>
-                        <input
-                          type="text"
-                          value={quest.actionHint}
-                          onChange={(e) => handleChangePendingActionHint(i, e.target.value)}
-                          placeholder="请输入任务内容..."
-                          className="w-full px-3 py-2 font-bold text-sm"
-                          style={{
-                            border: '2px solid #000'
-                          }}
-                        />
-                        {quest.voiceRawText && (
-                          <p className="text-xs font-bold mt-2" style={{ color: '#666' }}>
-                            💡 若口音导致识别错误，可手动修改委托内容
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="mb-3">
-                        <label className="block text-xs font-bold uppercase mb-2" style={{ color: '#666' }}>
-                          难度评级：
-                        </label>
-                        <div className="grid grid-cols-4 gap-2">
-                          {['C', 'B', 'A', 'S'].map(level => {
-                            const isSelected = quest.difficulty === level;
-                            return (
-                              <button
-                                key={level}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleChangePendingDifficulty(i, level);
-                                }}
-                                className="py-3 font-black text-lg transition-all"
-                                style={{
-                                  backgroundColor: isSelected ? difficultyColors[level] : '#F0F0F0',
-                                  color: level === 'S' && isSelected ? '#FFE66D' : '#000',
-                                  border: isSelected ? '3px solid #000' : '2px solid #000',
-                                  boxShadow: isSelected ? '3px 3px 0px #000' : 'none'
-                                }}
-                              >
-                                {level}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        <div className="grid grid-cols-4 gap-2 mt-2">
-                          <p className="text-xs font-bold text-center" style={{ color: '#666' }}>轻松</p>
-                          <p className="text-xs font-bold text-center" style={{ color: '#666' }}>中等</p>
-                          <p className="text-xs font-bold text-center" style={{ color: '#666' }}>高难</p>
-                          <p className="text-xs font-bold text-center" style={{ color: '#666' }}>超级</p>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeletePendingQuest(i);
-                        }}
-                        className="w-full py-2 font-bold uppercase text-sm"
-                        style={{
-                          backgroundColor: '#FFF',
-                          color: '#FF6B35',
-                          border: '2px solid #FF6B35'
-                        }}
-                      >
-                        删除此任务
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setPendingQuests([])}
-                className="flex-1 py-2 font-black uppercase"
-                style={{
-                  backgroundColor: '#FF6B35', 
-                  color: '#FFF', 
-                  border: '3px solid #000',
-                  boxShadow: '4px 4px 0px #000'
-                }}
-              >
-                取消
-              </button>
-              <button
-                onClick={confirmQuests}
-                className="flex-1 py-2 font-black uppercase"
-                style={{
-                  backgroundColor: '#4ECDC4',
-                  border: '3px solid #000',
-                  boxShadow: '4px 4px 0px #000'
-                }}
-              >
-                确认接取
-              </button>
-            </div>
-          </div>
-        )}
-
         <div className="flex gap-3 mb-6">
           {['all', 'todo', 'done'].map(f => (
             <button
@@ -979,7 +884,7 @@ export default function QuestBoard() {
             }}
           >
             <p className="text-2xl font-black uppercase mb-2">暂无委托</p>
-            <p className="font-bold text-gray-600">使用语音或文本添加今日任务</p>
+            <p className="font-bold text-gray-600">使用文本输入添加今日任务</p>
           </div>
         ) : (
           <div>
@@ -1000,14 +905,15 @@ export default function QuestBoard() {
         <div className="mt-6">
           <button
             onClick={() => setShowRestDayDialog(true)}
-            disabled={quests.length > 0 && !isRestDay}
+            // Only disable if there are active non-routine quests and it's not already a rest day
+            disabled={quests.filter(q => !q.isRoutine && q.date === today).length > 0 && !isRestDay}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
             style={{
               backgroundColor: isRestDay ? '#FF6B35' : '#4ECDC4',
               color: isRestDay ? '#FFF' : '#000',
               border: '4px solid #000',
               boxShadow: '6px 6px 0px #000',
-              opacity: (quests.length > 0 && !isRestDay) ? 0.5 : 1
+              opacity: (quests.filter(q => !q.isRoutine && q.date === today).length > 0 && !isRestDay) ? 0.5 : 1
             }}
           >
             <Coffee className="w-6 h-6" strokeWidth={3} />
@@ -1187,7 +1093,7 @@ export default function QuestBoard() {
                   <div className="space-y-3 font-bold text-sm">
                     <p>✓ 设为休息日后，今天不计入连胜天数</p>
                     <p>✓ 连胜不会因为今天未完成任务而中断</p>
-                    <p>✓ 如果今天添加了任务，休息日会自动取消</p>
+                    <p>✓ 如果今天添加了非修炼任务，休息日会自动取消</p>
                     <p className="text-xs" style={{ color: '#666' }}>
                       💡 建议：如果确定今天不工作，可以提前设为休息日。这样既不会影响连胜，也不需要消耗冻结券。
                     </p>

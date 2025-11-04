@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Filter, Loader2, Sparkles, Coffee, Calendar, Briefcase } from 'lucide-react';
+import { Filter, Loader2, Sparkles, Coffee, Calendar, Briefcase, ChevronDown, ChevronUp, Check } from 'lucide-react';
 import QuestCard from '../components/quest/QuestCard';
 import PraiseDialog from '../components/quest/PraiseDialog';
 import ChestOpening from '../components/treasure/ChestOpening';
@@ -17,6 +17,8 @@ export default function QuestBoard() {
   const [showChest, setShowChest] = useState(false);
   const [textInput, setTextInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [pendingQuests, setPendingQuests] = useState([]);
+  const [expandedPending, setExpandedPending] = useState(null);
   const [editingQuest, setEditingQuest] = useState(null);
   const [toast, setToast] = useState(null);
   const [milestoneReward, setMilestoneReward] = useState(null);
@@ -241,20 +243,59 @@ export default function QuestBoard() {
         }
       });
 
-      await createQuestMutation.mutateAsync({
+      // 添加到待确认列表，不直接创建
+      setPendingQuests(prev => [...prev, {
         ...result,
-        date: today,
-        status: 'todo',
-        source: 'text',
-        tags: []
-      });
-
+        tags: [],
+        tempId: Date.now() // 临时ID用于React key
+      }]);
+      
       setTextInput('');
     } catch (error) {
       console.error('任务处理错误:', error);
       alert(`任务解析失败：${error.message || '请重试'}`);
     }
     setIsProcessing(false);
+  };
+
+  const handleUpdatePendingQuest = (tempId, field, value) => {
+    setPendingQuests(prev => prev.map(q => 
+      q.tempId === tempId ? { ...q, [field]: value } : q
+    ));
+  };
+
+  const handleDeletePendingQuest = (tempId) => {
+    setPendingQuests(prev => prev.filter(q => q.tempId !== tempId));
+    if (expandedPending === tempId) {
+      setExpandedPending(null);
+    }
+  };
+
+  const handleConfirmPendingQuests = async () => {
+    if (pendingQuests.length === 0) return;
+    
+    try {
+      for (const quest of pendingQuests) {
+        await createQuestMutation.mutateAsync({
+          title: quest.title,
+          actionHint: quest.actionHint,
+          difficulty: quest.difficulty,
+          rarity: quest.rarity,
+          date: today,
+          status: 'todo',
+          source: 'text',
+          tags: quest.tags || []
+        });
+      }
+      
+      setPendingQuests([]);
+      setExpandedPending(null);
+      setToast(`已添加 ${pendingQuests.length} 项委托到任务板`);
+      setTimeout(() => setToast(null), 2000);
+    } catch (error) {
+      console.error('创建任务失败:', error);
+      alert('创建任务失败，请重试');
+    }
   };
 
   const checkAndAwardMilestone = async (newStreak) => {
@@ -624,6 +665,13 @@ export default function QuestBoard() {
   // Show planning button if it's 9 PM (21:00) or later AND planning hasn't been done for today yet
   const canShowPlanningButton = currentHour >= 21 && user?.lastPlannedDate !== today;
 
+  const difficultyColors = {
+    C: '#FFE66D',
+    B: '#FF6B35',
+    A: '#C44569',
+    S: '#000'
+  };
+
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
       <div className="max-w-2xl mx-auto">
@@ -676,7 +724,7 @@ export default function QuestBoard() {
           <div className="flex gap-3">
             <input
               type="text"
-              placeholder="输入今日任务，如：跑步5km，然后去超市买菜..."
+              placeholder="输入今日任务，如：跑步5km"
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
               onKeyPress={(e) => {
@@ -727,6 +775,128 @@ export default function QuestBoard() {
           <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
             💡 右侧按钮用于粘贴长期计划，冒险者工会将自动分配到每日委托板
           </p>
+
+          {/* Pending Quests Preview */}
+          {pendingQuests.length > 0 && (
+            <div 
+              className="mt-4 p-3"
+              style={{
+                backgroundColor: '#FFF',
+                border: '3px solid #000'
+              }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-black uppercase text-sm">
+                  待确认任务 ({pendingQuests.length})
+                </h3>
+              </div>
+
+              <div className="space-y-2 mb-3">
+                {pendingQuests.map((quest) => (
+                  <div 
+                    key={quest.tempId}
+                    style={{
+                      backgroundColor: '#F9FAFB',
+                      border: '3px solid #000'
+                    }}
+                  >
+                    <div 
+                      className="p-3 flex items-center justify-between cursor-pointer"
+                      onClick={() => setExpandedPending(expandedPending === quest.tempId ? null : quest.tempId)}
+                    >
+                      <div className="flex-1 min-w-0 flex items-center gap-3">
+                        <span 
+                          className="px-2 py-1 text-sm font-black flex-shrink-0"
+                          style={{
+                            backgroundColor: difficultyColors[quest.difficulty],
+                            color: quest.difficulty === 'S' ? '#FFE66D' : '#000',
+                            border: '2px solid #000'
+                          }}
+                        >
+                          {quest.difficulty}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-black text-sm mb-1 truncate">{quest.title}</p>
+                          <p className="text-xs font-bold text-gray-600 truncate">
+                            ({quest.actionHint})
+                          </p>
+                        </div>
+                      </div>
+                      {expandedPending === quest.tempId ? (
+                        <ChevronUp className="w-5 h-5 flex-shrink-0" strokeWidth={3} />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 flex-shrink-0" strokeWidth={3} />
+                      )}
+                    </div>
+
+                    {expandedPending === quest.tempId && (
+                      <div className="px-3 pb-3 pt-0" style={{ borderTop: '2px solid #000' }}>
+                        <div className="mb-3 mt-3">
+                          <label className="block text-xs font-bold uppercase mb-2">
+                            任务内容：
+                          </label>
+                          <input
+                            type="text"
+                            value={quest.actionHint}
+                            onChange={(e) => handleUpdatePendingQuest(quest.tempId, 'actionHint', e.target.value)}
+                            className="w-full px-3 py-2 font-bold text-sm"
+                            style={{ border: '2px solid #000' }}
+                          />
+                        </div>
+
+                        <div className="mb-3">
+                          <label className="block text-xs font-bold uppercase mb-2">
+                            难度评级：
+                          </label>
+                          <div className="grid grid-cols-4 gap-2">
+                            {['C', 'B', 'A', 'S'].map(level => (
+                              <button
+                                key={level}
+                                onClick={() => handleUpdatePendingQuest(quest.tempId, 'difficulty', level)}
+                                className="py-2 font-black"
+                                style={{
+                                  backgroundColor: quest.difficulty === level ? difficultyColors[level] : '#F0F0F0',
+                                  color: level === 'S' && quest.difficulty === level ? '#FFE66D' : '#000',
+                                  border: quest.difficulty === level ? '3px solid #000' : '2px solid #000'
+                                }}
+                              >
+                                {level}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => handleDeletePendingQuest(quest.tempId)}
+                          className="w-full py-2 font-bold uppercase text-sm"
+                          style={{
+                            backgroundColor: '#FFF',
+                            color: '#FF6B35',
+                            border: '2px solid #FF6B35'
+                          }}
+                        >
+                          删除此任务
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={handleConfirmPendingQuests}
+                className="w-full py-3 font-black uppercase text-sm flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: '#4ECDC4',
+                  border: '4px solid #000',
+                  boxShadow: '4px 4px 0px #000'
+                }}
+              >
+                <Check className="w-5 h-5" strokeWidth={3} />
+                确认接取 {pendingQuests.length} 项委托
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Next Day Planned Quests Display + Planning Button */}
@@ -818,7 +988,6 @@ export default function QuestBoard() {
         <div className="mt-6">
           <button
             onClick={() => setShowRestDayDialog(true)}
-            // Only disable if there are active quests today and it's not already a rest day
             disabled={quests.length > 0 && !isRestDay}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
             style={{

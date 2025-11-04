@@ -734,7 +734,7 @@ export default function QuestBoard() {
           </div>
           
           <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
-            💡 右侧按钮用于粘贴长期计划，AI 将智能分发到各日
+            💡 右侧按钮用于粘贴长期计划，冒险者工会将自动分配到每日委托板
           </p>
         </div>
 

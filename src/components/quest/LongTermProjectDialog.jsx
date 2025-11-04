@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { X, Loader2, Sparkles, Calendar, Edit2, Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -130,7 +131,7 @@ ${textInput.trim()}
           🎯 大项目规划 🎯
         </h2>
         <p className="text-center font-bold text-white mb-6 text-sm">
-          粘贴你的长期计划，AI 将智能分发到各日委托板
+          粘贴你的长期计划，冒险者工会将自动分配到每日委托板
         </p>
 
         {!showPreview ? (
@@ -169,7 +170,7 @@ ${textInput.trim()}
               {isProcessing ? (
                 <>
                   <Loader2 className="w-6 h-6 animate-spin" />
-                  AI 正在解析中...
+                  工会管理员正在更新委托板...
                 </>
               ) : (
                 <>
@@ -271,8 +272,8 @@ ${textInput.trim()}
                               <span className="font-black text-sm">
                                 {format(new Date(quest.date), 'MM月dd日')}
                               </span>
-                              <span 
-                                className="px-2 py-0.5 text-xs font-black"
+                              <div 
+                                className="px-2 py-0.5 text-base font-black"
                                 style={{
                                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)',
                                   color: '#FFF',
@@ -280,8 +281,8 @@ ${textInput.trim()}
                                   textShadow: '1px 1px 0px #000'
                                 }}
                               >
-                                彩虹S
-                              </span>
+                                S
+                              </div>
                             </div>
                             <p className="font-black text-base mb-1">{quest.title}</p>
                             <p className="text-sm font-bold text-gray-600">

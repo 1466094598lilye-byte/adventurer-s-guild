@@ -226,24 +226,29 @@ export default function QuestBoard() {
 1. 把整个输入作为**单个任务**处理（不要拆分！）
 2. **为这个任务生成专属的RPG史诗风格标题**：
 
-【标题生成规则】（必须严格遵守）：
-- 格式：【2字动作类型】+ 7字幻想描述
-- 动作类型必须从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
-- 7字描述必须充满幻想色彩，把现实任务转化为史诗叙事
+【标题生成规则】（必须100%严格遵守）：
+- 格式：【X X】+ Y Y Y Y Y Y Y （X=动作类型2个字，Y=描述正好7个字）
+- 动作类型：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
+- **7字描述是硬性限制！必须正好7个汉字，不能多也不能少！**
+- 描述要充满幻想色彩，把现实任务转化为史诗叙事
 - **绝对禁止使用"任务"二字！**
 
-【标题转化示例】：
-"跑步5km" → "【征讨】踏破晨曦五里征途"
-"写周报" → "【记录】编撰冒险周志卷轴"
-"开会" → "【议会】召开圆桌战术会议"
-"买菜" → "【收集】前往集市采购补给"
-"学习英语" → "【研习】修炼古老语言魔法"
-"健身" → "【锻造】淬炼冒险者之躯体"
+【标题示例】（注意每个描述都正好7个字）：
+"跑步5km" → "【征讨】踏破晨曦五里征途"（7字：踏破晨曦五里征途）
+"写周报" → "【记录】编撰冒险周志卷轴"（7字：编撰冒险周志卷轴）
+"开会" → "【议会】召开圆桌战术会议"（7字：召开圆桌战术会议）
+"买菜" → "【收集】前往集市采购补给"（7字：前往集市采购补给）
+"学习英语" → "【研习】修炼古老语言魔法"（7字：修炼古老语言魔法）
+"健身" → "【锻造】淬炼冒险者之躯体"（7字：淬炼冒险者之躯体）
+"投资会议" → "【谈判】商讨战略资金分配"（7字：商讨战略资金分配）
+"准备PPT" → "【铸造】炼制议会演说宝典"（7字：炼制议会演说宝典）
+
+**重要提醒**：描述部分必须正好7个汉字！数一下：踏（1）破（2）晨（3）曦（4）五（5）里（6）征（7）途 = 7个字！
 
 3. 评定难度和稀有度
 4. 保留用户的完整输入作为 actionHint
 
-**重要**：无论输入多长或多复杂，都只返回1个任务！标题必须是RPG幻想风格！
+**再次强调**：无论输入多长或多复杂，都只返回1个任务！标题的描述部分必须正好7个汉字！
 
 请返回任务：`,
         response_json_schema: {
@@ -251,7 +256,7 @@ export default function QuestBoard() {
           properties: {
             title: { 
               type: "string",
-              description: "必须是RPG幻想风格！格式：【2字动作类型】+7字幻想描述。例如：【征讨】踏破晨曦五里征途。绝对不能包含'任务'二字！"
+              description: "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！例如：【征讨】踏破晨曦五里征途。描述必须正好7个字，不能多也不能少！绝对不能包含'任务'二字！"
             },
             actionHint: { 
               type: "string",
@@ -279,66 +284,10 @@ export default function QuestBoard() {
     setIsProcessing(false);
   };
 
-  const handleUpdatePendingQuest = async (tempId, field, value) => {
-    // 立即更新UI
+  const handleUpdatePendingQuest = (tempId, field, value) => {
     setPendingQuests(prev => prev.map(q => 
       q.tempId === tempId ? { ...q, [field]: value } : q
     ));
-    
-    // 如果修改的是 actionHint，自动重新生成 RPG 标题
-    if (field === 'actionHint' && value.trim()) {
-      try {
-        const result = await base44.integrations.Core.InvokeLLM({
-          prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
-
-用户输入：${value.trim()}
-
-你的任务：
-1. 把整个输入作为**单个任务**处理
-2. **为这个任务生成专属的RPG史诗风格标题**：
-
-【标题生成规则】（必须严格遵守）：
-- 格式：【2字动作类型】+ 7字幻想描述
-- 动作类型必须从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
-- 7字描述必须充满幻想色彩，把现实任务转化为史诗叙事
-- **绝对禁止使用"任务"二字！**
-
-【标题转化示例】：
-"跑步5km" → "【征讨】踏破晨曦五里征途"
-"写周报" → "【记录】编撰冒险周志卷轴"
-"开会" → "【议会】召开圆桌战术会议"
-"买菜" → "【收集】前往集市采购补给"
-
-3. 评定难度和稀有度
-
-请返回任务：`,
-          response_json_schema: {
-            type: "object",
-            properties: {
-              title: { 
-                type: "string",
-                description: "必须是RPG幻想风格！格式：【2字动作类型】+7字幻想描述。"
-              },
-              difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
-              rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
-            },
-            required: ["title", "difficulty", "rarity"]
-          }
-        });
-
-        // 更新生成的标题和难度
-        setPendingQuests(prev => prev.map(q => 
-          q.tempId === tempId ? {
-            ...q,
-            title: result.title,
-            difficulty: result.difficulty,
-            rarity: result.rarity
-          } : q
-        ));
-      } catch (error) {
-        console.error('重新生成RPG标题失败:', error);
-      }
-    }
   };
 
   const handleDeletePendingQuest = (tempId) => {

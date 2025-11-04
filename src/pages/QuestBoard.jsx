@@ -2,12 +2,13 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Filter, Loader2, Sparkles, Coffee, Calendar } from 'lucide-react';
+import { Filter, Loader2, Sparkles, Coffee, Calendar, Briefcase } from 'lucide-react';
 import QuestCard from '../components/quest/QuestCard';
 import PraiseDialog from '../components/quest/PraiseDialog';
 import ChestOpening from '../components/treasure/ChestOpening';
 import QuestEditFormModal from '../components/quest/QuestEditFormModal';
 import EndOfDaySummaryAndPlanning from '../components/quest/EndOfDaySummaryAndPlanning';
+import LongTermProjectDialog from '../components/quest/LongTermProjectDialog';
 import { format, subDays } from 'date-fns';
 
 export default function QuestBoard() {
@@ -22,6 +23,7 @@ export default function QuestBoard() {
   const [showRestDayDialog, setShowRestDayDialog] = useState(false);
   const [showPlanningDialog, setShowPlanningDialog] = useState(false);
   const [showCelebrationInPlanning, setShowCelebrationInPlanning] = useState(false);
+  const [showLongTermDialog, setShowLongTermDialog] = useState(false);
   const queryClient = useQueryClient();
 
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -613,6 +615,12 @@ export default function QuestBoard() {
     setShowPlanningDialog(true);
   };
 
+  const handleLongTermQuestsCreated = (count) => {
+    queryClient.invalidateQueries(['quests']);
+    setToast(`已成功添加 ${count} 项大项目任务到委托板`);
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const filteredQuests = quests.filter(quest => {
     if (filter === 'all') return true;
     if (filter === 'done') return quest.status === 'done';
@@ -665,7 +673,7 @@ export default function QuestBoard() {
           </div>
         )}
 
-        {/* Text Input (替代语音输入) */}
+        {/* Text Input + Long Term Button */}
         <div 
           className="p-4 mb-6"
           style={{
@@ -711,7 +719,23 @@ export default function QuestBoard() {
                 <Sparkles className="w-8 h-8" strokeWidth={3} style={{ color: '#FFF', fill: 'none' }} />
               )}
             </button>
+
+            <button
+              onClick={() => setShowLongTermDialog(true)}
+              className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
+              style={{
+                backgroundColor: '#9B59B6',
+                border: '4px solid #000',
+                boxShadow: '5px 5px 0px #000'
+              }}
+            >
+              <Briefcase className="w-8 h-8" strokeWidth={3} style={{ color: '#FFF' }} />
+            </button>
           </div>
+          
+          <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
+            💡 右侧按钮用于粘贴长期计划，AI 将智能分发到各日
+          </p>
         </div>
 
         {/* Next Day Planned Quests Display + Planning Button */}
@@ -856,6 +880,13 @@ export default function QuestBoard() {
               setShowCelebrationInPlanning(false);
             }}
             onPlanSaved={handlePlanSaved}
+          />
+        )}
+
+        {showLongTermDialog && (
+          <LongTermProjectDialog
+            onClose={() => setShowLongTermDialog(false)}
+            onQuestsCreated={handleLongTermQuestsCreated}
           />
         )}
 

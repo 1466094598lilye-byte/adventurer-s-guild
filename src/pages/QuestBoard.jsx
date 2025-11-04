@@ -53,16 +53,15 @@ export default function QuestBoard() {
         if (oldQuests.length > 0) {
           console.log(`发现 ${oldQuests.length} 项昨日未完成任务，开始顺延...`);
           
-          let nonRoutineCount = 0;
           for (const quest of oldQuests) {
             // 如果是每日修炼任务，不顺延（因为会重新生成）
             if (!quest.isRoutine) {
               await base44.entities.Quest.update(quest.id, { date: today });
-              nonRoutineCount++;
             }
           }
           
           queryClient.invalidateQueries(['quests']);
+          const nonRoutineCount = oldQuests.filter(q => !q.isRoutine).length;
           if (nonRoutineCount > 0) {
             setToast(`昨日 ${nonRoutineCount} 项委托已顺延至今日`);
             setTimeout(() => setToast(null), 3000);
@@ -97,47 +96,44 @@ export default function QuestBoard() {
         }
 
         // 3. 处理每日修炼任务（自动生成今日任务）
-        // Fetch all existing routine quest templates (regardless of date, as they define the recurring task)
-        const allRoutineQuestTemplates = await base44.entities.Quest.filter({ isRoutine: true, date: null }); // Assuming templates have date: null
-        console.log(`找到 ${allRoutineQuestTemplates.length} 个每日修炼任务模板`);
+        // 查询所有标记为每日修炼的任务（使用 isRoutine: true）
+        const allQuests = await base44.entities.Quest.filter({ isRoutine: true });
+        console.log(`找到 ${allQuests.length} 个每日修炼任务`);
         
-        if (allRoutineQuestTemplates.length > 0) {
+        if (allQuests.length > 0) {
           const todayQuests = await base44.entities.Quest.filter({ date: today });
-          let createdRoutineCount = 0;
-
-          for (const routineTemplate of allRoutineQuestTemplates) {
-            // Check today's quests if this specific routine task already exists
-            const alreadyExistsToday = todayQuests.some(
-              q => q.isRoutine && q.originalActionHint === routineTemplate.originalActionHint
+          
+          // 去重：找出所有不同的 originalActionHint
+          const uniqueRoutines = new Map();
+          allQuests.forEach(quest => {
+            if (quest.originalActionHint) {
+              uniqueRoutines.set(quest.originalActionHint, quest);
+            }
+          });
+          
+          console.log(`找到 ${uniqueRoutines.size} 个不同的每日修炼任务`);
+          
+          for (const [actionHint, routineQuest] of uniqueRoutines) {
+            // 检查今天是否已经有这个每日修炼任务
+            const alreadyExists = todayQuests.some(
+              q => q.isRoutine && q.originalActionHint === actionHint
             );
             
-            if (!alreadyExistsToday) {
-              console.log(`为每日修炼任务生成今日版本: ${routineTemplate.originalActionHint}`);
+            if (!alreadyExists) {
+              console.log(`为每日修炼任务生成今日版本: ${actionHint}`);
               
-              // Use LLM to re-generate RPG title, difficulty, and rarity for today's instance
+              // 用 LLM 重新生成 RPG 标题、难度和稀有度
               const result = await base44.integrations.Core.InvokeLLM({
                 prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
 
-**当前冒险者委托内容：** ${routineTemplate.originalActionHint}
+**当前冒险者委托内容：** ${actionHint}
 
 请为这个每日修炼任务生成**全新的**RPG风格标题、难度和稀有度。
+
 要求：
 1. 标题要有变化，不要每天都一样（但核心内容要体现任务本质）
-2. 标题主体：7个字
-3. 格式：【2字类型】+ 7字标题
-4. 类型词库：修炼/采集/探索/讨伐/试炼/谈判/淬炼/磨砺/夺回/寻回/护送/调查/狩猎/救援/喂养/秩序/交易/传讯/净化/整顿
-5. 奇幻化词汇（结合具体任务）：
-   - 超市→集市/市集
-   - 跑步→疾行/晨跑
-   - 读书→研读/阅卷
-   - 退货→夺回/寻回
-   - 开会→议事/会谈
-   - 健身→修炼/锻体
-   - 写作→笔录/记录
-   - 猫/狗→魔宠/灵兽
-   - 妈妈→远方羁绊
-6. 禁用词：的/之/冒号
-7. 风格：简洁有力、略带戏剧感，标题要有节奏感和画面感，更要体现任务的独特性
+2. 格式：【2字类型】+ 7字标题
+3. 保持任务的核心特征
 
 只返回标题、难度、稀有度。`,
                 response_json_schema: {
@@ -151,27 +147,23 @@ export default function QuestBoard() {
                 }
               });
 
-              // Create today's daily routine quest
+              // 创建今日的每日修炼任务
               await base44.entities.Quest.create({
                 title: result.title,
-                actionHint: routineTemplate.originalActionHint, // Use original actionHint for consistency
+                actionHint: actionHint,
                 difficulty: result.difficulty,
                 rarity: result.rarity,
                 date: today,
                 status: 'todo',
                 source: 'routine',
                 isRoutine: true,
-                originalActionHint: routineTemplate.originalActionHint, // Store original hint to match templates
+                originalActionHint: actionHint,
                 tags: []
               });
-              createdRoutineCount++;
             }
           }
-          if (createdRoutineCount > 0) {
-            queryClient.invalidateQueries(['quests']);
-            setToast(`已加载 ${createdRoutineCount} 项每日修炼委托`);
-            setTimeout(() => setToast(null), 3000);
-          }
+          
+          queryClient.invalidateQueries(['quests']);
         }
       } catch (error) {
         console.error('日更处理失败:', error);
@@ -222,51 +214,17 @@ export default function QuestBoard() {
     setIsProcessing(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官，你不仅擅长为平凡任务注入奇幻色彩，更能从每个委托的细节中提炼其核心精髓，铸造出独一无二的专属称号。
+        prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
 
-**用户输入：** ${textInput.trim()}
+用户输入：${textInput.trim()}
 
-**你的任务：**
-1. **识别并拆分**用户输入中的所有独立任务。如果用户输入的是一个单独的任务，则只处理这一个。
-2. **深入分析**每个任务，提取其**核心动词、名词和关键情境**。
-3. **结合分析结果**，为每个任务创作一个**专属的RPG风格标题**，使其既有奇幻感，又**精准映射**委托内容的具体行动。
-4. 评定难度和稀有度，保留用户的原始任务描述或你提炼出的具体行动描述作为 actionHint。
-5. 所有任务的 date 设定为今日，status 设定为 'todo'，source 设定为 'text'。
+你的任务：
+1. 识别并拆分用户输入中的所有独立任务
+2. 深入分析每个任务，提取其核心动词、名词和关键情境
+3. 结合分析结果，为每个任务创作一个专属的RPG风格标题
+4. 评定难度和稀有度，保留用户的原始任务描述作为 actionHint
 
-**标题创作细则：**
-1. **专属感优先**：标题必须从任务内容中提炼元素，体现出为这个特定任务量身定制的感觉。
-   - 例如："给猫喂食" → 【喂养】唤醒沉睡魔宠（突出"猫"→"魔宠"）
-   - 例如："整理房间" → 【秩序】净化混乱居所（突出"房间"+"整理"）
-   - 例如："去超市买菜" → 【采集】市集寻觅鲜蔬（具体到"买菜"）
-
-2. **标题主体**：7个字
-3. **格式**：【2字类型】+ 7字标题
-4. **类型词库**：修炼/采集/探索/讨伐/试炼/谈判/淬炼/磨砺/夺回/寻回/护送/调查/狩猎/救援/喂养/秩序/交易/传讯/净化/整顿
-5. **奇幻化词汇**（结合具体任务）：
-   - 超市→集市/市集
-   - 跑步→疾行/晨跑
-   - 读书→研读/阅卷
-   - 退货→夺回/寻回
-   - 开会→议事/会谈
-   - 健身→修炼/锻体
-   - 写作→笔录/记录
-   - 猫/狗→魔宠/灵兽
-   - 妈妈→远方羁绊
-6. **禁用词**：的/之/冒号
-7. **风格**：简洁有力、略带戏剧感，标题要有节奏感和画面感，更要体现任务的独特性
-
-✓ 优秀示例（专属感强，7字标题）：
-【喂养】唤醒沉睡魔宠
-【传讯】连接远方羁绊
-【净化】扫除腐败源头
-【修炼】破晓五里疾行
-【采集】市集寻觅鲜蔬
-
-❌ 避免通用化（专属感弱）：
-【喂养】驯化异兽（太通用）
-【整顿】收拾空间（太普通）
-
-请只返回 JSON 数组，包含所有拆分出的任务对象。`,
+请返回任务数组：`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -547,35 +505,12 @@ export default function QuestBoard() {
 
   const handleEditQuestSave = async ({ actionHint, dueDate, isRoutine, originalActionHint }) => {
     try {
-      // If setting as routine, the originalActionHint is critical for daily generation
-      // If not routine, originalActionHint can be null or same as actionHint
-      const effectiveOriginalActionHint = isRoutine ? (originalActionHint || actionHint) : null;
-      
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
 
 **当前冒险者委托内容：** ${actionHint}
 
 请为这个任务生成RPG风格标题、难度和稀有度。
-如果这是每日修炼任务，请确保标题依然具有奇幻和冒险色彩，但不必每次都完全不同。
-
-**标题创作细则：**
-1. **专属感优先**：标题必须从任务内容中提炼元素，体现出为这个特定任务量身定制的感觉。
-2. **标题主体**：7个字
-3. **格式**：【2字类型】+ 7字标题
-4. **类型词库**：修炼/采集/探索/讨伐/试炼/谈判/淬炼/磨砺/夺回/寻回/护送/调查/狩猎/救援/喂养/秩序/交易/传讯/净化/整顿
-5. **奇幻化词汇**（结合具体任务）：
-   - 超市→集市/市集
-   - 跑步→疾行/晨跑
-   - 读书→研读/阅卷
-   - 退货→夺回/寻回
-   - 开会→议事/会谈
-   - 健身→修炼/锻体
-   - 写作→笔录/记录
-   - 猫/狗→魔宠/灵兽
-   - 妈妈→远方羁绊
-6. **禁用词**：的/之/冒号
-7. **风格**：简洁有力、略带戏剧感，标题要有节奏感和画面感，更要体现任务的独特性
 
 只返回标题、难度、稀有度。`,
         response_json_schema: {
@@ -597,58 +532,22 @@ export default function QuestBoard() {
         tags: [], // Tags are not managed through this modal currently
         dueDate: dueDate,
         isRoutine: isRoutine,
-        originalActionHint: effectiveOriginalActionHint,
-        // If a quest is set as routine and it had a specific date, it should now have date: null
-        // If it's being set as non-routine, and it was a template (date: null), it should now have today's date.
-        // This logic needs to be handled carefully. For simplicity, if editing a routine template, keep date null.
-        // If editing a daily quest, keep its date.
-        date: isRoutine && editingQuest.date ? null : editingQuest.date // If making an existing dated quest routine, set its date to null (template)
+        originalActionHint: isRoutine ? actionHint : null,
+        date: editingQuest.date // Preserve the current date of the quest
       };
 
-      // Special handling for routine templates:
-      // If an existing quest (which had a specific date) is now marked as `isRoutine: true`:
-      // 1. Its `date` should be cleared (set to `null`) so it becomes a template.
-      // 2. A new instance of this routine quest should be created for `today`.
-      if (isRoutine && editingQuest.date !== null) {
-        // Update the existing quest to be the template
-        await updateQuestMutation.mutateAsync({
-          id: editingQuest.id,
-          data: { ...updateData, date: null } // Clear date for template
-        });
-        
-        // Create a new instance for today
-        await createQuestMutation.mutateAsync({
-          ...updateData,
-          date: today,
-          status: 'todo',
-          source: 'routine',
-          originalActionHint: effectiveOriginalActionHint // ensure this is set for today's instance
-        });
+      await updateQuestMutation.mutateAsync({
+        id: editingQuest.id,
+        data: updateData
+      });
 
-        setToast('委托已设为每日修炼！今日份已生成。');
-
-      } else if (!isRoutine && editingQuest.isRoutine && editingQuest.date === null) {
-         // If a routine template is being changed to non-routine:
-         // It should now apply to today.
-         await updateQuestMutation.mutateAsync({
-          id: editingQuest.id,
-          data: { ...updateData, date: today }
-        });
-        setToast('每日修炼委托已转为普通委托。');
-
-      } else {
-        // Standard update for non-routine or routine instance
-        await updateQuestMutation.mutateAsync({
-          id: editingQuest.id,
-          data: updateData
-        });
-        setToast(isRoutine ? '每日修炼委托模板已更新！' : '委托更新成功！');
-      }
-
+      setToast(isRoutine ? '委托已设为每日修炼！' : '委托更新成功！');
       setTimeout(() => setToast(null), 2000);
+
       setEditingQuest(null);
+
       queryClient.invalidateQueries(['quests']);
-      queryClient.invalidateQueries(['user']); // User data might be affected if routine state changes.
+      queryClient.invalidateQueries(['user']);
     } catch (error) {
       console.error("更新失败", error);
       alert('更新失败，请重试');
@@ -656,10 +555,9 @@ export default function QuestBoard() {
   };
 
   const handleToggleRestDay = async () => {
-    // Cannot set as rest day if there are *any* non-routine quests today
-    const activeQuestsToday = quests.filter(q => !q.isRoutine);
-    if (activeQuestsToday.length > 0) {
-      alert('今日已有非修炼任务，无法设置为休息日。请先完成或删除它们。');
+    // Cannot set as rest day if there are *any* quests today
+    if (quests.length > 0) {
+      alert('今日已有任务，无法设置为休息日。请先完成或删除它们。');
       return;
     }
     
@@ -905,15 +803,15 @@ export default function QuestBoard() {
         <div className="mt-6">
           <button
             onClick={() => setShowRestDayDialog(true)}
-            // Only disable if there are active non-routine quests and it's not already a rest day
-            disabled={quests.filter(q => !q.isRoutine && q.date === today).length > 0 && !isRestDay}
+            // Only disable if there are active quests today and it's not already a rest day
+            disabled={quests.length > 0 && !isRestDay}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
             style={{
               backgroundColor: isRestDay ? '#FF6B35' : '#4ECDC4',
               color: isRestDay ? '#FFF' : '#000',
               border: '4px solid #000',
               boxShadow: '6px 6px 0px #000',
-              opacity: (quests.filter(q => !q.isRoutine && q.date === today).length > 0 && !isRestDay) ? 0.5 : 1
+              opacity: (quests.length > 0 && !isRestDay) ? 0.5 : 1
             }}
           >
             <Coffee className="w-6 h-6" strokeWidth={3} />
@@ -1093,7 +991,7 @@ export default function QuestBoard() {
                   <div className="space-y-3 font-bold text-sm">
                     <p>✓ 设为休息日后，今天不计入连胜天数</p>
                     <p>✓ 连胜不会因为今天未完成任务而中断</p>
-                    <p>✓ 如果今天添加了非修炼任务，休息日会自动取消</p>
+                    <p>✓ 如果今天添加了任务，休息日会自动取消</p>
                     <p className="text-xs" style={{ color: '#666' }}>
                       💡 建议：如果确定今天不工作，可以提前设为休息日。这样既不会影响连胜，也不需要消耗冻结券。
                     </p>

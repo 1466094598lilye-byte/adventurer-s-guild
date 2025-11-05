@@ -659,14 +659,8 @@ export default function QuestBoard() {
   };
 
   const handleToggleRestDay = async () => {
-    // Only check non-routine tasks
-    const nonRoutineQuests = quests.filter(q => !q.isRoutine);
-    
-    // This condition should ideally be handled before showing the dialog, but double-checking here.
-    // However, the new `canSetRestDay` will prevent the button from being active,
-    // so this check becomes redundant for activating rest day, but still valid for safety.
-    if (nonRoutineQuests.length > 0 && !isRestDay) {
-      alert('今日已有临时任务，无法设置为休息日。请先完成或删除它们。');
+    if (quests.length > 0) {
+      alert('今日已有任务，无法设置为休息日。请先完成或删除它们。');
       return;
     }
     
@@ -740,9 +734,9 @@ export default function QuestBoard() {
   // Show planning button if it's 9 PM (21:00) or later AND planning hasn't been done for today yet
   const canShowPlanningButton = currentHour >= 21 && user?.lastPlannedDate !== today;
 
-  // 检查是否有非每日修炼任务
-  const nonRoutineQuests = quests.filter(q => !q.isRoutine);
-  const canSetRestDay = nonRoutineQuests.length === 0;
+  // Now, 'canSetRestDay' should check all quests, not just non-routine ones,
+  // to be consistent with the updated handleToggleRestDay logic.
+  const canSetRestDay = quests.length === 0;
 
   const difficultyColors = {
     C: '#FFE66D',
@@ -1082,7 +1076,7 @@ export default function QuestBoard() {
           </button>
           {!canSetRestDay && !isRestDay && (
             <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
-              💡 今日有临时任务，无法设为休息日（每日修炼任务不影响）
+              💡 今日有任务，无法设为休息日。
             </p>
           )}
         </div>

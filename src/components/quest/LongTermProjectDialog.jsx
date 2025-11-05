@@ -24,7 +24,11 @@ ${textInput.trim()}
 
 你的任务：
 1. 识别文本中的所有独立任务
-2. 为每个任务智能匹配日期（格式：yyyy-MM-dd）
+2. **为每个任务智能匹配日期（只需要月和日，格式：MM-DD）**
+   - 不要管年份！只输出月和日，例如："12-25"、"01-05"
+   - 识别相对时间（如"周一"、"明天"）并转换为月日
+   - 识别绝对时间（如"12月25日"、"1月5号"）
+   
 3. **为每个任务生成专属的RPG史诗风格标题**：
 
 【标题生成规则】：
@@ -46,6 +50,8 @@ ${textInput.trim()}
 4. 保留原始任务描述作为 actionHint（完全保持原样）
 5. 这些是"大项目"任务，难度统一设为 S，稀有度设为 Epic
 
+**重要**：日期只输出 MM-DD 格式，不要年份！
+
 请返回任务数组（按日期排序）：`,
         response_json_schema: {
           type: "object",
@@ -63,7 +69,10 @@ ${textInput.trim()}
                     type: "string", 
                     description: "原始任务描述，保持用户输入的原样"
                   },
-                  date: { type: "string", description: "Format: yyyy-MM-dd" },
+                  date: { 
+                    type: "string", 
+                    description: "Format: MM-DD (只有月和日，不要年份！)" 
+                  },
                   difficulty: { type: "string", enum: ["S"] },
                   rarity: { type: "string", enum: ["Epic"] }
                 },
@@ -75,7 +84,30 @@ ${textInput.trim()}
         }
       });
 
-      setParsedQuests(result.tasks || []);
+      // 处理返回的任务，补充年份
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const currentMonth = today.getMonth() + 1; // 1-indexed
+      const currentDay = today.getDate();
+      
+      const tasksWithFullDate = (result.tasks || []).map(task => {
+        const [month, day] = task.date.split('-').map(Number);
+        
+        let year = currentYear;
+        // If the parsed month is earlier than the current month, or
+        // if the parsed month is the same as current month but the day is earlier,
+        // assume it's for the next year to avoid assigning to a past date.
+        if (month < currentMonth || (month === currentMonth && day < currentDay)) {
+          year = currentYear + 1;
+        }
+        
+        return {
+          ...task,
+          date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+        };
+      });
+
+      setParsedQuests(tasksWithFullDate);
       setShowPreview(true);
     } catch (error) {
       console.error('解析失败:', error);

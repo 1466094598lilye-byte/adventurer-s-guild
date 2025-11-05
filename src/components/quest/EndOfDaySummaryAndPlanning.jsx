@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Loader2, Sparkles, ChevronDown, ChevronUp, Plus } from 'lucide-react';
+import { X, Loader2, Sparkles, ChevronDown, ChevronUp, Plus, Repeat } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 export default function EndOfDaySummaryAndPlanning({ 
@@ -14,13 +14,40 @@ export default function EndOfDaySummaryAndPlanning({
   const [isProcessing, setIsProcessing] = useState(false);
   const [textInput, setTextInput] = useState('');
   const [plannedQuests, setPlannedQuests] = useState([]);
+  const [routineQuests, setRoutineQuests] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
 
   useEffect(() => {
     if (showCelebration) {
       generateCelebrationMessage();
     }
+    loadRoutineQuests();
   }, []);
+
+  const loadRoutineQuests = async () => {
+    try {
+      // 查询所有每日修炼任务
+      const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
+      
+      // 去重：按 originalActionHint 去重
+      const uniqueRoutinesMap = new Map();
+      allRoutineQuests.forEach(quest => {
+        const key = quest.originalActionHint;
+        if (key && !uniqueRoutinesMap.has(key)) {
+          uniqueRoutinesMap.set(key, {
+            title: quest.title,
+            actionHint: key,
+            difficulty: quest.difficulty,
+            rarity: quest.rarity
+          });
+        }
+      });
+      
+      setRoutineQuests(Array.from(uniqueRoutinesMap.values()));
+    } catch (error) {
+      console.error('加载每日修炼任务失败:', error);
+    }
+  };
 
   const generateCelebrationMessage = async () => {
     try {
@@ -180,6 +207,8 @@ export default function EndOfDaySummaryAndPlanning({
     S: '#000'
   };
 
+  const totalTomorrowQuests = routineQuests.length + plannedQuests.length;
+
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
@@ -232,6 +261,80 @@ export default function EndOfDaySummaryAndPlanning({
           </div>
         )}
 
+        {/* Tomorrow's Task Count Summary */}
+        {totalTomorrowQuests > 0 && (
+          <div 
+            className="mb-4 p-3"
+            style={{
+              backgroundColor: '#FFE66D',
+              border: '4px solid #000',
+              boxShadow: '4px 4px 0px #000'
+            }}
+          >
+            <p className="font-black text-center">
+              📋 明日委托总数：{totalTomorrowQuests} 项
+              {routineQuests.length > 0 && (
+                <span className="text-sm font-bold ml-2" style={{ color: '#666' }}>
+                  （{routineQuests.length}项每日修炼 + {plannedQuests.length}项临时任务）
+                </span>
+              )}
+            </p>
+          </div>
+        )}
+
+        {/* Routine Quests Display (Read-only) */}
+        {routineQuests.length > 0 && (
+          <div 
+            className="mb-4 p-4"
+            style={{
+              backgroundColor: '#FFF',
+              border: '4px solid #000'
+            }}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <Repeat className="w-5 h-5" strokeWidth={3} />
+              <h3 className="font-black uppercase text-sm">每日修炼（自动出现）</h3>
+            </div>
+            
+            <div className="space-y-2">
+              {routineQuests.map((quest, i) => (
+                <div 
+                  key={i}
+                  className="p-3 opacity-80"
+                  style={{
+                    backgroundColor: '#F0F0F0',
+                    border: '3px solid #999'
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span 
+                      className="px-2 py-1 text-xs font-black"
+                      style={{
+                        backgroundColor: difficultyColors[quest.difficulty],
+                        color: quest.difficulty === 'S' ? '#FFE66D' : '#000',
+                        border: '2px solid #000'
+                      }}
+                    >
+                      {quest.difficulty}
+                    </span>
+                    <div className="flex-1">
+                      <p className="font-black text-sm">{quest.title}</p>
+                      <p className="text-xs font-bold text-gray-600">
+                        ({quest.actionHint})
+                      </p>
+                    </div>
+                    <Repeat className="w-4 h-4 text-gray-500" strokeWidth={3} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs font-bold mt-2 text-center" style={{ color: '#666' }}>
+              💡 这些任务每天自动出现，无需单独规划
+            </p>
+          </div>
+        )}
+
+        {/* Plan New Quests */}
         <div 
           className="mb-4 p-4"
           style={{
@@ -239,7 +342,7 @@ export default function EndOfDaySummaryAndPlanning({
             border: '4px solid #000'
           }}
         >
-          <h3 className="font-black uppercase mb-3">为明日做好准备</h3>
+          <h3 className="font-black uppercase mb-3">规划明日临时任务</h3>
           
           <div className="flex gap-3 mb-4">
             <input
@@ -398,7 +501,7 @@ export default function EndOfDaySummaryAndPlanning({
           }}
         >
           {plannedQuests.length > 0 
-            ? `确认登记 ${plannedQuests.length} 项委托` 
+            ? `确认登记 ${plannedQuests.length} 项临时委托` 
             : '关闭'}
         </button>
       </div>

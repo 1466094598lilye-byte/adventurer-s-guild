@@ -800,7 +800,7 @@ export default function QuestBoard() {
           </div>
         )}
 
-        {/* Text Input + Long Term Button */}
+        {/* Text Input + Buttons - Mobile Optimized */}
         <div 
           className="p-4 mb-6"
           style={{
@@ -809,7 +809,8 @@ export default function QuestBoard() {
             boxShadow: '6px 6px 0px #000'
           }}
         >
-          <div className="flex gap-3">
+          {/* Input and AI Button */}
+          <div className="flex gap-3 mb-3">
             <input
               type="text"
               placeholder="输入今日任务，如：跑步5km"
@@ -846,22 +847,25 @@ export default function QuestBoard() {
                 <Sparkles className="w-8 h-8" strokeWidth={3} style={{ color: '#FFF', fill: 'none' }} />
               )}
             </button>
-
-            <button
-              onClick={() => setShowLongTermDialog(true)}
-              className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
-              style={{
-                backgroundColor: '#9B59B6',
-                border: '4px solid #000',
-                boxShadow: '5px 5px 0px #000'
-              }}
-            >
-              <Briefcase className="w-8 h-8" strokeWidth={3} style={{ color: '#FFF' }} />
-            </button>
           </div>
+
+          {/* Long Term Project Button - Full Width */}
+          <button
+            onClick={() => setShowLongTermDialog(true)}
+            className="w-full py-3 font-black uppercase text-sm flex items-center justify-center gap-2"
+            style={{
+              backgroundColor: '#9B59B6',
+              color: '#FFF',
+              border: '4px solid #000',
+              boxShadow: '5px 5px 0px #000'
+            }}
+          >
+            <Briefcase className="w-5 h-5" strokeWidth={3} />
+            大项目规划
+          </button>
           
           <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
-            💡 右侧按钮用于粘贴长期计划，冒险者工会将自动分配到每日委托板
+            💡 用于粘贴长期计划，冒险者工会将自动分配到每日委托板
           </p>
 
           {/* Pending Quests Preview */}

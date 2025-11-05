@@ -109,7 +109,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       if (selectedDate) {
         const updatedQuests = getQuestsForDate(selectedDate);
         setSelectedDateQuests(updatedQuests);
-        if (updatedQuests.length === 0) {
+        if (updatedQuquests.length === 0) {
           setShowDateDetail(false);
         }
       }
@@ -305,14 +305,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                   return (
                     <button
                       key={index}
-                      onClick={() => {
-                        console.log(`点击日期: ${dateStr}, 有任务: ${hasQuests}, 任务数: ${quests.length}`);
-                        if (hasQuests) {
-                          handleDateClick(day);
-                        } else {
-                          console.log('该日期没有任务，不触发弹窗');
-                        }
-                      }}
+                      onClick={() => hasQuests && handleDateClick(day)}
                       disabled={!hasQuests}
                       className="relative flex flex-col items-center justify-center p-2 transition-all"
                       style={{

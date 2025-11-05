@@ -9,6 +9,7 @@ import ChestOpening from '../components/treasure/ChestOpening';
 import QuestEditFormModal from '../components/quest/QuestEditFormModal';
 import EndOfDaySummaryAndPlanning from '../components/quest/EndOfDaySummaryAndPlanning';
 import LongTermProjectDialog from '../components/quest/LongTermProjectDialog';
+import LongTermCalendar from '../components/quest/LongTermCalendar'; // New Import
 import { format, subDays } from 'date-fns';
 
 export default function QuestBoard() {
@@ -26,6 +27,7 @@ export default function QuestBoard() {
   const [showPlanningDialog, setShowPlanningDialog] = useState(false);
   const [showCelebrationInPlanning, setShowCelebrationInPlanning] = useState(false);
   const [showLongTermDialog, setShowLongTermDialog] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false); // New State
   const queryClient = useQueryClient();
 
   const hasProcessedDayRollover = useRef(false);
@@ -724,6 +726,10 @@ export default function QuestBoard() {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const handleCalendarUpdate = () => { // New handler
+    queryClient.invalidateQueries(['quests']);
+  };
+
   const filteredQuests = quests.filter(quest => {
     if (filter === 'all') return true;
     if (filter === 'done') return quest.status === 'done';
@@ -742,6 +748,9 @@ export default function QuestBoard() {
     A: '#C44569',
     S: '#000'
   };
+
+  // Check if there are any long-term project quests
+  const hasLongTermQuests = quests.some(q => q.isLongTermProject); // New derived state
 
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
@@ -970,6 +979,29 @@ export default function QuestBoard() {
           )}
         </div>
 
+        {/* Long-Term Calendar Entry - Only show if has long-term quests */}
+        {hasLongTermQuests && (
+          <div 
+            className="mb-6 p-4"
+            style={{
+              backgroundColor: '#9B59B6',
+              border: '4px solid #000',
+              boxShadow: '6px 6px 0px #000'
+            }}
+          >
+            <button
+              onClick={() => setShowCalendar(true)}
+              className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3 text-white"
+            >
+              <Calendar className="w-6 h-6" strokeWidth={3} />
+              限时活动日程表！
+            </button>
+            <p className="text-center text-xs font-bold mt-2 text-white">
+              点击查看所有大项目任务的时间安排
+            </p>
+          </div>
+        )}
+
         {/* Next Day Planned Quests Display + Planning Button */}
         {(nextDayPlannedCount > 0 || canShowPlanningButton) && (
           <div 
@@ -1123,6 +1155,13 @@ export default function QuestBoard() {
           <LongTermProjectDialog
             onClose={() => setShowLongTermDialog(false)}
             onQuestsCreated={handleLongTermQuestsCreated}
+          />
+        )}
+
+        {showCalendar && ( // New component
+          <LongTermCalendar
+            onClose={() => setShowCalendar(false)}
+            onQuestsUpdated={handleCalendarUpdate}
           />
         )}
 

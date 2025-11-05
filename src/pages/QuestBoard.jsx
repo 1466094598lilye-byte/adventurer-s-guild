@@ -659,10 +659,13 @@ export default function QuestBoard() {
   };
 
   const handleToggleRestDay = async () => {
-    // 只检查非每日修炼任务
+    // Only check non-routine tasks
     const nonRoutineQuests = quests.filter(q => !q.isRoutine);
     
-    if (nonRoutineQuests.length > 0) {
+    // This condition should ideally be handled before showing the dialog, but double-checking here.
+    // However, the new `canSetRestDay` will prevent the button from being active,
+    // so this check becomes redundant for activating rest day, but still valid for safety.
+    if (nonRoutineQuests.length > 0 && !isRestDay) {
       alert('今日已有临时任务，无法设置为休息日。请先完成或删除它们。');
       return;
     }
@@ -736,6 +739,10 @@ export default function QuestBoard() {
   const nextDayPlannedCount = (user?.nextDayPlannedQuests || []).length;
   // Show planning button if it's 9 PM (21:00) or later AND planning hasn't been done for today yet
   const canShowPlanningButton = currentHour >= 21 && user?.lastPlannedDate !== today;
+
+  // 检查是否有非每日修炼任务
+  const nonRoutineQuests = quests.filter(q => !q.isRoutine);
+  const canSetRestDay = nonRoutineQuests.length === 0;
 
   const difficultyColors = {
     C: '#FFE66D',
@@ -965,7 +972,7 @@ export default function QuestBoard() {
                 }}
               >
                 <Check className="w-5 h-5" strokeWidth={3} />
-                确认接取 {pendingQuests.length} 项委托
+                确认接取 ${pendingQuests.length} 项委托
               </button>
             </div>
           )}
@@ -985,7 +992,7 @@ export default function QuestBoard() {
               <div className="flex items-center justify-center gap-2 mb-3">
                 <Calendar className="w-5 h-5 text-white" strokeWidth={3} />
                 <p className="font-black uppercase text-white">
-                  工会已登记明日 {nextDayPlannedCount} 项委托
+                  工会已登记明日 ${nextDayPlannedCount} 项委托
                 </p>
               </div>
             )}
@@ -1060,19 +1067,24 @@ export default function QuestBoard() {
         <div className="mt-6">
           <button
             onClick={() => setShowRestDayDialog(true)}
-            disabled={quests.length > 0 && !isRestDay} // This condition also needs to be updated to nonRoutineQuests for consistency in disabling
+            disabled={!canSetRestDay && !isRestDay}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
             style={{
               backgroundColor: isRestDay ? '#FF6B35' : '#4ECDC4',
               color: isRestDay ? '#FFF' : '#000',
               border: '4px solid #000',
               boxShadow: '6px 6px 0px #000',
-              opacity: (quests.filter(q => !q.isRoutine).length > 0 && !isRestDay) ? 0.5 : 1
+              opacity: (!canSetRestDay && !isRestDay) ? 0.5 : 1
             }}
           >
             <Coffee className="w-6 h-6" strokeWidth={3} />
             {isRestDay ? '取消工会休息日' : '设为工会休息日'}
           </button>
+          {!canSetRestDay && !isRestDay && (
+            <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
+              💡 今日有临时任务，无法设为休息日（每日修炼任务不影响）
+            </p>
+          )}
         </div>
 
         {selectedQuest && (

@@ -21,6 +21,13 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const loadLongTermQuests = async () => {
     try {
       const quests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
+      console.log('=== 日历加载的大项目任务 ===');
+      console.log('任务数量:', quests.length);
+      console.log('任务详情:', quests.map(q => ({ 
+        title: q.title, 
+        date: q.date,
+        actionHint: q.actionHint 
+      })));
       setLongTermQuests(quests);
     } catch (error) {
       console.error('加载大项目任务失败:', error);
@@ -190,6 +197,24 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
           </div>
         ) : (
           <>
+            {/* Debug Info - 临时添加，帮助调试 */}
+            <div 
+              className="mb-4 p-3"
+              style={{
+                backgroundColor: '#FF6B35',
+                border: '4px solid #000',
+                color: '#FFF'
+              }}
+            >
+              <p className="font-black text-sm mb-1">📊 调试信息：</p>
+              <p className="text-xs font-bold">
+                共加载 {longTermQuests.length} 个大项目任务
+              </p>
+              <p className="text-xs font-bold">
+                日期范围：{longTermQuests.map(q => q.date).join(', ')}
+              </p>
+            </div>
+
             {/* Month Navigation */}
             <div 
               className="mb-4 p-3 flex items-center justify-between"
@@ -247,10 +272,16 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
               {/* Calendar Days */}
               <div className="grid grid-cols-7 gap-2">
                 {days.map((day, index) => {
+                  const dateStr = format(day, 'yyyy-MM-dd');
                   const quests = getQuestsForDate(day);
                   const hasQuests = quests.length > 0;
                   const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
                   const isToday = isSameDay(day, new Date());
+
+                  // 调试日志
+                  if (hasQuests) {
+                    console.log(`日期 ${dateStr} 有 ${quests.length} 个任务:`, quests.map(q => q.title));
+                  }
 
                   return (
                     <button
@@ -270,27 +301,28 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                         {format(day, 'd')}
                       </span>
                       {hasQuests && (
-                        <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-0.5">
-                          {quests.slice(0, 3).map((_, i) => (
-                            <div 
-                              key={i}
-                              className="w-1.5 h-1.5 rounded-full"
-                              style={{ backgroundColor: '#9B59B6' }}
-                            />
-                          ))}
-                        </div>
-                      )}
-                      {hasQuests && quests.length > 3 && (
-                        <span 
-                          className="absolute top-0 right-0 text-[10px] font-black px-1"
-                          style={{
-                            backgroundColor: '#9B59B6',
-                            color: '#FFF',
-                            borderRadius: '0 0 0 4px'
-                          }}
-                        >
-                          +{quests.length - 3}
-                        </span>
+                        <>
+                          <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-0.5">
+                            {quests.slice(0, 3).map((_, i) => (
+                              <div 
+                                key={i}
+                                className="w-2 h-2 rounded-full"
+                                style={{ backgroundColor: '#9B59B6' }}
+                              />
+                            ))}
+                          </div>
+                          <span 
+                            className="absolute top-0 right-0 text-[9px] font-black px-1 leading-none"
+                            style={{
+                              backgroundColor: '#9B59B6',
+                              color: '#FFF',
+                              borderRadius: '0 0 0 4px',
+                              padding: '2px 4px'
+                            }}
+                          >
+                            {quests.length}
+                          </span>
+                        </>
                       )}
                     </button>
                   );

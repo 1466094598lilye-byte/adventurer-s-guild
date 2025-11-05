@@ -1,19 +1,16 @@
-
 import { useState, useEffect } from 'react';
-import { X, Calendar as CalendarIcon, Plus, Trash2, Edit2, AlertTriangle } from 'lucide-react';
+import { X, Calendar as CalendarIcon, Trash2, Edit2, AlertTriangle, ChevronRight } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
+import { format, parseISO, isSameDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
 export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const [longTermQuests, setLongTermQuests] = useState([]);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedDateQuests, setSelectedDateQuests] = useState([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDateDetail, setShowDateDetail] = useState(false);
   const [editingQuest, setEditingQuest] = useState(null);
-  const [isInitialized, setIsInitialized] = useState(false); // Added state
 
   useEffect(() => {
     loadLongTermQuests();
@@ -22,69 +19,28 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const loadLongTermQuests = async () => {
     try {
       const quests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-      console.log('=== 日历加载的大项目任务 ===');
-      console.log('任务数量:', quests.length);
-      console.log('任务详情:', quests.map(q => ({ 
-        id: q.id,
-        title: q.title, 
-        date: q.date,
-        actionHint: q.actionHint 
-      })));
-      
       setLongTermQuests(quests);
-      
-      // 自动定位到第一个有任务的月份
-      if (quests.length > 0 && !isInitialized) {
-        const dates = quests.map(q => parseISO(q.date));
-        const earliestDate = new Date(Math.min(...dates));
-        console.log('自动定位到最早任务的月份:', format(earliestDate, 'yyyy年MM月'));
-        setCurrentMonth(earliestDate);
-        setIsInitialized(true);
-      }
     } catch (error) {
       console.error('加载大项目任务失败:', error);
     }
   };
 
-  // 计算日历覆盖的日期范围
-  const getCalendarRange = () => {
-    if (longTermQuests.length === 0) {
-      const start = startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 1 });
-      const end = endOfWeek(endOfMonth(currentMonth), { weekStartsOn: 1 });
-      return { start, end, minDate: null, maxDate: null };
+  // 按日期分组任务
+  const groupedByDate = longTermQuests.reduce((acc, quest) => {
+    if (!acc[quest.date]) {
+      acc[quest.date] = [];
     }
+    acc[quest.date].push(quest);
+    return acc;
+  }, {});
 
-    const dates = longTermQuests.map(q => parseISO(q.date));
-    const minDate = new Date(Math.min(...dates));
-    const maxDate = new Date(Math.max(...dates));
+  // 获取排序后的日期列表
+  const sortedDates = Object.keys(groupedByDate).sort();
 
-    const start = startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 1 });
-    const end = endOfWeek(endOfMonth(currentMonth), { weekStartsOn: 1 });
-
-    return { start, end, minDate, maxDate };
-  };
-
-  const { start, end, minDate, maxDate } = getCalendarRange();
-  const days = eachDayOfInterval({ start, end });
-
-  // 获取特定日期的任务
-  const getQuestsForDate = (date) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    const matchedQuests = longTermQuests.filter(q => {
-      // console.log(`比较: ${q.date} === ${dateStr}`, q.date === dateStr); // Commented out for less console noise
-      return q.date === dateStr;
-    });
-    // console.log(`日期 ${dateStr} 匹配到 ${matchedQuests.length} 个任务`); // Commented out for less console noise
-    return matchedQuests;
-  };
-
-  const handleDateClick = (date) => {
-    const quests = getQuestsForDate(date);
-    if (quests.length > 0) {
-      setSelectedDate(date);
-      setSelectedDateQuests(quests);
-      setShowDateDetail(true);
-    }
+  const handleDateClick = (date, quests) => {
+    setSelectedDate(parseISO(date));
+    setSelectedDateQuests(quests);
+    setShowDateDetail(true);
   };
 
   const handleDeleteAllProjects = async () => {
@@ -92,7 +48,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       for (const quest of longTermQuests) {
         await base44.entities.Quest.delete(quest.id);
       }
-      onQuestsUpdated(); // This will refresh the main quest list AND hasAnyLongTermQuests
+      onQuestsUpdated();
       onClose();
     } catch (error) {
       console.error('删除失败:', error);
@@ -105,16 +61,16 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       await base44.entities.Quest.delete(questId);
       await loadLongTermQuests();
       
-      // 更新选中日期的任务列表
       if (selectedDate) {
-        const updatedQuests = getQuestsForDate(selectedDate);
+        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+        const updatedQuests = groupedByDate[dateStr] || [];
         setSelectedDateQuests(updatedQuests);
-        if (updatedQuests.length === 0) { // Fix: updatedQuquests should be updatedQuests
+        if (updatedQuests.length === 0) {
           setShowDateDetail(false);
         }
       }
       
-      onQuestsUpdated(); // Important: refresh both quest list and hasAnyLongTermQuests query
+      onQuestsUpdated();
     } catch (error) {
       console.error('删除任务失败:', error);
       alert('删除失败，请重试');
@@ -140,9 +96,9 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
 
       await loadLongTermQuests();
       
-      // 更新选中日期的任务列表
       if (selectedDate) {
-        const updatedQuests = getQuestsForDate(selectedDate);
+        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+        const updatedQuests = groupedByDate[dateStr] || [];
         setSelectedDateQuests(updatedQuests);
       }
       
@@ -154,7 +110,11 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
     }
   };
 
-  const weekDays = ['一', '二', '三', '四', '五', '六', '日'];
+  const getDateStatus = (quests) => {
+    const total = quests.length;
+    const done = quests.filter(q => q.status === 'done').length;
+    return { total, done, allDone: done === total };
+  };
 
   return (
     <div 
@@ -163,7 +123,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       onClick={onClose}
     >
       <div 
-        className="relative max-w-4xl w-full my-8 p-6"
+        className="relative max-w-2xl w-full my-8 p-6"
         style={{
           backgroundColor: '#9B59B6',
           border: '5px solid #000',
@@ -187,14 +147,11 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         {/* Header */}
         <div className="text-center mb-6">
           <h2 className="text-3xl font-black uppercase text-white mb-2">
-            📅 限时活动日程表 📅
+            📅 限时活动日程 📅
           </h2>
-          {longTermQuests.length > 0 && (
-            <p className="font-bold text-white text-sm">
-              共 {longTermQuests.length} 项史诗委托
-              {minDate && maxDate && ` · ${format(minDate, 'MM月dd日')} - ${format(maxDate, 'MM月dd日')}`}
-            </p>
-          )}
+          <p className="font-bold text-white text-sm">
+            共 {longTermQuests.length} 项史诗委托
+          </p>
         </div>
 
         {longTermQuests.length === 0 ? (
@@ -214,118 +171,95 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
           </div>
         ) : (
           <>
-            {/* Month Navigation */}
+            {/* Timeline List */}
             <div 
-              className="mb-4 p-3 flex items-center justify-between"
-              style={{
-                backgroundColor: '#FFE66D',
-                border: '4px solid #000'
-              }}
-            >
-              <button
-                onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                className="px-4 py-2 font-black"
-                style={{
-                  backgroundColor: '#FFF',
-                  border: '3px solid #000',
-                  boxShadow: '3px 3px 0px #000'
-                }}
-              >
-                ◀
-              </button>
-              
-              <h3 className="font-black text-xl">
-                {format(currentMonth, 'yyyy年MM月')}
-              </h3>
-
-              <button
-                onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                className="px-4 py-2 font-black"
-                style={{
-                  backgroundColor: '#FFF',
-                  border: '3px solid #000',
-                  boxShadow: '3px 3px 0px #000'
-                }}
-              >
-                ▶
-              </button>
-            </div>
-
-            {/* Calendar Grid */}
-            <div 
-              className="mb-4 p-4"
+              className="mb-4 max-h-[500px] overflow-y-auto"
               style={{
                 backgroundColor: '#FFF',
                 border: '4px solid #000'
               }}
             >
-              {/* Week Days Header */}
-              <div className="grid grid-cols-7 gap-2 mb-2">
-                {weekDays.map(day => (
-                  <div key={day} className="text-center font-black text-sm py-2">
-                    {day}
-                  </div>
-                ))}
-              </div>
-
-              {/* Calendar Days */}
-              <div className="grid grid-cols-7 gap-2">
-                {days.map((day, index) => {
-                  const dateStr = format(day, 'yyyy-MM-dd');
-                  const quests = getQuestsForDate(day);
-                  const hasQuests = quests.length > 0;
-                  const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
-                  const isToday = isSameDay(day, new Date());
-
-                  return (
-                    <button
-                      key={index}
-                      onClick={() => hasQuests && handleDateClick(day)}
-                      disabled={!hasQuests}
-                      className="relative flex flex-col items-center justify-center p-2 transition-all"
-                      style={{
-                        minHeight: '60px',
-                        backgroundColor: isToday ? '#4ECDC4' : hasQuests ? '#FFE66D' : '#F0F0F0',
-                        border: hasQuests ? '4px solid #000' : '2px solid #CCC',
-                        boxShadow: hasQuests ? '4px 4px 0px #000' : 'none',
-                        opacity: isCurrentMonth ? 1 : 0.3,
-                        cursor: hasQuests ? 'pointer' : 'default',
-                        fontWeight: 'bold'
-                      }}
-                    >
-                      <span className="font-black text-base mb-1">
-                        {format(day, 'd')}
-                      </span>
-                      
-                      {hasQuests && (
-                        <div className="mt-auto w-full">
-                          {/* 大大的紫色块状标记 */}
+              {sortedDates.map((date, index) => {
+                const quests = groupedByDate[date];
+                const status = getDateStatus(quests);
+                const isToday = isSameDay(parseISO(date), new Date());
+                
+                return (
+                  <button
+                    key={date}
+                    onClick={() => handleDateClick(date, quests)}
+                    className="w-full p-4 text-left transition-all hover:bg-gray-50"
+                    style={{
+                      borderBottom: index < sortedDates.length - 1 ? '3px solid #000' : 'none'
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CalendarIcon className="w-5 h-5 flex-shrink-0" strokeWidth={3} />
+                          <span className="font-black text-lg">
+                            {format(parseISO(date), 'MM月dd日')}
+                          </span>
+                          {isToday && (
+                            <span 
+                              className="px-2 py-0.5 text-xs font-black"
+                              style={{
+                                backgroundColor: '#4ECDC4',
+                                border: '2px solid #000',
+                                borderRadius: '4px'
+                              }}
+                            >
+                              今天
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
                           <div 
-                            className="w-full h-1 mb-1"
-                            style={{ 
-                              backgroundColor: '#9B59B6',
-                              border: '1px solid #000'
-                            }}
-                          />
-                          {/* 任务数量 */}
-                          <div 
-                            className="text-xs font-black px-1 py-0.5 mx-auto"
+                            className="px-3 py-1 font-black text-sm"
                             style={{
-                              backgroundColor: '#9B59B6',
-                              color: '#FFF',
+                              backgroundColor: status.allDone ? '#4ECDC4' : '#FFE66D',
                               border: '2px solid #000',
-                              borderRadius: '4px',
-                              display: 'inline-block'
+                              borderRadius: '4px'
                             }}
                           >
-                            {quests.length}项
+                            {status.done}/{status.total} 项
                           </div>
+                          
+                          {status.allDone && (
+                            <span className="text-sm font-bold" style={{ color: '#4ECDC4' }}>
+                              ✓ 已完成
+                            </span>
+                          )}
                         </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+                        
+                        {/* Quest Titles Preview */}
+                        <div className="mt-2 space-y-1">
+                          {quests.slice(0, 2).map((quest, i) => (
+                            <p 
+                              key={i}
+                              className="text-sm font-bold truncate"
+                              style={{ 
+                                color: quest.status === 'done' ? '#999' : '#666',
+                                textDecoration: quest.status === 'done' ? 'line-through' : 'none'
+                              }}
+                            >
+                              • {quest.title}
+                            </p>
+                          ))}
+                          {quests.length > 2 && (
+                            <p className="text-xs font-bold" style={{ color: '#999' }}>
+                              还有 {quests.length - 2} 项...
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <ChevronRight className="w-6 h-6 flex-shrink-0" strokeWidth={3} />
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Delete All Button */}
@@ -356,7 +290,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
             }}
           >
             <div 
-              className="relative max-w-2xl w-full p-6"
+              className="relative max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto"
               style={{
                 backgroundColor: '#4ECDC4',
                 border: '5px solid #000',

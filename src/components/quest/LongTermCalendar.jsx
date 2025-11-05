@@ -13,6 +13,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDateDetail, setShowDateDetail] = useState(false);
   const [editingQuest, setEditingQuest] = useState(null);
+  const [isInitialized, setIsInitialized] = useState(false); // Added state
 
   useEffect(() => {
     loadLongTermQuests();
@@ -29,7 +30,17 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         date: q.date,
         actionHint: q.actionHint 
       })));
+      
       setLongTermQuests(quests);
+      
+      // 自动定位到第一个有任务的月份
+      if (quests.length > 0 && !isInitialized) {
+        const dates = quests.map(q => parseISO(q.date));
+        const earliestDate = new Date(Math.min(...dates));
+        console.log('自动定位到最早任务的月份:', format(earliestDate, 'yyyy年MM月'));
+        setCurrentMonth(earliestDate);
+        setIsInitialized(true);
+      }
     } catch (error) {
       console.error('加载大项目任务失败:', error);
     }
@@ -60,10 +71,10 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const getQuestsForDate = (date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const matchedQuests = longTermQuests.filter(q => {
-      console.log(`比较: ${q.date} === ${dateStr}`, q.date === dateStr);
+      // console.log(`比较: ${q.date} === ${dateStr}`, q.date === dateStr); // Commented out for less console noise
       return q.date === dateStr;
     });
-    console.log(`日期 ${dateStr} 匹配到 ${matchedQuests.length} 个任务`);
+    // console.log(`日期 ${dateStr} 匹配到 ${matchedQuests.length} 个任务`); // Commented out for less console noise
     return matchedQuests;
   };
 

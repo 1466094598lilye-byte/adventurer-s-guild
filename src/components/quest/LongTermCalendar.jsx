@@ -24,6 +24,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       console.log('=== 日历加载的大项目任务 ===');
       console.log('任务数量:', quests.length);
       console.log('任务详情:', quests.map(q => ({ 
+        id: q.id,
         title: q.title, 
         date: q.date,
         actionHint: q.actionHint 
@@ -58,7 +59,12 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   // 获取特定日期的任务
   const getQuestsForDate = (date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return longTermQuests.filter(q => q.date === dateStr);
+    const matchedQuests = longTermQuests.filter(q => {
+      console.log(`比较: ${q.date} === ${dateStr}`, q.date === dateStr);
+      return q.date === dateStr;
+    });
+    console.log(`日期 ${dateStr} 匹配到 ${matchedQuests.length} 个任务`);
+    return matchedQuests;
   };
 
   const handleDateClick = (date) => {
@@ -197,21 +203,28 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
           </div>
         ) : (
           <>
-            {/* Debug Info - 临时添加，帮助调试 */}
+            {/* Debug Info - 增强版 */}
             <div 
-              className="mb-4 p-3"
+              className="mb-4 p-4"
               style={{
                 backgroundColor: '#FF6B35',
                 border: '4px solid #000',
                 color: '#FFF'
               }}
             >
-              <p className="font-black text-sm mb-1">📊 调试信息：</p>
-              <p className="text-xs font-bold">
-                共加载 {longTermQuests.length} 个大项目任务
-              </p>
-              <p className="text-xs font-bold">
-                日期范围：{longTermQuests.map(q => q.date).join(', ')}
+              <p className="font-black text-base mb-2">📊 调试信息：</p>
+              <div className="space-y-1 text-sm font-bold">
+                <p>✓ 共加载 {longTermQuests.length} 个大项目任务</p>
+                <p>✓ 当前查看月份：{format(currentMonth, 'yyyy年MM月')}</p>
+                <p className="text-xs">✓ 任务日期列表：</p>
+                <div className="pl-4 text-xs max-h-32 overflow-y-auto">
+                  {longTermQuests.map((q, i) => (
+                    <p key={i}>• {q.date} - {q.title}</p>
+                  ))}
+                </div>
+              </div>
+              <p className="text-xs mt-2 opacity-80">
+                💡 如果看不到标记，请检查浏览器控制台(F12)的日志
               </p>
             </div>
 
@@ -278,51 +291,57 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                   const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
                   const isToday = isSameDay(day, new Date());
 
-                  // 调试日志
-                  if (hasQuests) {
-                    console.log(`日期 ${dateStr} 有 ${quests.length} 个任务:`, quests.map(q => q.title));
-                  }
-
                   return (
                     <button
                       key={index}
-                      onClick={() => hasQuests && handleDateClick(day)}
+                      onClick={() => {
+                        console.log(`点击日期: ${dateStr}, 有任务: ${hasQuests}, 任务数: ${quests.length}`);
+                        if (hasQuests) {
+                          handleDateClick(day);
+                        } else {
+                          console.log('该日期没有任务，不触发弹窗');
+                        }
+                      }}
                       disabled={!hasQuests}
-                      className="aspect-square flex flex-col items-center justify-center p-1 relative"
+                      className="relative flex flex-col items-center justify-center p-2 transition-all"
                       style={{
+                        minHeight: '60px',
                         backgroundColor: isToday ? '#4ECDC4' : hasQuests ? '#FFE66D' : '#F0F0F0',
-                        border: hasQuests ? '3px solid #000' : '2px solid #CCC',
-                        boxShadow: hasQuests ? '3px 3px 0px #000' : 'none',
+                        border: hasQuests ? '4px solid #000' : '2px solid #CCC',
+                        boxShadow: hasQuests ? '4px 4px 0px #000' : 'none',
                         opacity: isCurrentMonth ? 1 : 0.3,
-                        cursor: hasQuests ? 'pointer' : 'default'
+                        cursor: hasQuests ? 'pointer' : 'default',
+                        fontWeight: 'bold'
                       }}
                     >
-                      <span className="font-black text-sm mb-1">
+                      <span className="font-black text-base mb-1">
                         {format(day, 'd')}
                       </span>
+                      
                       {hasQuests && (
-                        <>
-                          <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-0.5">
-                            {quests.slice(0, 3).map((_, i) => (
-                              <div 
-                                key={i}
-                                className="w-2 h-2 rounded-full"
-                                style={{ backgroundColor: '#9B59B6' }}
-                              />
-                            ))}
-                          </div>
-                          <span 
-                            className="absolute top-0 right-0 text-[9px] font-black px-1 leading-none"
+                        <div className="mt-auto w-full">
+                          {/* 大大的紫色块状标记 */}
+                          <div 
+                            className="w-full h-1 mb-1"
+                            style={{ 
+                              backgroundColor: '#9B59B6',
+                              border: '1px solid #000'
+                            }}
+                          />
+                          {/* 任务数量 */}
+                          <div 
+                            className="text-xs font-black px-1 py-0.5 mx-auto"
                             style={{
                               backgroundColor: '#9B59B6',
                               color: '#FFF',
-                              borderRadius: '0 0 0 4px',
-                              padding: '2px 4px'
+                              border: '2px solid #000',
+                              borderRadius: '4px',
+                              display: 'inline-block'
                             }}
                           >
-                            {quests.length}
-                          </span>
-                        </>
+                            {quests.length}项
+                          </div>
+                        </div>
                       )}
                     </button>
                   );

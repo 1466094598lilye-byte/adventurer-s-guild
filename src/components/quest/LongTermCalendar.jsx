@@ -62,7 +62,9 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       for (const quest of longTermQuests) {
         await base44.entities.Quest.delete(quest.id);
       }
-      onQuestsUpdated();
+      if (onQuestsUpdated) {
+        onQuestsUpdated();
+      }
       onClose();
     } catch (error) {
       console.error('删除失败:', error);
@@ -72,30 +74,35 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
 
   const handleDeleteQuest = async (questId) => {
     try {
+      // 删除任务
       await base44.entities.Quest.delete(questId);
-      const updatedQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-      setLongTermQuests(updatedQuests);
+      
+      // 重新加载任务列表
+      await loadLongTermQuests();
 
+      // 如果当前有打开的日期详情，更新它
       if (selectedDate) {
-        // Re-calculate groupedByDate after loadLongTermQuests, then update selectedDateQuests
-        const updatedGroupedByDate = updatedQuests.reduce((acc, quest) => {
-          if (!acc[quest.date]) {
-            acc[quest.date] = [];
-          }
-          acc[quest.date].push(quest);
-          return acc;
-        }, {});
-
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
-        const questsForSelectedDate = updatedGroupedByDate[dateStr] || [];
-        setSelectedDateQuests(questsForSelectedDate);
-        if (questsForSelectedDate.length === 0) {
+        
+        // 重新计算该日期的任务
+        const updatedQuestsForSelectedDate = await base44.entities.Quest.filter({ 
+          isLongTermProject: true, 
+          date: dateStr 
+        });
+        
+        setSelectedDateQuests(updatedQuestsForSelectedDate);
+        
+        // 如果该日期没有任务了，关闭详情并收起日期
+        if (updatedQuestsForSelectedDate.length === 0) {
           setShowDateDetail(false);
-          setExpandedDates(prev => prev.filter(d => d !== dateStr)); // Collapse date if all quests are deleted
+          setExpandedDates(prev => prev.filter(d => d !== dateStr));
         }
       }
 
-      onQuestsUpdated();
+      // 通知父组件更新（放在最后，避免中断流程）
+      if (onQuestsUpdated) {
+        onQuestsUpdated();
+      }
     } catch (error) {
       console.error('删除任务失败:', error);
       alert('删除失败，请重试');
@@ -138,7 +145,9 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       }
 
       setEditingQuest(null);
-      onQuestsUpdated();
+      if (onQuestsUpdated) {
+        onQuestsUpdated();
+      }
     } catch (error) {
       console.error('更新任务失败:', error);
       alert('更新失败，请重试');
@@ -208,7 +217,9 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       setNewTaskInput('');
       setAddingToDate(null);
 
-      onQuestsUpdated();
+      if (onQuestsUpdated) {
+        onQuestsUpdated();
+      }
     } catch (error) {
       console.error('添加任务失败:', error);
       alert('添加失败，请重试');

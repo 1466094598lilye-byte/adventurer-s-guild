@@ -48,6 +48,16 @@ export default function QuestBoard() {
     queryFn: () => base44.auth.me()
   });
 
+  // Check if there are ANY long-term project quests (not just today's)
+  const { data: hasAnyLongTermQuests = false } = useQuery({
+    queryKey: ['hasLongTermQuests'],
+    queryFn: async () => {
+      const longTermQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 1);
+      return longTermQuests.length > 0;
+    },
+    initialData: false, // Ensure it's false before data loads
+  });
+
   // 日更逻辑：未完成任务顺延 + 明日规划任务创建 + 每日修炼任务生成
   useEffect(() => {
     const handleDayRollover = async () => {
@@ -749,9 +759,6 @@ export default function QuestBoard() {
     S: '#000'
   };
 
-  // Check if there are any long-term project quests
-  const hasLongTermQuests = quests.some(q => q.isLongTermProject); // New derived state
-
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
       <div className="max-w-2xl mx-auto">
@@ -980,7 +987,7 @@ export default function QuestBoard() {
         </div>
 
         {/* Long-Term Calendar Entry - Only show if has long-term quests */}
-        {hasLongTermQuests && (
+        {hasAnyLongTermQuests && (
           <div 
             className="mb-6 p-4"
             style={{

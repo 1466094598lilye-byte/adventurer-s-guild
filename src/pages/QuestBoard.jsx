@@ -600,37 +600,44 @@ export default function QuestBoard() {
     setTimeout(() => setToast(null), 2000);
   };
 
-  const handleEditQuestSave = async ({ actionHint, dueDate, isRoutine, originalActionHint }) => {
+  const handleEditQuestSave = async ({ actionHint, isRoutine, originalActionHint }) => {
     try {
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
 
 **当前冒险者委托内容：** ${actionHint}
 
-请为这个任务生成RPG风格标题、难度和稀有度。
+请为这个任务生成RPG风格标题（只需要标题，不需要评级）。
 
-只返回标题、难度、稀有度。`,
+【标题生成规则】（必须100%严格遵守）：
+- 格式：【X X】+ Y Y Y Y Y Y Y （X=动作类型2个字，Y=描述正好7个字）
+- 动作类型：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
+- **7字描述是硬性限制！必须正好7个汉字，不能多也不能少！**
+- 描述要充满幻想色彩，把现实任务转化为史诗叙事
+- **绝对禁止使用"任务"二字！**
+
+只返回标题：`,
         response_json_schema: {
           type: "object",
           properties: {
-            title: { type: "string" },
-            difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
-            rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
+            title: { 
+              type: "string",
+              description: "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！"
+            }
           },
-          required: ["title", "difficulty", "rarity"]
+          required: ["title"]
         }
       });
 
       const updateData = {
         title: result.title,
         actionHint: actionHint,
-        difficulty: result.difficulty,
-        rarity: result.rarity,
-        tags: [], // Tags are not managed through this modal currently
-        dueDate: dueDate,
+        difficulty: editingQuest.difficulty, // 保持原有难度
+        rarity: editingQuest.rarity, // 保持原有稀有度
+        tags: editingQuest.tags || [],
         isRoutine: isRoutine,
         originalActionHint: isRoutine ? actionHint : null,
-        date: editingQuest.date // Preserve the current date of the quest
+        date: editingQuest.date
       };
 
       await updateQuestMutation.mutateAsync({

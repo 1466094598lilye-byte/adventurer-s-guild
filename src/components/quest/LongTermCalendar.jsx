@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { X, Calendar as CalendarIcon, Plus, Trash2, Edit2, AlertTriangle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -67,7 +68,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       for (const quest of longTermQuests) {
         await base44.entities.Quest.delete(quest.id);
       }
-      onQuestsUpdated();
+      onQuestsUpdated(); // This will refresh the main quest list AND hasAnyLongTermQuests
       onClose();
     } catch (error) {
       console.error('删除失败:', error);
@@ -89,7 +90,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         }
       }
       
-      onQuestsUpdated();
+      onQuestsUpdated(); // Important: refresh both quest list and hasAnyLongTermQuests query
     } catch (error) {
       console.error('删除任务失败:', error);
       alert('删除失败，请重试');
@@ -256,7 +257,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                       key={index}
                       onClick={() => hasQuests && handleDateClick(day)}
                       disabled={!hasQuests}
-                      className="aspect-square flex flex-col items-center justify-center p-2 relative"
+                      className="aspect-square flex flex-col items-center justify-center p-1 relative"
                       style={{
                         backgroundColor: isToday ? '#4ECDC4' : hasQuests ? '#FFE66D' : '#F0F0F0',
                         border: hasQuests ? '3px solid #000' : '2px solid #CCC',
@@ -265,11 +266,11 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                         cursor: hasQuests ? 'pointer' : 'default'
                       }}
                     >
-                      <span className="font-black text-sm">
+                      <span className="font-black text-sm mb-1">
                         {format(day, 'd')}
                       </span>
                       {hasQuests && (
-                        <div className="flex gap-1 mt-1">
+                        <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-0.5">
                           {quests.slice(0, 3).map((_, i) => (
                             <div 
                               key={i}
@@ -277,10 +278,19 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                               style={{ backgroundColor: '#9B59B6' }}
                             />
                           ))}
-                          {quests.length > 3 && (
-                            <span className="text-xs font-bold">+{quests.length - 3}</span>
-                          )}
                         </div>
+                      )}
+                      {hasQuests && quests.length > 3 && (
+                        <span 
+                          className="absolute top-0 right-0 text-[10px] font-black px-1"
+                          style={{
+                            backgroundColor: '#9B59B6',
+                            color: '#FFF',
+                            borderRadius: '0 0 0 4px'
+                          }}
+                        >
+                          +{quests.length - 3}
+                        </span>
                       )}
                     </button>
                   );

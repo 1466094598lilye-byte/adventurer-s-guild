@@ -737,7 +737,8 @@ export default function QuestBoard() {
   };
 
   const handleCalendarUpdate = () => { // New handler
-    queryClient.invalidateQueries(['quests']);
+    queryClient.invalidateQueries(['quests']); // Refresh main quest list
+    queryClient.invalidateQueries(['hasLongTermQuests']); // IMPORTANT: Also refresh this query
   };
 
   const filteredQuests = quests.filter(quest => {

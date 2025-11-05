@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Filter, Loader2, Sparkles, Coffee, Calendar, Briefcase, ChevronDown, ChevronUp, Check } from 'lucide-react';
@@ -28,6 +28,8 @@ export default function QuestBoard() {
   const [showLongTermDialog, setShowLongTermDialog] = useState(false);
   const queryClient = useQueryClient();
 
+  const hasProcessedDayRollover = useRef(false);
+
   const today = format(new Date(), 'yyyy-MM-dd');
   const currentHour = new Date().getHours();
 
@@ -48,6 +50,13 @@ export default function QuestBoard() {
   useEffect(() => {
     const handleDayRollover = async () => {
       if (!user) return;
+      
+      // 使用 ref 防止重复执行
+      const rolloverKey = `${today}-${user.id}`;
+      if (hasProcessedDayRollover.current === rolloverKey) {
+        return;
+      }
+      hasProcessedDayRollover.current = rolloverKey;
 
       try {
         // 1. 处理昨天未完成的任务（顺延到今天）
@@ -79,6 +88,13 @@ export default function QuestBoard() {
         if (nextDayPlanned.length > 0 && lastPlanned && lastPlanned < today) {
           console.log(`发现 ${nextDayPlanned.length} 项已规划任务，开始创建...`);
           
+          // 先清空用户的规划列表（防止重复创建）
+          await base44.auth.updateMe({
+            nextDayPlannedQuests: [],
+            lastPlannedDate: today
+          });
+          
+          // 然后创建任务
           for (const plannedQuest of nextDayPlanned) {
             await base44.entities.Quest.create({
               ...plannedQuest,
@@ -87,11 +103,6 @@ export default function QuestBoard() {
               source: 'ai'
             });
           }
-
-          await base44.auth.updateMe({
-            nextDayPlannedQuests: [],
-            lastPlannedDate: today // Mark today as planned, even if just by rolling over old plans
-          });
 
           queryClient.invalidateQueries(['quests']);
           queryClient.invalidateQueries(['user']);

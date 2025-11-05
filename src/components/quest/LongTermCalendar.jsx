@@ -74,38 +74,42 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
 
   const handleDeleteQuest = async (questId) => {
     try {
-      // 删除任务
+      // 先删除任务
       await base44.entities.Quest.delete(questId);
+      
+      // 稍微延迟一下再重新加载，确保删除操作完成
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       // 重新加载任务列表
       await loadLongTermQuests();
-
-      // 如果当前有打开的日期详情，更新它
+      
+      // 如果当前在详情页，也需要更新详情页的数据
       if (selectedDate) {
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
+        // 从最新的数据中筛选出该日期的任务
+        const allQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
+        const updatedQuestsForDate = allQuests.filter(q => q.date === dateStr);
         
-        // 重新计算该日期的任务
-        const updatedQuestsForSelectedDate = await base44.entities.Quest.filter({ 
-          isLongTermProject: true, 
-          date: dateStr 
-        });
+        setSelectedDateQuests(updatedQuestsForDate);
         
-        setSelectedDateQuests(updatedQuestsForSelectedDate);
-        
-        // 如果该日期没有任务了，关闭详情并收起日期
-        if (updatedQuestsForSelectedDate.length === 0) {
+        // 如果该日期没有任务了，关闭详情并收起
+        if (updatedQuestsForDate.length === 0) {
           setShowDateDetail(false);
           setExpandedDates(prev => prev.filter(d => d !== dateStr));
         }
       }
-
-      // 通知父组件更新（放在最后，避免中断流程）
+      
+      // 通知父组件更新
       if (onQuestsUpdated) {
         onQuestsUpdated();
       }
     } catch (error) {
-      console.error('删除任务失败:', error);
-      alert('删除失败，请重试');
+      console.error('删除任务时出错:', error);
+      // 不显示alert，而是尝试刷新数据
+      await loadLongTermQuests();
+      if (onQuestsUpdated) {
+        onQuestsUpdated();
+      }
     }
   };
 

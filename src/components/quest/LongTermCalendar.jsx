@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { X, Calendar as CalendarIcon, Trash2, Edit2, AlertTriangle, ChevronRight, ChevronDown } from 'lucide-react';
+import { X, Calendar as CalendarIcon, Trash2, Edit2, AlertTriangle, ChevronRight, ChevronDown, Plus } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -12,7 +12,11 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDateDetail, setShowDateDetail] = useState(false);
   const [editingQuest, setEditingQuest] = useState(null);
-  const [expandedDates, setExpandedDates] = useState([]); // New: track which dates are expanded
+  const [expandedDates, setExpandedDates] = useState([]);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addingToDate, setAddingToDate] = useState(null);
+  const [newTaskInput, setNewTaskInput] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     loadLongTermQuests();
@@ -69,11 +73,12 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const handleDeleteQuest = async (questId) => {
     try {
       await base44.entities.Quest.delete(questId);
-      await loadLongTermQuests();
+      const updatedQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
+      setLongTermQuests(updatedQuests);
 
       if (selectedDate) {
         // Re-calculate groupedByDate after loadLongTermQuests, then update selectedDateQuests
-        const updatedGroupedByDate = longTermQuests.reduce((acc, quest) => {
+        const updatedGroupedByDate = updatedQuests.reduce((acc, quest) => {
           if (!acc[quest.date]) {
             acc[quest.date] = [];
           }
@@ -82,9 +87,9 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         }, {});
 
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
-        const updatedQuests = updatedGroupedByDate[dateStr] || [];
-        setSelectedDateQuests(updatedQuests);
-        if (updatedQuests.length === 0) {
+        const questsForSelectedDate = updatedGroupedByDate[dateStr] || [];
+        setSelectedDateQuests(questsForSelectedDate);
+        if (questsForSelectedDate.length === 0) {
           setShowDateDetail(false);
           setExpandedDates(prev => prev.filter(d => d !== dateStr)); // Collapse date if all quests are deleted
         }
@@ -114,11 +119,12 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         actionHint: newActionHint
       });
 
-      await loadLongTermQuests();
+      const updatedQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
+      setLongTermQuests(updatedQuests);
 
       if (selectedDate) {
         // Re-calculate groupedByDate after loadLongTermQuests, then update selectedDateQuests
-        const updatedGroupedByDate = longTermQuests.reduce((acc, quest) => {
+        const updatedGroupedByDate = updatedQuests.reduce((acc, quest) => {
           if (!acc[quest.date]) {
             acc[quest.date] = [];
           }
@@ -127,8 +133,8 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         }, {});
 
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
-        const updatedQuests = updatedGroupedByDate[dateStr] || [];
-        setSelectedDateQuests(updatedQuests);
+        const questsForSelectedDate = updatedGroupedByDate[dateStr] || [];
+        setSelectedDateQuests(questsForSelectedDate);
       }
 
       setEditingQuest(null);
@@ -143,6 +149,71 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
     const total = quests.length;
     const done = quests.filter(q => q.status === 'done').length;
     return { total, done, allDone: done === total };
+  };
+
+  const handleAddTask = (date) => {
+    setAddingToDate(date);
+    setShowAddForm(true);
+  };
+
+  const handleSaveNewTask = async () => {
+    if (!newTaskInput.trim() || isProcessing) return;
+
+    setIsProcessing(true);
+    try {
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
+
+**冒险者添加的大项目任务：** ${newTaskInput.trim()}
+
+请为这个大项目任务生成RPG风格标题（只需要标题）。
+
+【标题生成规则】：
+- 格式：【2字类型】+ 7字幻想描述
+- 2字类型必须从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
+- 7字描述必须充满幻想色彩
+- **绝对禁止使用"任务"二字！**
+
+只返回标题：`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            title: { type: "string" }
+          },
+          required: ["title"]
+        }
+      });
+
+      await base44.entities.Quest.create({
+        title: result.title,
+        actionHint: newTaskInput.trim(),
+        date: addingToDate,
+        difficulty: 'S',
+        rarity: 'Epic',
+        status: 'todo',
+        source: 'longterm',
+        isLongTermProject: true,
+        tags: []
+      });
+
+      const updatedQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
+      setLongTermQuests(updatedQuests);
+
+      // 自动展开刚添加的日期
+      if (!expandedDates.includes(addingToDate)) {
+        setExpandedDates(prev => [...prev, addingToDate]);
+      }
+
+      setShowAddForm(false);
+      setNewTaskInput('');
+      setAddingToDate(null);
+
+      onQuestsUpdated();
+    } catch (error) {
+      console.error('添加任务失败:', error);
+      alert('添加失败，请重试');
+    }
+    setIsProcessing(false);
   };
 
   return (
@@ -355,6 +426,23 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                             </div>
                           </div>
                         ))}
+
+                        {/* Add Task Button for this date */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddTask(date);
+                          }}
+                          className="w-full py-2 font-bold uppercase text-sm flex items-center justify-center gap-2"
+                          style={{
+                            backgroundColor: '#4ECDC4',
+                            border: '3px solid #000',
+                            boxShadow: '3px 3px 0px #000'
+                          }}
+                        >
+                          <Plus className="w-4 h-4" strokeWidth={3} />
+                          添加任务到此日期
+                        </button>
                       </div>
                     )}
                   </div>
@@ -513,6 +601,112 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
             </div>
           </div>
         )}
+
+        {/* Add Task Form Modal */}
+        {showAddForm && (
+          <div
+            className="fixed inset-0 z-60 flex items-center justify-center p-4"
+            style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
+            onClick={() => {
+              setShowAddForm(false);
+              setNewTaskInput('');
+              setAddingToDate(null);
+            }}
+          >
+            <div
+              className="relative max-w-md w-full p-6"
+              style={{
+                backgroundColor: '#4ECDC4',
+                border: '5px solid #000',
+                boxShadow: '12px 12px 0px #000'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => {
+                  setShowAddForm(false);
+                  setNewTaskInput('');
+                  setAddingToDate(null);
+                }}
+                className="absolute -top-4 -right-4 w-12 h-12 flex items-center justify-center"
+                style={{
+                  backgroundColor: '#FF6B35',
+                  border: '4px solid #000',
+                  boxShadow: '5px 5px 0px #000'
+                }}
+              >
+                <X className="w-7 h-7" strokeWidth={4} />
+              </button>
+
+              <h3 className="text-2xl font-black uppercase text-center mb-4">
+                添加任务
+              </h3>
+
+              <div
+                className="mb-4 p-3"
+                style={{
+                  backgroundColor: '#FFE66D',
+                  border: '3px solid #000'
+                }}
+              >
+                <p className="font-bold text-sm">
+                  📅 日期：{format(parseISO(addingToDate), 'yyyy年MM月dd日')}
+                </p>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-black uppercase mb-2">
+                  任务内容
+                </label>
+                <textarea
+                  value={newTaskInput}
+                  onChange={(e) => setNewTaskInput(e.target.value)}
+                  placeholder="例如：完成项目方案设计"
+                  rows={3}
+                  className="w-full px-3 py-2 font-bold resize-none"
+                  style={{
+                    backgroundColor: '#FFF',
+                    border: '3px solid #000'
+                  }}
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setNewTaskInput('');
+                    setAddingToDate(null);
+                  }}
+                  disabled={isProcessing}
+                  className="flex-1 py-3 font-black uppercase"
+                  style={{
+                    backgroundColor: '#FFF',
+                    border: '4px solid #000',
+                    boxShadow: '4px 4px 0px #000',
+                    opacity: isProcessing ? 0.5 : 1
+                  }}
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleSaveNewTask}
+                  disabled={!newTaskInput.trim() || isProcessing}
+                  className="flex-1 py-3 font-black uppercase"
+                  style={{
+                    backgroundColor: '#FFE66D',
+                    border: '4px solid #000',
+                    boxShadow: '4px 4px 0px #000',
+                    opacity: (!newTaskInput.trim() || isProcessing) ? 0.5 : 1
+                  }}
+                >
+                  {isProcessing ? '添加中...' : '确认添加'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
 
         {/* Delete Confirmation Modal */}
         {showDeleteConfirm && (

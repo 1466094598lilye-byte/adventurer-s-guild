@@ -659,15 +659,17 @@ export default function QuestBoard() {
   };
 
   const handleToggleRestDay = async () => {
-    if (quests.length > 0) {
+    // This check is now redundant due to the new button disabled logic,
+    // but keeping it for a second layer of validation.
+    if (quests.length > 0 && !isRestDay) { // Only prevent if there are quests AND it's not already a rest day
       alert('今日已有任务，无法设置为休息日。请先完成或删除它们。');
       return;
     }
     
     const restDays = user?.restDays || [];
-    const isRestDay = restDays.includes(today);
+    const isRestDayCurrently = restDays.includes(today); // Use a new variable to avoid conflict with state or prop 'isRestDay'
     
-    if (isRestDay) {
+    if (isRestDayCurrently) {
       await base44.auth.updateMe({
         restDays: restDays.filter(d => d !== today)
       });
@@ -733,10 +735,6 @@ export default function QuestBoard() {
   const nextDayPlannedCount = (user?.nextDayPlannedQuests || []).length;
   // Show planning button if it's 9 PM (21:00) or later AND planning hasn't been done for today yet
   const canShowPlanningButton = currentHour >= 21 && user?.lastPlannedDate !== today;
-
-  // Now, 'canSetRestDay' should check all quests, not just non-routine ones,
-  // to be consistent with the updated handleToggleRestDay logic.
-  const canSetRestDay = quests.length === 0;
 
   const difficultyColors = {
     C: '#FFE66D',
@@ -1061,20 +1059,20 @@ export default function QuestBoard() {
         <div className="mt-6">
           <button
             onClick={() => setShowRestDayDialog(true)}
-            disabled={!canSetRestDay && !isRestDay}
+            disabled={quests.length > 0 && !isRestDay}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
             style={{
               backgroundColor: isRestDay ? '#FF6B35' : '#4ECDC4',
               color: isRestDay ? '#FFF' : '#000',
               border: '4px solid #000',
               boxShadow: '6px 6px 0px #000',
-              opacity: (!canSetRestDay && !isRestDay) ? 0.5 : 1
+              opacity: (quests.length > 0 && !isRestDay) ? 0.5 : 1
             }}
           >
             <Coffee className="w-6 h-6" strokeWidth={3} />
             {isRestDay ? '取消工会休息日' : '设为工会休息日'}
           </button>
-          {!canSetRestDay && !isRestDay && (
+          {quests.length > 0 && !isRestDay && (
             <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
               💡 今日有任务，无法设为休息日。
             </p>

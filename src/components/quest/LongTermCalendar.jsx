@@ -109,7 +109,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       if (selectedDate) {
         const updatedQuests = getQuestsForDate(selectedDate);
         setSelectedDateQuests(updatedQuests);
-        if (updatedQuquests.length === 0) {
+        if (updatedQuests.length === 0) { // Fix: updatedQuquests should be updatedQuests
           setShowDateDetail(false);
         }
       }
@@ -214,31 +214,6 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
           </div>
         ) : (
           <>
-            {/* Debug Info - 增强版 */}
-            <div 
-              className="mb-4 p-4"
-              style={{
-                backgroundColor: '#FF6B35',
-                border: '4px solid #000',
-                color: '#FFF'
-              }}
-            >
-              <p className="font-black text-base mb-2">📊 调试信息：</p>
-              <div className="space-y-1 text-sm font-bold">
-                <p>✓ 共加载 {longTermQuests.length} 个大项目任务</p>
-                <p>✓ 当前查看月份：{format(currentMonth, 'yyyy年MM月')}</p>
-                <p className="text-xs">✓ 任务日期列表：</p>
-                <div className="pl-4 text-xs max-h-32 overflow-y-auto">
-                  {longTermQuests.map((q, i) => (
-                    <p key={i}>• {q.date} - {q.title}</p>
-                  ))}
-                </div>
-              </div>
-              <p className="text-xs mt-2 opacity-80">
-                💡 如果看不到标记，请检查浏览器控制台(F12)的日志
-              </p>
-            </div>
-
             {/* Month Navigation */}
             <div 
               className="mb-4 p-3 flex items-center justify-between"

@@ -54,8 +54,11 @@ export default function QuestBoard() {
       // 使用 ref 防止重复执行
       const rolloverKey = `${today}-${user.id}`;
       if (hasProcessedDayRollover.current === rolloverKey) {
+        console.log('日更逻辑已执行过，跳过');
         return;
       }
+      
+      console.log('=== 开始执行日更逻辑 ===');
       hasProcessedDayRollover.current = rolloverKey;
 
       try {
@@ -111,37 +114,54 @@ export default function QuestBoard() {
         }
 
         // 3. 处理每日修炼任务（自动生成今日任务）
-        // 查询所有标记为每日修炼的任务（使用 isRoutine: true）
-        const allQuests = await base44.entities.Quest.filter({ isRoutine: true });
-        console.log(`找到 ${allQuests.length} 个每日修炼任务`);
+        console.log('=== 开始处理每日修炼任务 ===');
         
-        if (allQuests.length > 0) {
-          const todayQuests = await base44.entities.Quest.filter({ date: today });
-          
-          // 去重：找出所有不同的 originalActionHint
-          const uniqueRoutines = new Map();
-          allQuests.forEach(quest => {
-            if (quest.originalActionHint) {
-              uniqueRoutines.set(quest.originalActionHint, quest);
+        // 先查询今天是否已有任务（防止重复创建）
+        const todayQuests = await base44.entities.Quest.filter({ date: today });
+        console.log(`今天已有 ${todayQuests.length} 个任务`);
+        
+        // 查询所有标记为每日修炼的任务，只取最近的记录来识别有哪些每日修炼任务
+        const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
+        console.log(`数据库中找到 ${allRoutineQuests.length} 个标记为每日修炼的任务记录`);
+        
+        if (allRoutineQuests.length > 0) {
+          // 去重：按 originalActionHint 去重，只保留每个独特任务的最新一条记录
+          const uniqueRoutinesMap = new Map();
+          allRoutineQuests.forEach(quest => {
+            const key = quest.originalActionHint;
+            if (key) {
+              // 如果Map中还没有这个key，或者当前任务创建时间更晚，则更新
+              if (!uniqueRoutinesMap.has(key) || 
+                  new Date(quest.created_date) > new Date(uniqueRoutinesMap.get(key).created_date)) {
+                uniqueRoutinesMap.set(key, quest);
+              }
             }
           });
           
-          console.log(`找到 ${uniqueRoutines.size} 个不同的每日修炼任务`);
+          console.log(`去重后识别出 ${uniqueRoutinesMap.size} 个不同的每日修炼任务`);
           
-          for (const [actionHint, routineQuest] of uniqueRoutines) {
+          // 遍历每个独特的每日修炼任务
+          for (const [actionHint, templateQuest] of uniqueRoutinesMap) {
+            console.log(`检查每日修炼任务: ${actionHint}`);
+            
             // 检查今天是否已经有这个每日修炼任务
             const alreadyExists = todayQuests.some(
               q => q.isRoutine && q.originalActionHint === actionHint
             );
             
-            if (!alreadyExists) {
-              console.log(`为每日修炼任务生成今日版本: ${actionHint}`);
-              
+            if (alreadyExists) {
+              console.log(`今天已存在，跳过: ${actionHint}`);
+              continue;
+            }
+            
+            console.log(`今天还没有，开始生成: ${actionHint}`);
+            
+            try {
               // 用 LLM 重新生成 RPG 标题、难度和稀有度
               const result = await base44.integrations.Core.InvokeLLM({
                 prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
 
-**当前冒险者委托内容：** ${actionHint}
+**当前冒险者每日修炼内容：** ${actionHint}
 
 请为这个每日修炼任务生成**全新的**RPG风格标题、难度和稀有度。
 
@@ -175,11 +195,17 @@ export default function QuestBoard() {
                 originalActionHint: actionHint,
                 tags: []
               });
+              
+              console.log(`成功创建今日每日修炼任务: ${actionHint}`);
+            } catch (error) {
+              console.error(`生成每日修炼任务失败: ${actionHint}`, error);
             }
           }
           
           queryClient.invalidateQueries(['quests']);
         }
+        
+        console.log('=== 日更逻辑执行完成 ===');
       } catch (error) {
         console.error('日更处理失败:', error);
       }

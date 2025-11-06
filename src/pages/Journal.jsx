@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { TrendingUp } from 'lucide-react';
 import { format, subDays } from 'date-fns';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import StreakDisplay from '../components/profile/StreakDisplay';
 
 export default function Journal() {
@@ -66,6 +66,13 @@ export default function Journal() {
     return null;
   };
 
+  // Bar color based on completion rate
+  const getBarColor = (rate) => {
+    if (rate === 100) return '#4ECDC4';
+    if (rate >= 50) return '#FFE66D';
+    return '#FF6B35';
+  };
+
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
       <div className="max-w-2xl mx-auto">
@@ -112,7 +119,7 @@ export default function Journal() {
           ))}
         </div>
 
-        {/* Completion Rate Chart - Line Chart */}
+        {/* Completion Rate Chart */}
         <div 
           className="p-4 mb-4"
           style={{
@@ -130,29 +137,55 @@ export default function Journal() {
             <>
               <div className="bg-white p-3" style={{ border: '3px solid #000', height: '200px' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#000" />
-                    <XAxis 
-                      dataKey="date" 
-                      stroke="#000"
-                      style={{ fontSize: '12px', fontWeight: 'bold' }}
-                    />
-                    <YAxis 
-                      stroke="#000"
-                      domain={[0, 100]}
-                      ticks={[0, 25, 50, 75, 100]}
-                      style={{ fontSize: '12px', fontWeight: 'bold' }}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="rate" 
-                      stroke="#C44569" 
-                      strokeWidth={3}
-                      dot={{ fill: '#C44569', strokeWidth: 2, r: 4, stroke: '#000' }}
-                      activeDot={{ r: 6, strokeWidth: 3, stroke: '#000' }}
-                    />
-                  </LineChart>
+                  {period === 7 ? (
+                    // 7天用柱状图
+                    <BarChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#000" />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="#000"
+                        style={{ fontSize: '12px', fontWeight: 'bold' }}
+                      />
+                      <YAxis 
+                        stroke="#000"
+                        domain={[0, 100]}
+                        ticks={[0, 25, 50, 75, 100]}
+                        style={{ fontSize: '12px', fontWeight: 'bold' }}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Bar 
+                        dataKey="rate" 
+                        fill="#4ECDC4"
+                        stroke="#000"
+                        strokeWidth={2}
+                      />
+                    </BarChart>
+                  ) : (
+                    // 30天用折线图
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#000" />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="#000"
+                        style={{ fontSize: '12px', fontWeight: 'bold' }}
+                      />
+                      <YAxis 
+                        stroke="#000"
+                        domain={[0, 100]}
+                        ticks={[0, 25, 50, 75, 100]}
+                        style={{ fontSize: '12px', fontWeight: 'bold' }}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Line 
+                        type="monotone" 
+                        dataKey="rate" 
+                        stroke="#C44569" 
+                        strokeWidth={3}
+                        dot={{ fill: '#C44569', strokeWidth: 2, r: 4, stroke: '#000' }}
+                        activeDot={{ r: 6, strokeWidth: 3, stroke: '#000' }}
+                      />
+                    </LineChart>
+                  )}
                 </ResponsiveContainer>
               </div>
 

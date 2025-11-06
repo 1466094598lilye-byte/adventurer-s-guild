@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { TrendingUp } from 'lucide-react';
 import { format, subDays } from 'date-fns';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import StreakDisplay from '../components/profile/StreakDisplay';
 
 export default function Journal() {
@@ -43,6 +43,13 @@ export default function Journal() {
 
   const dateRange = generateDateRange(period);
 
+  // Bar color based on completion rate
+  const getBarColor = (rate) => {
+    if (rate === 100) return '#4ECDC4';
+    if (rate >= 50) return '#FFE66D';
+    return '#FF6B35';
+  };
+
   // Calculate streak data for chart - 使用完整的日期范围
   const chartData = dateRange.map(date => {
     const dayQuests = questsByDate[date] || []; // Handle cases where a date might not have any quests
@@ -54,7 +61,8 @@ export default function Journal() {
       date: format(new Date(date), 'MM/dd'),
       rate: rate,
       label: `${rate}%`,
-      hasData: total > 0  // 标记这一天是否有数据
+      hasData: total > 0,  // 标记这一天是否有数据
+      color: getBarColor(rate)  // 添加颜色属性
     };
   });
 
@@ -76,13 +84,6 @@ export default function Journal() {
       );
     }
     return null;
-  };
-
-  // Bar color based on completion rate
-  const getBarColor = (rate) => {
-    if (rate === 100) return '#4ECDC4';
-    if (rate >= 50) return '#FFE66D';
-    return '#FF6B35';
   };
 
   return (
@@ -167,10 +168,13 @@ export default function Journal() {
                       <Tooltip content={<CustomTooltip />} />
                       <Bar 
                         dataKey="rate" 
-                        fill="#4ECDC4"
                         stroke="#000"
                         strokeWidth={2}
-                      />
+                      >
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
                     </BarChart>
                   ) : (
                     // 30天用折线图

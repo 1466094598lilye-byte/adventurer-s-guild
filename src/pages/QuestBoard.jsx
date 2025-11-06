@@ -10,6 +10,7 @@ import QuestEditFormModal from '../components/quest/QuestEditFormModal';
 import EndOfDaySummaryAndPlanning from '../components/quest/EndOfDaySummaryAndPlanning';
 import LongTermProjectDialog from '../components/quest/LongTermProjectDialog';
 import LongTermCalendar from '../components/quest/LongTermCalendar'; // New Import
+import JointPraiseDialog from '../components/quest/JointPraiseDialog'; // New Import
 import { format, subDays } from 'date-fns';
 
 export default function QuestBoard() {
@@ -29,6 +30,8 @@ export default function QuestBoard() {
   const [showLongTermDialog, setShowLongTermDialog] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false); // New State
   const [isConfirmingPending, setIsConfirmingPending] = useState(false); // 新增：确认待办任务的 loading 状态
+  const [showJointPraise, setShowJointPraise] = useState(false); // New State
+  const [completedProject, setCompletedProject] = useState(null); // New State
   const queryClient = useQueryClient();
 
   const hasProcessedDayRollover = useRef(false);
@@ -451,6 +454,44 @@ export default function QuestBoard() {
 
       await queryClient.invalidateQueries(['quests']);
       console.log('查询缓存已刷新');
+
+      // 检查是否是大项目任务，如果是，检查该项目的所有任务是否都完成
+      if (quest.isLongTermProject && quest.longTermProjectId) {
+        setTimeout(async () => {
+          try {
+            const projectQuests = await base44.entities.Quest.filter({ 
+              longTermProjectId: quest.longTermProjectId 
+            });
+            
+            const allDone = projectQuests.every(q => q.status === 'done');
+            
+            if (allDone && projectQuests.length > 0) {
+              console.log('=== 大项目所有任务已完成 ===');
+              
+              // 获取项目信息
+              const project = await base44.entities.LongTermProject.filter({ 
+                id: quest.longTermProjectId 
+              });
+              
+              if (project.length > 0 && project[0].status === 'active') {
+                // 更新项目状态
+                await base44.entities.LongTermProject.update(project[0].id, {
+                  status: 'completed',
+                  completionDate: today
+                });
+                
+                // 显示联名表扬信
+                setCompletedProject(project[0]);
+                setTimeout(() => {
+                  setShowJointPraise(true);
+                }, 1000); // Small delay to allow other UI updates
+              }
+            }
+          } catch (error) {
+            console.error('检查大项目完成状态时出错:', error);
+          }
+        }, 500); // Delay for project check
+      }
       
       setTimeout(async () => {
         console.log('=== 开始检查是否全部完成 ===');
@@ -745,6 +786,7 @@ export default function QuestBoard() {
 
   const handleLongTermQuestsCreated = (count) => {
     queryClient.invalidateQueries(['quests']);
+    queryClient.invalidateQueries(['hasLongTermQuests']); // Also invalidate this when new long-term quests are created
     setToast(`已成功添加 ${count} 项大项目任务到委托板`);
     setTimeout(() => setToast(null), 3000);
   };
@@ -1194,10 +1236,20 @@ export default function QuestBoard() {
           />
         )}
 
-        {showCalendar && ( // New component
+        {showCalendar && (
           <LongTermCalendar
             onClose={() => setShowCalendar(false)}
             onQuestsUpdated={handleCalendarUpdate}
+          />
+        )}
+
+        {showJointPraise && completedProject && (
+          <JointPraiseDialog
+            project={completedProject}
+            onClose={() => {
+              setShowJointPraise(false);
+              setCompletedProject(null);
+            }}
           />
         )}
 

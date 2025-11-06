@@ -162,6 +162,15 @@ ${textInput.trim()}
 
     setIsCreating(true);
     try {
+      // 先创建大项目实体
+      const projectName = `大项目 - ${format(new Date(), 'yyyy年MM月dd日')}`;
+      const project = await base44.entities.LongTermProject.create({
+        projectName: projectName,
+        description: `包含 ${parsedQuests.length} 项任务`,
+        status: 'active'
+      });
+
+      // 然后创建所有任务，并关联到这个项目
       for (const quest of parsedQuests) {
         await base44.entities.Quest.create({
           title: quest.title,
@@ -172,6 +181,7 @@ ${textInput.trim()}
           status: 'todo',
           source: 'longterm',
           isLongTermProject: true,
+          longTermProjectId: project.id, // Link to the newly created project
           tags: []
         });
       }

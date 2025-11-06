@@ -28,6 +28,7 @@ export default function QuestBoard() {
   const [showCelebrationInPlanning, setShowCelebrationInPlanning] = useState(false);
   const [showLongTermDialog, setShowLongTermDialog] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false); // New State
+  const [isConfirmingPending, setIsConfirmingPending] = useState(false); // 新增：确认待办任务的 loading 状态
   const queryClient = useQueryClient();
 
   const hasProcessedDayRollover = useRef(false);
@@ -347,8 +348,9 @@ export default function QuestBoard() {
   };
 
   const handleConfirmPendingQuests = async () => {
-    if (pendingQuests.length === 0) return;
+    if (pendingQuests.length === 0 || isConfirmingPending) return;
     
+    setIsConfirmingPending(true);
     try {
       for (const quest of pendingQuests) {
         await createQuestMutation.mutateAsync({
@@ -371,6 +373,7 @@ export default function QuestBoard() {
       console.error('创建任务失败:', error);
       alert('创建任务失败，请重试');
     }
+    setIsConfirmingPending(false);
   };
 
   const checkAndAwardMilestone = async (newStreak) => {
@@ -977,15 +980,26 @@ export default function QuestBoard() {
 
               <button
                 onClick={handleConfirmPendingQuests}
+                disabled={isConfirmingPending}
                 className="w-full py-3 font-black uppercase text-sm flex items-center justify-center gap-2"
                 style={{
                   backgroundColor: '#4ECDC4',
                   border: '4px solid #000',
-                  boxShadow: '4px 4px 0px #000'
+                  boxShadow: '4px 4px 0px #000',
+                  opacity: isConfirmingPending ? 0.5 : 1
                 }}
               >
-                <Check className="w-5 h-5" strokeWidth={3} />
-                确认接取 ${pendingQuests.length} 项委托
+                {isConfirmingPending ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" strokeWidth={3} />
+                    正在添加...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-5 h-5" strokeWidth={3} />
+                    确认接取 {pendingQuests.length} 项委托
+                  </>
+                )}
               </button>
             </div>
           )}

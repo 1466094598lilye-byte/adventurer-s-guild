@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -18,7 +19,7 @@ export default function Journal() {
     queryKey: ['recentQuests', period],
     queryFn: async () => {
       const startDate = format(subDays(new Date(), period), 'yyyy-MM-dd');
-      const allQuests = await base44.entities.Quest.list('-date', 500);
+      const allQuests = await base44.entities.Quest.list('-created_date', 500); // Changed from '-date' to '-created_date'
       return allQuests.filter(q => q.date >= startDate);
     }
   });
@@ -30,11 +31,21 @@ export default function Journal() {
     return acc;
   }, {});
 
-  const dates = Object.keys(questsByDate).sort().reverse();
+  // 生成真正的过去N天的日期数组
+  const generateDateRange = (days) => {
+    const dates = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const date = subDays(new Date(), i);
+      dates.push(format(date, 'yyyy-MM-dd'));
+    }
+    return dates;
+  };
 
-  // Calculate streak data for chart
-  const chartData = dates.slice(0, period).reverse().map(date => {
-    const dayQuests = questsByDate[date];
+  const dateRange = generateDateRange(period);
+
+  // Calculate streak data for chart - 使用完整的日期范围
+  const chartData = dateRange.map(date => {
+    const dayQuests = questsByDate[date] || []; // Handle cases where a date might not have any quests
     const total = dayQuests.length;
     const completed = dayQuests.filter(q => q.status === 'done').length;
     const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -42,7 +53,8 @@ export default function Journal() {
     return {
       date: format(new Date(date), 'MM/dd'),
       rate: rate,
-      label: `${rate}%`
+      label: `${rate}%`,
+      hasData: total > 0  // 标记这一天是否有数据
     };
   });
 
@@ -238,7 +250,7 @@ export default function Journal() {
           )}
         </div>
 
-        {dates.length === 0 && (
+        {chartData.every(d => !d.hasData) && ( // Updated condition to check hasData property
           <div 
             className="p-8 text-center"
             style={{

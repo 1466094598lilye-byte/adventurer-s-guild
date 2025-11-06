@@ -1,9 +1,9 @@
-
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { TrendingUp } from 'lucide-react';
 import { format, subDays } from 'date-fns';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import StreakDisplay from '../components/profile/StreakDisplay';
 
 export default function Journal() {
@@ -32,18 +32,39 @@ export default function Journal() {
 
   const dates = Object.keys(questsByDate).sort().reverse();
 
-  // Calculate streak data
-  const streakData = dates.map(date => {
+  // Calculate streak data for chart
+  const chartData = dates.slice(0, period).reverse().map(date => {
     const dayQuests = questsByDate[date];
     const total = dayQuests.length;
     const completed = dayQuests.filter(q => q.status === 'done').length;
+    const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    
     return {
-      date,
-      total,
-      completed,
-      rate: total > 0 ? Math.round((completed / total) * 100) : 0
+      date: format(new Date(date), 'MM/dd'),
+      rate: rate,
+      label: `${rate}%`
     };
   });
+
+  // Custom tooltip for the chart
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div 
+          className="p-2"
+          style={{
+            backgroundColor: '#FFE66D',
+            border: '3px solid #000',
+            boxShadow: '4px 4px 0px #000'
+          }}
+        >
+          <p className="font-black text-sm">{payload[0].payload.date}</p>
+          <p className="font-bold text-sm">完成率: {payload[0].value}%</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
@@ -91,7 +112,7 @@ export default function Journal() {
           ))}
         </div>
 
-        {/* Completion Rate Chart */}
+        {/* Completion Rate Chart - Line Chart */}
         <div 
           className="p-4 mb-4"
           style={{
@@ -104,66 +125,84 @@ export default function Journal() {
             <TrendingUp className="w-5 h-5" strokeWidth={3} />
             <h3 className="font-black uppercase">完成率趋势</h3>
           </div>
-          <div className="flex items-end gap-2 h-40 mb-3">
-            {streakData.slice(0, period === 7 ? 7 : 30).reverse().map((day, i) => {
-              const heightPx = Math.max((day.rate / 100) * 160, 8);
-              return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <div 
-                    className="w-full"
-                    style={{
-                      height: `${heightPx}px`,
-                      backgroundColor: day.rate === 100 ? '#4ECDC4' : day.rate >= 50 ? '#FFE66D' : '#FF6B35',
-                      border: '2px solid #000'
-                    }}
-                  />
-                  <span className="text-xs font-bold">{day.rate}%</span>
+
+          {chartData.length > 0 ? (
+            <>
+              <div className="bg-white p-3" style={{ border: '3px solid #000', height: '200px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#000" />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="#000"
+                      style={{ fontSize: '12px', fontWeight: 'bold' }}
+                    />
+                    <YAxis 
+                      stroke="#000"
+                      domain={[0, 100]}
+                      ticks={[0, 25, 50, 75, 100]}
+                      style={{ fontSize: '12px', fontWeight: 'bold' }}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="rate" 
+                      stroke="#C44569" 
+                      strokeWidth={3}
+                      dot={{ fill: '#C44569', strokeWidth: 2, r: 4, stroke: '#000' }}
+                      activeDot={{ r: 6, strokeWidth: 3, stroke: '#000' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Legend */}
+              <div 
+                className="mt-3 p-3"
+                style={{
+                  backgroundColor: '#FFF',
+                  border: '3px solid #000'
+                }}
+              >
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-4 h-4 flex-shrink-0"
+                      style={{
+                        backgroundColor: '#4ECDC4',
+                        border: '2px solid #000'
+                      }}
+                    />
+                    <span className="font-bold">100% 完美</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-4 h-4 flex-shrink-0"
+                      style={{
+                        backgroundColor: '#FFE66D',
+                        border: '2px solid #000'
+                      }}
+                    />
+                    <span className="font-bold">50-99% 良好</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-4 h-4 flex-shrink-0"
+                      style={{
+                        backgroundColor: '#FF6B35',
+                        border: '2px solid #000'
+                      }}
+                    />
+                    <span className="font-bold">&lt;50% 待提升</span>
+                  </div>
                 </div>
-              );
-            })}
-          </div>
-          
-          {/* Legend */}
-          <div 
-            className="p-3"
-            style={{
-              backgroundColor: '#FFF',
-              border: '3px solid #000'
-            }}
-          >
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              <div className="flex items-center gap-2">
-                <div 
-                  className="w-4 h-4 flex-shrink-0"
-                  style={{
-                    backgroundColor: '#4ECDC4',
-                    border: '2px solid #000'
-                  }}
-                />
-                <span className="font-bold">100% 完美</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div 
-                  className="w-4 h-4 flex-shrink-0"
-                  style={{
-                    backgroundColor: '#FFE66D',
-                    border: '2px solid #000'
-                  }}
-                />
-                <span className="font-bold">50-99% 良好</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div 
-                  className="w-4 h-4 flex-shrink-0"
-                  style={{
-                    backgroundColor: '#FF6B35',
-                    border: '2px solid #000'
-                  }}
-                />
-                <span className="font-bold">&lt;50% 待提升</span>
-              </div>
+            </>
+          ) : (
+            <div className="text-center py-8">
+              <p className="font-bold text-gray-600">暂无数据</p>
             </div>
-          </div>
+          )}
         </div>
 
         {dates.length === 0 && (

@@ -617,8 +617,15 @@ export default function QuestBoard() {
 
   const handleEditQuestSave = async ({ actionHint, isRoutine, originalActionHint }) => {
     try {
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
+      // 检查任务内容是否发生变化
+      const contentChanged = actionHint !== editingQuest.actionHint;
+      
+      let newTitle = editingQuest.title; // 默认保持原标题
+      
+      // 只有内容变化时才重新生成标题
+      if (contentChanged) {
+        const result = await base44.integrations.Core.InvokeLLM({
+          prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
 
 **当前冒险者委托内容：** ${actionHint}
 
@@ -632,20 +639,23 @@ export default function QuestBoard() {
 - **绝对禁止使用"任务"二字！**
 
 只返回标题：`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            title: { 
-              type: "string",
-              description: "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！"
-            }
-          },
-          required: ["title"]
-        }
-      });
+          response_json_schema: {
+            type: "object",
+            properties: {
+              title: { 
+                type: "string",
+                description: "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！"
+              }
+            },
+            required: ["title"]
+          }
+        });
+        
+        newTitle = result.title;
+      }
 
       const updateData = {
-        title: result.title,
+        title: newTitle,
         actionHint: actionHint,
         difficulty: editingQuest.difficulty, // 保持原有难度
         rarity: editingQuest.rarity, // 保持原有稀有度
@@ -660,7 +670,7 @@ export default function QuestBoard() {
         data: updateData
       });
 
-      setToast(isRoutine ? '委托已设为每日修炼！' : '委托更新成功！');
+      setToast(isRoutine ? '委托已设为每日修炼！' : contentChanged ? '委托更新成功！' : '已保存修改！');
       setTimeout(() => setToast(null), 2000);
 
       setEditingQuest(null);

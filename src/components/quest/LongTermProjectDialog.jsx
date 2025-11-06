@@ -10,6 +10,7 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
   const [parsedQuests, setParsedQuests] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [isCreating, setIsCreating] = useState(false); // 新增：创建任务的 loading 状态
 
   const handleParse = async () => {
     if (!textInput.trim() || isProcessing) return;
@@ -127,8 +128,9 @@ ${textInput.trim()}
   };
 
   const handleConfirm = async () => {
-    if (parsedQuests.length === 0) return;
+    if (parsedQuests.length === 0 || isCreating) return;
 
+    setIsCreating(true);
     try {
       for (const quest of parsedQuests) {
         await base44.entities.Quest.create({
@@ -149,6 +151,7 @@ ${textInput.trim()}
     } catch (error) {
       console.error('创建任务失败:', error);
       alert('创建任务失败，请重试');
+      setIsCreating(false); // Ensure state is reset on error
     }
   };
 
@@ -374,16 +377,23 @@ ${textInput.trim()}
 
             <button
               onClick={handleConfirm}
-              disabled={parsedQuests.length === 0}
-              className="w-full py-4 font-black uppercase text-lg"
+              disabled={parsedQuests.length === 0 || isCreating}
+              className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-2"
               style={{
                 backgroundColor: '#FFE66D',
                 border: '4px solid #000',
                 boxShadow: '6px 6px 0px #000',
-                opacity: parsedQuests.length === 0 ? 0.5 : 1
+                opacity: (parsedQuests.length === 0 || isCreating) ? 0.5 : 1
               }}
             >
-              确认并添加到委托板
+              {isCreating ? (
+                <>
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  正在添加到委托板...
+                </>
+              ) : (
+                '确认并添加到委托板'
+              )}
             </button>
           </>
         )}

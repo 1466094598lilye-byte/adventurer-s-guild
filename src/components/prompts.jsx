@@ -268,3 +268,203 @@ export function getPraiseRoles(language) {
     ];
   }
 }
+
+export function getLongTermParsingPrompt(language, userInput) {
+  if (language === 'zh') {
+    return {
+      prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。冒险者粘贴了一段长期计划文本，你需要智能解析并生成任务列表。
+
+用户输入：
+${userInput.trim()}
+
+【核心要求 - 必须严格遵守】：
+1. **逐行识别**：把输入的每一行或每一个明确的任务点都当作独立任务（不要合并！）
+2. **即使同一天也要分开**：如果同一天有多项任务，必须拆分成多个独立的任务对象
+3. **不要遗漏任何一项**：确保返回的任务数量 ≥ 输入中能识别出的任务数量
+
+【日期匹配规则】：
+- 识别相对时间（如"周一"、"明天"、"下周三"）并转换为 MM-DD 格式
+- 识别绝对时间（如"12月25日"、"1月5号"、"12-25"）
+- **重要**：如果一行有多个任务但只有一个日期，该日期适用于该行的所有任务
+- **重要**：如果连续几行没有日期，使用上一个出现的日期
+- 只输出 MM-DD 格式，不要年份！
+
+【标题生成规则 - 必须100%严格遵守】：
+- **格式**：【XX】+ YYYYYYY（XX=2字动作类型，YYYYYYY=正好7个汉字的描述）
+- **2字动作类型**从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
+- **7字描述是硬性限制**！必须正好7个汉字，不能多也不能少！
+- 7字描述要充满幻想色彩，把现实任务转化为史诗叙事
+- **绝对禁止使用"任务"二字！**
+
+【标题示例】（注意每个描述都正好7个字）：
+- "跑步5km" → "【征讨】踏破晨曦五里征途"（7字：踏破晨曦五里征途）
+- "写周报" → "【记录】编撰冒险周志卷轴"（7字：编撰冒险周志卷轴）
+- "开会" → "【议会】召开圆桌战术会议"（7字：召开圆桌战术会议）
+- "准备PPT" → "【铸造】炼制议会演说宝典"（7字：炼制议会演说宝典）
+- "整理菜单" → "【记录】编撰珍馐盛宴图录"（7字：编撰珍馐盛宴图录）
+- "制定方案" → "【铸造】铸造战略蓝图石板"（7字：铸造战略蓝图石板）
+
+**重要提醒**：描述部分必须正好7个汉字！数一下：踏（1）破（2）晨（3）曦（4）五（5）里（6）征（7）途 = 7个字！
+
+【解析示例】：
+
+输入1：
+"""
+周一：
+- 完成项目方案
+- 准备会议PPT
+- 联系客户张三
+"""
+应返回3个任务，每个标题都是【XX】+7字格式：
+1. 周一 / 【铸造】铸造战略蓝图石板 / 完成项目方案
+2. 周一 / 【铸造】炼制议会演说宝典 / 准备会议PPT  
+3. 周一 / 【外交】觐见商贸联盟使节 / 联系客户张三
+
+输入2：
+"""
+12月20日：写周报
+12月21日：开会讨论、修改方案、发邮件
+"""
+应返回4个任务，每个标题都是【XX】+7字格式：
+1. 12-20 / 【记录】编撰冒险周志卷轴 / 写周报
+2. 12-21 / 【议会】召开圆桌战术会议 / 开会讨论
+3. 12-21 / 【锻造】重铸战略蓝图石板 / 修改方案
+4. 12-21 / 【外交】传递星陨纪元密信 / 发邮件
+
+【最终检查】：
+- 返回前数一数任务数量，确保每个独立任务点都被包含
+- 同一天的多个任务必须是独立的任务对象（不要合并成一个）
+- **每个标题必须严格是【XX】+7字格式，数一下确保正好7个汉字！**
+- 保留每个任务的原始描述作为 actionHint
+
+请返回任务数组（按日期排序）：`,
+      schema: {
+        type: "object",
+        properties: {
+          tasks: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                title: { 
+                  type: "string", 
+                  description: "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！例如：【征讨】踏破晨曦五里征途。描述必须正好7个字，不能多也不能少！绝对不能包含'任务'二字！"
+                },
+                actionHint: { 
+                  type: "string", 
+                  description: "原始任务描述，保持用户输入的原样，不要合并多个任务"
+                },
+                date: { 
+                  type: "string", 
+                  description: "Format: MM-DD (只有月和日，不要年份！)" 
+                },
+                difficulty: { type: "string", enum: ["S"] },
+                rarity: { type: "string", enum: ["Epic"] }
+              },
+              required: ["title", "actionHint", "date", "difficulty", "rarity"]
+            }
+          }
+        },
+        required: ["tasks"]
+      }
+    };
+  } else {
+    return {
+      prompt: `You are the Chief Epic Chronicler of the [Starfall Era Adventurer's Guild]. An adventurer has pasted a long-term planning text, and you need to intelligently parse it and generate a task list.
+
+User input:
+${userInput.trim()}
+
+【Core Requirements - Must Strictly Follow】:
+1. **Line-by-line Recognition**: Treat each line or each distinct task point as an independent task (do not merge!)
+2. **Separate Even on Same Day**: If there are multiple tasks on the same day, split them into separate task objects
+3. **Do Not Omit Any**: Ensure the number of returned tasks ≥ the number of identifiable task points in the input
+
+【Date Matching Rules】:
+- Recognize relative time (e.g., "Monday", "tomorrow", "next Wednesday") and convert to MM-DD format
+- Recognize absolute time (e.g., "December 25", "Jan 5", "12-25")
+- **Important**: If one line has multiple tasks but only one date, that date applies to all tasks on that line
+- **Important**: If consecutive lines have no date, use the last appearing date
+- Output only MM-DD format, no year!
+
+【Title Generation Rules - Must 100% Strictly Follow】:
+- **Format**: [Category]: <5-8 Word Epic Phrase>
+- **Category** options: Conquest, Expedition, Forging, Research, Escort, Investigation, Collection, Crafting, Diplomacy, Chronicle, Guardian, Purification, Treasure Hunt, Ritual, Negotiation
+- **5-8 words is a strict requirement**! The epic phrase must be between 5-8 words.
+- The phrase should be filled with fantasy flair, transforming mundane tasks into epic narratives
+- **Absolutely forbidden: use the word "task" or "quest" in the phrase!**
+
+【Title Examples】(note each phrase is 5-8 words):
+- "Run 5km" → "[Conquest]: Dawn March Through Five Miles" (6 words)
+- "Write weekly report" → "[Chronicle]: Forge Epic Weekly Adventure Scroll" (6 words)
+- "Attend meeting" → "[Diplomacy]: Convene Round Table War Council" (6 words)
+- "Prepare PPT" → "[Forging]: Craft Grand Presentation Tome" (5 words)
+- "Organize menu" → "[Chronicle]: Compile Feast Bounty Registry" (5 words)
+- "Draft proposal" → "[Forging]: Forge Strategic Blueprint Tablet" (5 words)
+
+**Important Reminder**: The phrase must be 5-8 words! Count carefully!
+
+【Parsing Examples】:
+
+Input 1:
+"""
+Monday:
+- Complete project proposal
+- Prepare meeting PPT
+- Contact client John
+"""
+Should return 3 tasks, each title in [Category]: <Phrase> format:
+1. Monday / [Forging]: Forge Strategic Blueprint Tablet / Complete project proposal
+2. Monday / [Forging]: Craft Grand Presentation Tome / Prepare meeting PPT  
+3. Monday / [Diplomacy]: Meet Trade Alliance Envoy / Contact client John
+
+Input 2:
+"""
+December 20: Write weekly report
+December 21: Attend meeting, revise proposal, send email
+"""
+Should return 4 tasks, each title in [Category]: <Phrase> format:
+1. 12-20 / [Chronicle]: Forge Epic Weekly Adventure Scroll / Write weekly report
+2. 12-21 / [Diplomacy]: Convene Round Table War Council / Attend meeting
+3. 12-21 / [Forging]: Reforge Strategic Blueprint Tablet / Revise proposal
+4. 12-21 / [Diplomacy]: Dispatch Starfall Era Missive / Send email
+
+【Final Check】:
+- Count task quantity before returning, ensure every independent task point is included
+- Multiple tasks on the same day must be separate task objects (do not merge)
+- **Every title must strictly follow [Category]: <5-8 Word Phrase> format, count to ensure correct length!**
+- Preserve original description of each task as actionHint
+
+Return task array (sorted by date):`,
+      schema: {
+        type: "object",
+        properties: {
+          tasks: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                title: { 
+                  type: "string", 
+                  description: "Must strictly follow [Category]: <5-8 Word Epic Phrase> format! Category is action type, Phrase is 5-8 words. Example: [Conquest]: Dawn March Through Five Miles. Phrase must be 5-8 words exactly! Absolutely cannot include the word 'task' or 'quest'!"
+                },
+                actionHint: { 
+                  type: "string", 
+                  description: "Original task description, keep user input as-is, do not merge multiple tasks"
+                },
+                date: { 
+                  type: "string", 
+                  description: "Format: MM-DD (only month and day, no year!)" 
+                },
+                difficulty: { type: "string", enum: ["S"] },
+                rarity: { type: "string", enum: ["Epic"] }
+              },
+              required: ["title", "actionHint", "date", "difficulty", "rarity"]
+            }
+          }
+        },
+        required: ["tasks"]
+      }
+    };
+  }
+}

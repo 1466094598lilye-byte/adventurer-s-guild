@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { X, Loader2, Sparkles, Calendar, Edit2, Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { format, addDays, parse } from 'date-fns';
+import { useLanguage } from '@/components/LanguageContext';
+import { getLongTermParsingPrompt } from '@/components/prompts';
 
 export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
   const [textInput, setTextInput] = useState('');
@@ -11,108 +13,18 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
   const [editingIndex, setEditingIndex] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const [isCreating, setIsCreating] = useState(false); // 新增：创建任务的 loading 状态
+  const { language, t } = useLanguage();
 
   const handleParse = async () => {
     if (!textInput.trim() || isProcessing) return;
     
     setIsProcessing(true);
     try {
+      const { prompt, schema } = getLongTermParsingPrompt(language, textInput);
+      
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。冒险者粘贴了一段长期计划文本，你需要智能解析并生成任务列表。
-
-用户输入：
-${textInput.trim()}
-
-【核心要求 - 必须严格遵守】：
-1. **逐行识别**：把输入的每一行或每一个明确的任务点都当作独立任务（不要合并！）
-2. **即使同一天也要分开**：如果同一天有多项任务，必须拆分成多个独立的任务对象
-3. **不要遗漏任何一项**：确保返回的任务数量 ≥ 输入中能识别出的任务数量
-
-【日期匹配规则】：
-- 识别相对时间（如"周一"、"明天"、"下周三"）并转换为 MM-DD 格式
-- 识别绝对时间（如"12月25日"、"1月5号"、"12-25"）
-- **重要**：如果一行有多个任务但只有一个日期，该日期适用于该行的所有任务
-- **重要**：如果连续几行没有日期，使用上一个出现的日期
-- 只输出 MM-DD 格式，不要年份！
-
-【标题生成规则 - 必须100%严格遵守】：
-- **格式**：【XX】+ YYYYYYY（XX=2字动作类型，YYYYYYY=正好7个汉字的描述）
-- **2字动作类型**从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
-- **7字描述是硬性限制**！必须正好7个汉字，不能多也不能少！
-- 7字描述要充满幻想色彩，把现实任务转化为史诗叙事
-- **绝对禁止使用"任务"二字！**
-
-【标题示例】（注意每个描述都正好7个字）：
-- "跑步5km" → "【征讨】踏破晨曦五里征途"（7字：踏破晨曦五里征途）
-- "写周报" → "【记录】编撰冒险周志卷轴"（7字：编撰冒险周志卷轴）
-- "开会" → "【议会】召开圆桌战术会议"（7字：召开圆桌战术会议）
-- "准备PPT" → "【铸造】炼制议会演说宝典"（7字：炼制议会演说宝典）
-- "整理菜单" → "【记录】编撰珍馐盛宴图录"（7字：编撰珍馐盛宴图录）
-- "制定方案" → "【铸造】铸造战略蓝图石板"（7字：铸造战略蓝图石板）
-
-**重要提醒**：描述部分必须正好7个汉字！数一下：踏（1）破（2）晨（3）曦（4）五（5）里（6）征（7）途 = 7个字！
-
-【解析示例】：
-
-输入1：
-"""
-周一：
-- 完成项目方案
-- 准备会议PPT
-- 联系客户张三
-"""
-应返回3个任务，每个标题都是【XX】+7字格式：
-1. 周一 / 【铸造】铸造战略蓝图石板 / 完成项目方案
-2. 周一 / 【铸造】炼制议会演说宝典 / 准备会议PPT  
-3. 周一 / 【外交】觐见商贸联盟使节 / 联系客户张三
-
-输入2：
-"""
-12月20日：写周报
-12月21日：开会讨论、修改方案、发邮件
-"""
-应返回4个任务，每个标题都是【XX】+7字格式：
-1. 12-20 / 【记录】编撰冒险周志卷轴 / 写周报
-2. 12-21 / 【议会】召开圆桌战术会议 / 开会讨论
-3. 12-21 / 【锻造】重铸战略蓝图石板 / 修改方案
-4. 12-21 / 【外交】传递星陨纪元密信 / 发邮件
-
-【最终检查】：
-- 返回前数一数任务数量，确保每个独立任务点都被包含
-- 同一天的多个任务必须是独立的任务对象（不要合并成一个）
-- **每个标题必须严格是【XX】+7字格式，数一下确保正好7个汉字！**
-- 保留每个任务的原始描述作为 actionHint
-
-请返回任务数组（按日期排序）：`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            tasks: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  title: { 
-                    type: "string", 
-                    description: "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！例如：【征讨】踏破晨曦五里征途。描述必须正好7个字，不能多也不能少！绝对不能包含'任务'二字！"
-                  },
-                  actionHint: { 
-                    type: "string", 
-                    description: "原始任务描述，保持用户输入的原样，不要合并多个任务"
-                  },
-                  date: { 
-                    type: "string", 
-                    description: "Format: MM-DD (只有月和日，不要年份！)" 
-                  },
-                  difficulty: { type: "string", enum: ["S"] },
-                  rarity: { type: "string", enum: ["Epic"] }
-                },
-                required: ["title", "actionHint", "date", "difficulty", "rarity"]
-              }
-            }
-          },
-          required: ["tasks"]
-        }
+        prompt: prompt,
+        response_json_schema: schema
       });
 
       // 处理返回的任务，补充年份
@@ -142,7 +54,7 @@ ${textInput.trim()}
       setShowPreview(true);
     } catch (error) {
       console.error('解析失败:', error);
-      alert('解析失败，请重试');
+      alert(language === 'zh' ? '解析失败，请重试' : 'Parsing failed, please retry');
     }
     setIsProcessing(false);
   };
@@ -163,10 +75,10 @@ ${textInput.trim()}
     setIsCreating(true);
     try {
       // 先创建大项目实体
-      const projectName = `大项目 - ${format(new Date(), 'yyyy年MM月dd日')}`;
+      const projectName = `${language === 'zh' ? '大项目 - ' : 'Project - '}${format(new Date(), language === 'zh' ? 'yyyy年MM月dd日' : 'MMM dd, yyyy')}`;
       const project = await base44.entities.LongTermProject.create({
         projectName: projectName,
-        description: `包含 ${parsedQuests.length} 项任务`,
+        description: `${language === 'zh' ? '包含' : 'Contains'} ${parsedQuests.length} ${language === 'zh' ? '项任务' : 'tasks'}`,
         status: 'active'
       });
 
@@ -190,7 +102,7 @@ ${textInput.trim()}
       onClose();
     } catch (error) {
       console.error('创建任务失败:', error);
-      alert('创建任务失败，请重试');
+      alert(language === 'zh' ? '创建任务失败，请重试' : 'Failed to create tasks, please retry');
       setIsCreating(false); // Ensure state is reset on error
     }
   };
@@ -223,10 +135,10 @@ ${textInput.trim()}
         </button>
 
         <h2 className="text-3xl font-black uppercase text-center mb-2 text-white">
-          🎯 大项目规划 🎯
+          {t('longterm_title')}
         </h2>
         <p className="text-center font-bold text-white mb-6 text-sm">
-          粘贴你的长期计划，冒险者工会将自动分配到每日委托板
+          {t('longterm_subtitle')}
         </p>
 
         {!showPreview ? (
@@ -241,7 +153,7 @@ ${textInput.trim()}
               <textarea
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
-                placeholder="粘贴你的长期计划...&#10;&#10;例如：&#10;周一：完成项目方案设计&#10;周二：与团队讨论方案&#10;周三：修改并提交方案&#10;12月25日：准备年终总结"
+                placeholder={t('longterm_placeholder')}
                 rows={12}
                 className="w-full px-4 py-3 font-bold resize-none"
                 style={{
@@ -265,12 +177,12 @@ ${textInput.trim()}
               {isProcessing ? (
                 <>
                   <Loader2 className="w-6 h-6 animate-spin" />
-                  工会管理员正在更新委托板...
+                  {t('longterm_parsing')}
                 </>
               ) : (
                 <>
                   <Sparkles className="w-6 h-6" strokeWidth={3} />
-                  开始解析
+                  {t('longterm_start_parse')}
                 </>
               )}
             </button>
@@ -286,7 +198,7 @@ ${textInput.trim()}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-black uppercase">
-                  识别到 {parsedQuests.length} 项史诗委托
+                  {t('longterm_identified')} {parsedQuests.length} {t('longterm_epic_quests')}
                 </h3>
                 <button
                   onClick={() => {
@@ -295,7 +207,7 @@ ${textInput.trim()}
                   }}
                   className="text-sm font-bold underline"
                 >
-                  重新输入
+                  {t('longterm_reenter')}
                 </button>
               </div>
 
@@ -313,7 +225,7 @@ ${textInput.trim()}
                       <div className="space-y-3">
                         <div>
                           <label className="block text-xs font-bold uppercase mb-1">
-                            日期：
+                            {t('longterm_edit_date')}
                           </label>
                           <input
                             type="date"
@@ -325,20 +237,20 @@ ${textInput.trim()}
                         </div>
                         <div>
                           <label className="block text-xs font-bold uppercase mb-1">
-                            RPG 史诗标题：
+                            {t('longterm_edit_title')}
                           </label>
                           <input
                             type="text"
                             value={quest.title}
                             onChange={(e) => handleEditQuest(i, 'title', e.target.value)}
-                            placeholder="例如：【征讨】讨伐暗影深渊巨兽"
+                            placeholder={language === 'zh' ? '例如：【征讨】讨伐暗影深渊巨兽' : 'e.g.: [Conquest]: Slay Shadow Abyss Beast'}
                             className="w-full px-3 py-2 font-bold"
                             style={{ border: '2px solid #000' }}
                           />
                         </div>
                         <div>
                           <label className="block text-xs font-bold uppercase mb-1">
-                            原始任务内容：
+                            {t('longterm_edit_content')}
                           </label>
                           <input
                             type="text"
@@ -356,7 +268,7 @@ ${textInput.trim()}
                             border: '2px solid #000'
                           }}
                         >
-                          完成编辑
+                          {t('longterm_edit_done')}
                         </button>
                       </div>
                     ) : (
@@ -366,7 +278,7 @@ ${textInput.trim()}
                             <div className="flex items-center gap-2 mb-2">
                               <Calendar className="w-4 h-4 flex-shrink-0" strokeWidth={3} />
                               <span className="font-black text-sm">
-                                {format(new Date(quest.date), 'MM月dd日')}
+                                {format(new Date(quest.date), language === 'zh' ? 'MM月dd日' : 'MMM dd')}
                               </span>
                               <div 
                                 className="px-2 py-0.5 text-base font-black"
@@ -382,7 +294,7 @@ ${textInput.trim()}
                             </div>
                             <p className="font-black text-base mb-1 text-purple-800">{quest.title}</p>
                             <p className="text-sm font-bold text-gray-600">
-                              任务内容：{quest.actionHint}
+                              {t('longterm_task_content_label')}{quest.actionHint}
                             </p>
                           </div>
                           <div className="flex gap-1 flex-shrink-0">
@@ -429,10 +341,10 @@ ${textInput.trim()}
               {isCreating ? (
                 <>
                   <Loader2 className="w-6 h-6 animate-spin" />
-                  正在添加到委托板...
+                  {t('longterm_creating')}
                 </>
               ) : (
-                '确认并添加到委托板'
+                t('longterm_confirm_add')
               )}
             </button>
           </>

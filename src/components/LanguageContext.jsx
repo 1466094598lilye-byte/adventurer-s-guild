@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const LanguageContext = createContext();
@@ -27,6 +28,7 @@ export function LanguageProvider({ children }) {
       
       // Quest Board
       questboard_title: '委托板',
+      questboard_date: '年月日',
       questboard_input_placeholder: '输入今日任务，如：跑步5km',
       questboard_longterm_btn: '大项目规划',
       questboard_longterm_hint: '用于粘贴长期计划，冒险者工会将自动分配到每日委托板',
@@ -46,6 +48,18 @@ export function LanguageProvider({ children }) {
       questboard_planned_quests: '工会已登记明日',
       questboard_plan_tomorrow: '规划明日委托',
       
+      // Treasures
+      treasures_title: '宝物收藏',
+      treasures_collected: '共收集',
+      treasures_items: '件战利品',
+      treasures_stats: '稀有度统计',
+      treasures_filter_all: '全部',
+      treasures_page: '第',
+      treasures_page_of: '页（共',
+      treasures_page_items: '件）',
+      treasures_prev: '上一页',
+      treasures_next: '下一页',
+
       // Journal
       journal_title: '冒险日志',
       journal_current_streak: '当前连胜',
@@ -123,6 +137,7 @@ export function LanguageProvider({ children }) {
       
       // Quest Board
       questboard_title: 'Quest Board',
+      questboard_date: 'Date',
       questboard_input_placeholder: 'Enter today\'s quest, e.g.: Run 5km',
       questboard_longterm_btn: 'Long-term Project Planning',
       questboard_longterm_hint: 'Paste long-term plans, the Guild will automatically distribute them to daily quests',
@@ -141,6 +156,18 @@ export function LanguageProvider({ children }) {
       questboard_cancel_rest: 'Cancel Guild Rest Day',
       questboard_planned_quests: 'Guild has registered',
       questboard_plan_tomorrow: 'Plan Tomorrow\'s Quests',
+      
+      // Treasures
+      treasures_title: 'Treasure Collection',
+      treasures_collected: 'Collected',
+      treasures_items: 'items',
+      treasures_stats: 'Rarity Statistics',
+      treasures_filter_all: 'All',
+      treasures_page: 'Page',
+      treasures_page_of: 'of',
+      treasures_page_items: 'items',
+      treasures_prev: 'Previous',
+      treasures_next: 'Next',
       
       // Journal
       journal_title: 'Adventure Journal',

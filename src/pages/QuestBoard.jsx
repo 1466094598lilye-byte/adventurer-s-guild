@@ -37,7 +37,7 @@ export default function QuestBoard() {
   const [showJointPraise, setShowJointPraise] = useState(false);
   const [completedProject, setCompletedProject] = useState(null);
   const queryClient = useQueryClient();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
 
   const hasProcessedDayRollover = useRef(false);
 
@@ -97,7 +97,7 @@ export default function QuestBoard() {
           queryClient.invalidateQueries(['quests']);
           const nonRoutineCount = oldQuests.filter(q => !q.isRoutine).length;
           if (nonRoutineCount > 0) {
-            setToast(`昨日 ${nonRoutineCount} 项委托已顺延至今日`);
+            setToast(t('questboard_toast_yesterday_quests_delayed', { count: nonRoutineCount }));
             setTimeout(() => setToast(null), 3000);
           }
         }
@@ -125,7 +125,7 @@ export default function QuestBoard() {
 
           queryClient.invalidateQueries(['quests']);
           queryClient.invalidateQueries(['user']);
-          setToast(`已加载 ${nextDayPlanned.length} 项预先规划的委托`);
+          setToast(t('questboard_toast_planned_quests_loaded', { count: nextDayPlanned.length }));
           setTimeout(() => setToast(null), 3000);
         }
 
@@ -223,7 +223,7 @@ export default function QuestBoard() {
     if (user) {
       handleDayRollover();
     }
-  }, [user, today, queryClient]);
+  }, [user, today, queryClient, t]);
 
   const createQuestMutation = useMutation({
     mutationFn: (questData) => base44.entities.Quest.create(questData),
@@ -237,7 +237,7 @@ export default function QuestBoard() {
           restDays: restDays.filter(d => d !== today)
         });
         queryClient.invalidateQueries(['user']);
-        setToast('已添加任务，工会休息日已自动取消');
+        setToast(t('questboard_toast_quest_added_rest_canceled'));
         setTimeout(() => setToast(null), 2000);
       }
     }
@@ -291,7 +291,7 @@ export default function QuestBoard() {
       setTextInput('');
     } catch (error) {
       console.error('任务处理错误:', error);
-      alert(`任务解析失败：${error.message || '请重试'}`);
+      alert(t('questboard_alert_task_parse_failed', { message: error.message || t('common_try_again') }));
     }
     setIsProcessing(false);
   };
@@ -329,11 +329,11 @@ export default function QuestBoard() {
       
       setPendingQuests([]);
       setExpandedPending(null);
-      setToast(`已添加 ${pendingQuests.length} 项委托到任务板`);
+      setToast(t('questboard_toast_quests_added_to_board', { count: pendingQuests.length }));
       setTimeout(() => setToast(null), 2000);
     } catch (error) {
       console.error('创建任务失败:', error);
-      alert('创建任务失败，请重试');
+      alert(t('questboard_alert_create_quest_failed'));
     }
     setIsConfirmingPending(false);
   };
@@ -593,10 +593,10 @@ export default function QuestBoard() {
     });
     
     const messages = [
-      '已撤回报告，委托重新激活。',
-      '记录已改写，任务重新登记于工会任务板。',
-      '冒险者，请再次确认这份委托的准备情况。',
-      '报告撤回完毕，任务恢复至进行中状态。'
+      t('questboard_reopen_toast_1'),
+      t('questboard_reopen_toast_2'),
+      t('questboard_reopen_toast_3'),
+      t('questboard_reopen_toast_4')
     ];
     
     const message = messages[Math.floor(Math.random() * messages.length)];
@@ -644,7 +644,7 @@ export default function QuestBoard() {
         data: updateData
       });
 
-      setToast(isRoutine ? '委托已设为每日修炼！' : contentChanged ? '委托更新成功！' : '已保存修改！');
+      setToast(isRoutine ? t('questboard_toast_set_as_routine') : contentChanged ? t('questboard_toast_quest_updated') : t('questboard_toast_changes_saved'));
       setTimeout(() => setToast(null), 2000);
 
       setEditingQuest(null);
@@ -653,13 +653,13 @@ export default function QuestBoard() {
       queryClient.invalidateQueries(['user']);
     } catch (error) {
       console.error("更新失败", error);
-      alert('更新失败，请重试');
+      alert(t('questboard_alert_update_failed'));
     }
   };
 
   const handleToggleRestDay = async () => {
     if (quests.length > 0 && !isRestDay) {
-      alert('今日已有任务，无法设置为休息日。请先完成或删除它们。');
+      alert(t('questboard_alert_cannot_set_rest_day_with_quests'));
       return;
     }
     
@@ -670,12 +670,12 @@ export default function QuestBoard() {
       await base44.auth.updateMe({
         restDays: restDays.filter(d => d !== today)
       });
-      setToast('工会休憩已止，委托板重现光辉，新的挑战随时恭候。');
+      setToast(t('questboard_toast_rest_canceled_success'));
     } else {
       await base44.auth.updateMe({
         restDays: [...restDays, today]
       });
-      setToast('冒险者，你最近的英勇表现值得赞颂！工会为你特批今日休憩，在安宁中恢复，为下一次远征积蓄力量。');
+      setToast(t('questboard_toast_rest_set_success'));
     }
     
     queryClient.invalidateQueries(['user']);
@@ -701,11 +701,11 @@ export default function QuestBoard() {
       });
       
       queryClient.invalidateQueries(['user']);
-      setToast(`已成功登记明日 ${plannedQuests.length} 项委托`);
+      setToast(t('questboard_toast_plan_saved_success', { count: plannedQuests.length }));
       setTimeout(() => setToast(null), 3000);
     } catch (error) {
       console.error('保存规划失败:', error);
-      alert('保存失败，请重试');
+      alert(t('questboard_alert_save_plan_failed'));
     }
   };
 
@@ -717,7 +717,7 @@ export default function QuestBoard() {
   const handleLongTermQuestsCreated = (count) => {
     queryClient.invalidateQueries(['quests']);
     queryClient.invalidateQueries(['hasLongTermQuests']);
-    setToast(`已成功添加 ${count} 项大项目任务到委托板`);
+    setToast(t('questboard_toast_longterm_quests_added_success', { count: count }));
     setTimeout(() => setToast(null), 3000);
   };
 
@@ -757,10 +757,12 @@ export default function QuestBoard() {
           }}
         >
           <h1 className="text-3xl font-black uppercase text-center">
-            ⚔️ 委托板 ⚔️
+            ⚔️ {t('questboard_title')} ⚔️
           </h1>
           <p className="text-center font-bold mt-2 text-sm">
-            {format(new Date(), 'yyyy年MM月dd日')}
+            {language === 'zh' 
+              ? format(new Date(), 'yyyy年MM月dd日')
+              : format(new Date(), 'MMMM dd, yyyy')}
           </p>
         </div>
 
@@ -775,10 +777,10 @@ export default function QuestBoard() {
           >
             <div className="flex items-center justify-center gap-2">
               <Coffee className="w-6 h-6" strokeWidth={3} />
-              <p className="font-black uppercase">今日为工会休息日</p>
+              <p className="font-black uppercase">{t('questboard_rest_day')}</p>
             </div>
             <p className="text-center text-sm font-bold mt-2">
-              连胜不会中断，但也不会累积
+              {t('questboard_rest_day_hint')}
             </p>
           </div>
         )}
@@ -794,7 +796,7 @@ export default function QuestBoard() {
           <div className="flex gap-3 mb-3">
             <Input // Using shadcn Input component
               type="text"
-              placeholder="输入今日任务，如：跑步5km"
+              placeholder={t('questboard_input_placeholder')}
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
               onKeyPress={(e) => {
@@ -841,11 +843,11 @@ export default function QuestBoard() {
             }}
           >
             <Briefcase className="w-5 h-5" strokeWidth={3} />
-            大项目规划
+            {t('questboard_longterm_btn')}
           </Button>
           
           <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
-            💡 用于粘贴长期计划，冒险者工会将自动分配到每日委托板
+            💡 {t('questboard_longterm_hint')}
           </p>
 
           {pendingQuests.length > 0 && (
@@ -858,7 +860,7 @@ export default function QuestBoard() {
             >
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-black uppercase text-sm">
-                  待确认任务 ({pendingQuests.length})
+                  {t('questboard_pending_quests_title', { count: pendingQuests.length })}
                 </h3>
               </div>
 
@@ -904,7 +906,7 @@ export default function QuestBoard() {
                       <div className="px-3 pb-3 pt-0" style={{ borderTop: '2px solid #000' }}>
                         <div className="mb-3 mt-3">
                           <label className="block text-xs font-bold uppercase mb-2">
-                            任务内容：
+                            {t('questboard_pending_quest_content_label')}
                           </label>
                           <Input // Using shadcn Input component
                             type="text"
@@ -917,7 +919,7 @@ export default function QuestBoard() {
 
                         <div className="mb-3">
                           <label className="block text-xs font-bold uppercase mb-2">
-                            难度评级：
+                            {t('questboard_pending_quest_difficulty_label')}
                           </label>
                           <div className="grid grid-cols-4 gap-2">
                             {['C', 'B', 'A', 'S'].map(level => (
@@ -946,7 +948,7 @@ export default function QuestBoard() {
                             border: '2px solid #FF6B35'
                           }}
                         >
-                          删除此任务
+                          {t('questboard_pending_quest_delete_button')}
                         </Button>
                       </div>
                     )}
@@ -968,12 +970,12 @@ export default function QuestBoard() {
                 {isConfirmingPending ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" strokeWidth={3} />
-                    正在添加...
+                    {t('common_adding')}...
                   </>
                 ) : (
                   <>
                     <Check className="w-5 h-5" strokeWidth={3} />
-                    确认接取 {pendingQuests.length} 项委托
+                    {t('questboard_pending_quest_confirm_button', { count: pendingQuests.length })}
                   </>
                 )}
               </Button>
@@ -995,10 +997,10 @@ export default function QuestBoard() {
               className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3 text-white"
             >
               <CalendarIcon className="w-6 h-6" strokeWidth={3} />
-              限时活动日程表！
+              {t('questboard_calendar_btn')}
             </Button>
             <p className="text-center text-xs font-bold mt-2 text-white">
-              点击查看所有大项目任务的时间安排
+              {t('questboard_calendar_hint')}
             </p>
           </div>
         )}
@@ -1016,7 +1018,7 @@ export default function QuestBoard() {
               <div className="flex items-center justify-center gap-2 mb-3">
                 <CalendarIcon className="w-5 h-5 text-white" strokeWidth={3} />
                 <p className="font-black uppercase text-white">
-                  工会已登记明日 {nextDayPlannedCount} 项委托
+                  {t('questboard_planned_quests')} {nextDayPlannedCount} {t('common_items')}{language === 'zh' ? '委托' : ' quests'}
                 </p>
               </div>
             )}
@@ -1032,7 +1034,7 @@ export default function QuestBoard() {
                 }}
               >
                 <CalendarIcon className="w-5 h-5" strokeWidth={3} />
-                规划明日委托
+                {t('questboard_plan_tomorrow')}
               </Button>
             )}
           </div>
@@ -1051,7 +1053,7 @@ export default function QuestBoard() {
               }}
             >
               <Filter className="w-4 h-4 inline mr-1" strokeWidth={3} />
-              {f === 'all' ? '全部' : f === 'todo' ? '未完成' : '已完成'}
+              {t(`questboard_filter_${f}`)}
             </Button>
           ))}
         </div>
@@ -1069,8 +1071,8 @@ export default function QuestBoard() {
               boxShadow: '6px 6px 0px #000'
             }}
           >
-            <p className="text-2xl font-black uppercase mb-2">暂无委托</p>
-            <p className="font-bold text-gray-600">使用文本输入添加今日任务</p>
+            <p className="text-2xl font-black uppercase mb-2">{t('questboard_no_quests')}</p>
+            <p className="font-bold text-gray-600">{t('questboard_no_quests_hint')}</p>
           </div>
         ) : (
           <div>
@@ -1101,11 +1103,11 @@ export default function QuestBoard() {
             }}
           >
             <Coffee className="w-6 h-6" strokeWidth={3} />
-            {isRestDay ? '取消工会休息日' : '设为工会休息日'}
+            {isRestDay ? t('questboard_cancel_rest') : t('questboard_set_rest')}
           </Button>
           {quests.length > 0 && !isRestDay && (
             <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
-              💡 今日有任务，无法设为休息日。
+              {t('questboard_cannot_set_rest_day_hint')}
             </p>
           )}
         </div>
@@ -1115,7 +1117,7 @@ export default function QuestBoard() {
             quest={selectedQuest}
             onClose={() => setSelectedQuest(null)}
             onAddNote={() => {
-              alert('复盘笔记功能开发中');
+              alert(t('questboard_alert_review_notes_wip'));
             }}
           />
         )}
@@ -1194,7 +1196,7 @@ export default function QuestBoard() {
                   className="text-3xl font-black uppercase mb-3"
                   style={{ color: '#000' }}
                 >
-                  🎊 里程碑达成！🎊
+                  🎊 {t('milestone_reached')} 🎊
                 </h2>
 
                 <div 
@@ -1204,12 +1206,12 @@ export default function QuestBoard() {
                     border: '4px solid #000'
                   }}
                 >
-                  <p className="text-2xl font-black mb-3">{milestoneReward.days}天连胜</p>
+                  <p className="text-2xl font-black mb-3">{milestoneReward.days}{t('milestone_days_streak')}</p>
                   <p className="text-xl font-black uppercase mb-3" style={{ color: '#C44569' }}>
                     「{milestoneReward.title}」
                   </p>
                   <p className="font-bold text-sm leading-relaxed mb-4">
-                    恭喜你达成{milestoneReward.days}天连续完成任务的非凡成就！
+                    {t('milestone_congrats', { days: milestoneReward.days })}
                   </p>
                   
                   <div className="space-y-3">
@@ -1220,7 +1222,7 @@ export default function QuestBoard() {
                         border: '3px solid #000'
                       }}
                     >
-                      <p className="font-black">🎟️ 冻结券 +{milestoneReward.tokens}</p>
+                      <p className="font-black">{t('milestone_freeze_token_label')} +{milestoneReward.tokens}</p>
                     </div>
                     
                     <div 
@@ -1230,7 +1232,7 @@ export default function QuestBoard() {
                         border: '3px solid #000'
                       }}
                     >
-                      <p className="font-black text-white">🏅 {milestoneReward.title} 称号</p>
+                      <p className="font-black text-white">🏅 {milestoneReward.title} {t('milestone_title_badge_label')}</p>
                     </div>
 
                     <div 
@@ -1261,7 +1263,7 @@ export default function QuestBoard() {
                     boxShadow: '6px 6px 0px #FFE66D'
                   }}
                 >
-                  收入囊中
+                  {t('milestone_claim_button')}
                 </Button>
               </div>
             </div>
@@ -1287,7 +1289,7 @@ export default function QuestBoard() {
                 className="text-2xl font-black uppercase text-center mb-4"
                 style={{ color: '#000' }}
               >
-                {isRestDay ? '取消工会休息日？' : '设为工会休息日？'}
+                {isRestDay ? t('rest_day_dialog_cancel_title') : t('rest_day_dialog_set_title')}
               </h2>
 
               <div 
@@ -1299,16 +1301,16 @@ export default function QuestBoard() {
               >
                 {isRestDay ? (
                   <div className="space-y-3 font-bold text-sm">
-                    <p>✓ 取消后，今天将恢复为正常任务日</p>
-                    <p>✓ 如果之前有完成任务，连胜会正常计算</p>
+                    <p>✓ {t('rest_day_dialog_cancel_hint_1')}</p>
+                    <p>✓ {t('rest_day_dialog_cancel_hint_2')}</p>
                   </div>
                 ) : (
                   <div className="space-y-3 font-bold text-sm">
-                    <p>✓ 设为休息日后，今天不计入连胜天数</p>
-                    <p>✓ 连胜不会因为今天未完成任务而中断</p>
-                    <p>✓ 如果今天添加了任务，休息日会自动取消</p>
+                    <p>✓ {t('rest_day_dialog_set_hint_1')}</p>
+                    <p>✓ {t('rest_day_dialog_set_hint_2')}</p>
+                    <p>✓ {t('rest_day_dialog_set_hint_3')}</p>
                     <p className="text-xs" style={{ color: '#666' }}>
-                      💡 建议：如果确定今天不工作，可以提前设为休息日。这样既不会影响连胜，也不需要消耗冻结券。
+                      💡 {t('rest_day_dialog_set_hint_4')}
                     </p>
                   </div>
                 )}
@@ -1324,7 +1326,7 @@ export default function QuestBoard() {
                     boxShadow: '4px 4px 0px #000'
                   }}
                 >
-                  取消
+                  {t('common_cancel')}
                 </Button>
                 <Button // Using shadcn Button component
                   onClick={handleToggleRestDay}
@@ -1336,7 +1338,7 @@ export default function QuestBoard() {
                     boxShadow: '4px 4px 0px #000'
                   }}
                 >
-                  确认
+                  {t('common_confirm')}
                 </Button>
               </div>
             </div>

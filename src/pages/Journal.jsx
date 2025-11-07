@@ -6,9 +6,11 @@ import { TrendingUp } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import StreakDisplay from '../components/profile/StreakDisplay';
+import { useLanguage } from '@/components/LanguageContext';
 
 export default function Journal() {
   const [period, setPeriod] = useState(7);
+  const { t, language } = useLanguage();
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -79,7 +81,9 @@ export default function Journal() {
           }}
         >
           <p className="font-black text-sm">{payload[0].payload.date}</p>
-          <p className="font-bold text-sm">完成率: {payload[0].value}%</p>
+          <p className="font-bold text-sm">
+            {language === 'zh' ? '完成率' : 'Completion'}: {payload[0].value}%
+          </p>
         </div>
       );
     }
@@ -100,7 +104,7 @@ export default function Journal() {
           }}
         >
           <h1 className="text-3xl font-black uppercase text-center">
-            📖 冒险日志 📖
+            📖 {t('journal_title')} 📖
           </h1>
         </div>
 
@@ -127,7 +131,7 @@ export default function Journal() {
                 boxShadow: period === p ? '4px 4px 0px #000' : '2px 2px 0px #000'
               }}
             >
-              {p}天
+              {p}{language === 'zh' ? '天' : ' Days'}
             </button>
           ))}
         </div>
@@ -143,7 +147,7 @@ export default function Journal() {
         >
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-5 h-5" strokeWidth={3} />
-            <h3 className="font-black uppercase">完成率趋势</h3>
+            <h3 className="font-black uppercase">{t('journal_completion_trend')}</h3>
           </div>
 
           {chartData.length > 0 ? (
@@ -222,7 +226,7 @@ export default function Journal() {
                         border: '2px solid #000'
                       }}
                     />
-                    <span className="font-bold">100% 完美</span>
+                    <span className="font-bold">{t('journal_legend_complete')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div 
@@ -232,7 +236,7 @@ export default function Journal() {
                         border: '2px solid #000'
                       }}
                     />
-                    <span className="font-bold">50-99% 良好</span>
+                    <span className="font-bold">{t('journal_legend_partial')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div 
@@ -242,14 +246,16 @@ export default function Journal() {
                         border: '2px solid #000'
                       }}
                     />
-                    <span className="font-bold">&lt;50% 待提升</span>
+                    <span className="font-bold">{t('journal_legend_incomplete')}</span>
                   </div>
                 </div>
               </div>
             </>
           ) : (
             <div className="text-center py-8">
-              <p className="font-bold text-gray-600">暂无数据</p>
+              <p className="font-bold text-gray-600">
+                {language === 'zh' ? '暂无数据' : 'No data'}
+              </p>
             </div>
           )}
         </div>
@@ -263,8 +269,12 @@ export default function Journal() {
               boxShadow: '6px 6px 0px #000'
             }}
           >
-            <p className="text-2xl font-black uppercase mb-2">暂无记录</p>
-            <p className="font-bold text-gray-600">完成任务后会在此显示</p>
+            <p className="text-2xl font-black uppercase mb-2">
+              {language === 'zh' ? '暂无记录' : 'No Records'}
+            </p>
+            <p className="font-bold text-gray-600">
+              {language === 'zh' ? '完成任务后会在此显示' : 'Complete quests to see them here'}
+            </p>
           </div>
         )}
       </div>

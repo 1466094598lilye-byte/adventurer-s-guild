@@ -1,16 +1,19 @@
+
 import { useState } from 'react';
 import { X, Save } from 'lucide-react';
+import { useLanguage } from '@/components/LanguageContext';
 
 export default function QuestEditFormModal({ quest, onSave, onClose }) {
   const [actionHint, setActionHint] = useState(quest.actionHint || '');
   const [isRoutine, setIsRoutine] = useState(quest.isRoutine || false);
   const [isSaving, setIsSaving] = useState(false);
+  const { t, language } = useLanguage();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!actionHint.trim()) {
-      alert('请输入任务内容！');
+      alert(language === 'zh' ? '请输入任务内容！' : 'Please enter quest content!');
       return;
     }
 
@@ -21,6 +24,13 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
       originalActionHint: isRoutine ? actionHint.trim() : quest.originalActionHint
     });
     setIsSaving(false);
+  };
+
+  const difficultyColors = {
+    C: '#FFE66D',
+    B: '#FF6B35',
+    A: '#C44569',
+    S: '#000'
   };
 
   return (
@@ -56,7 +66,7 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
           className="text-2xl font-black uppercase text-center mb-6"
           style={{ color: '#000' }}
         >
-          ✏️ 编辑委托 ✏️
+          {t('questedit_title')}
         </h2>
 
         {/* Current RPG Title (Read-only Display) */}
@@ -68,7 +78,7 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
           }}
         >
           <p className="text-xs font-bold uppercase mb-1" style={{ color: '#666' }}>
-            当前RPG任务名
+            {t('questedit_current_title')}
           </p>
           <p className="font-black text-sm">{quest.title}</p>
         </div>
@@ -82,13 +92,13 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
           }}
         >
           <p className="text-xs font-bold uppercase mb-1" style={{ color: '#666' }}>
-            当前难度评级
+            {t('questedit_current_difficulty')}
           </p>
           <div className="flex items-center gap-2">
             <span 
               className="px-3 py-1 text-lg font-black"
               style={{
-                backgroundColor: quest.difficulty === 'S' ? '#000' : quest.difficulty === 'A' ? '#C44569' : quest.difficulty === 'B' ? '#FF6B35' : '#FFE66D',
+                backgroundColor: difficultyColors[quest.difficulty],
                 color: quest.difficulty === 'S' ? '#FFE66D' : '#000',
                 border: '3px solid #000'
               }}
@@ -96,7 +106,7 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
               {quest.difficulty}
             </span>
             <span className="text-sm font-bold" style={{ color: '#666' }}>
-              修改任务内容时评级保持不变
+              {t('questedit_difficulty_hint')}
             </span>
           </div>
         </div>
@@ -109,12 +119,12 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
               className="block text-sm font-black uppercase mb-2"
               style={{ color: '#000' }}
             >
-              任务内容 <span style={{ color: '#FF6B35' }}>*</span>
+              {t('questedit_content_label')} <span style={{ color: '#FF6B35' }}>*</span>
             </label>
             <textarea
               value={actionHint}
               onChange={(e) => setActionHint(e.target.value)}
-              placeholder="例如：跑步5km"
+              placeholder={t('questedit_content_placeholder')}
               rows={3}
               className="w-full px-4 py-3 font-bold text-base resize-none"
               style={{
@@ -124,7 +134,7 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
               }}
             />
             <p className="text-xs font-bold mt-2" style={{ color: '#666' }}>
-              💡 保存后AI将重新生成RPG风格的任务名称（难度评级保持不变）
+              {t('questedit_content_hint')}
             </p>
           </div>
 
@@ -147,9 +157,9 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
                 }}
               />
               <div>
-                <span className="font-black uppercase">设为每日修炼</span>
+                <span className="font-black uppercase">{t('questedit_routine')}</span>
                 <p className="text-xs font-bold mt-1">
-                  勾选后，此任务将每天自动出现在任务板上
+                  {t('questedit_routine_hint')}
                 </p>
               </div>
             </label>
@@ -169,7 +179,7 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
                 opacity: isSaving ? 0.5 : 1
               }}
             >
-              取消
+              {t('common_cancel')}
             </button>
             <button
               type="submit"
@@ -183,7 +193,7 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
               }}
             >
               <Save className="w-5 h-5" strokeWidth={4} />
-              {isSaving ? '保存中...' : '保存'}
+              {isSaving ? t('questedit_saving') : t('questedit_save')}
             </button>
           </div>
         </form>

@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { Gift, Sparkles, X, Shield } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useLanguage } from '@/components/LanguageContext';
+import { getTreasurePrompt } from '@/utils/prompts';
 
 export default function ChestOpening({ date, onClose, onLootGenerated }) {
+  const { language, t } = useLanguage();
   const [isOpening, setIsOpening] = useState(false);
   const [loot, setLoot] = useState(null);
   const [gotFreezeToken, setGotFreezeToken] = useState(false);
@@ -14,29 +17,23 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
   const openChest = async () => {
     setIsOpening(true);
 
-    // Simulate chest opening animation
     setTimeout(async () => {
       try {
-        // Get current user
         const currentUser = await base44.auth.me();
         const currentCounter = currentUser?.chestOpenCounter || 0;
         const newCounter = currentCounter + 1;
 
-        // Check pity system (60 chests = guaranteed freeze token)
         let wonFreezeToken = false;
         let hitPity = false;
         
         if (newCounter >= 60) {
-          // Pity triggered - guaranteed freeze token
           wonFreezeToken = true;
           hitPity = true;
         } else {
-          // Normal 1% chance
           const freezeTokenRoll = Math.random() * 100;
           wonFreezeToken = freezeTokenRoll < 1;
         }
 
-        // Determine rarity (70% Common, 20% Rare, 8% Epic, 2% Legendary)
         const rarityRoll = Math.random() * 100;
         let rarity;
         if (rarityRoll < 70) rarity = 'Common';
@@ -44,24 +41,10 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
         else if (rarityRoll < 98) rarity = 'Epic';
         else rarity = 'Legendary';
 
-        // Generate loot with AI
+        const { prompt } = getTreasurePrompt(language, rarity);
+
         const result = await base44.integrations.Core.InvokeLLM({
-          prompt: `生成一个RPG风格的战利品道具。
-
-稀有度：${rarity}（${rarity === 'Common' ? '普通' : rarity === 'Rare' ? '稀有' : rarity === 'Epic' ? '史诗' : '传说'}）
-
-要求：
-1. 名称要符合该稀有度，${rarity === 'Common' ? '简单朴素' : rarity === 'Rare' ? '有些特别' : rarity === 'Epic' ? '强大华丽' : '传奇神话'}
-2. 简介要有RPG风味，体现该稀有度的价值和来历
-3. 选择合适的emoji作为图标
-
-示例：
-- Common: "风化的石板" / "记录着冒险者日常足迹的普通石板。"
-- Rare: "月光水晶" / "在月圆之夜才会发光的神秘水晶。"
-- Epic: "不灭之炎" / "传说中永不熄灭的圣火碎片，象征着永恒的意志。"
-- Legendary: "时空之钥" / "据说能开启任意时空之门的神器，只有真正的英雄才配拥有。"
-
-请生成：`,
+          prompt: prompt,
           response_json_schema: {
             type: "object",
             properties: {
@@ -78,10 +61,8 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
           obtainedAt: new Date().toISOString()
         };
 
-        // Save loot
         const savedLoot = await base44.entities.Loot.create(newLoot);
 
-        // Update user: freeze token count and counter
         const updateData = {
           chestOpenCounter: wonFreezeToken ? 0 : newCounter
         };
@@ -93,7 +74,6 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
         await base44.auth.updateMe(updateData);
         queryClient.invalidateQueries(['user']);
 
-        // Mark chest as opened
         const chests = await base44.entities.DailyChest.filter({ date });
         if (chests.length > 0) {
           await base44.entities.DailyChest.update(chests[0].id, {
@@ -108,7 +88,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
         setShowLoot(true);
         onLootGenerated(savedLoot);
       } catch (error) {
-        alert('开箱失败，请重试');
+        alert(language === 'zh' ? '开箱失败，请重试' : 'Failed to open chest, please retry');
       }
       setIsOpening(false);
     }, 2000);
@@ -138,7 +118,6 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
       >
         {!showLoot ? (
           <>
-            {/* Chest */}
             <div className="flex justify-center mb-6">
               <div 
                 className={`w-32 h-32 flex items-center justify-center ${isOpening ? 'animate-bounce' : ''}`}
@@ -160,11 +139,11 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
                 textShadow: '3px 3px 0px rgba(255,255,255,0.5)'
               }}
             >
-              今日宝箱
+              {t('chest_title')}
             </h2>
 
             <p className="text-center font-bold mb-6">
-              恭喜！你完成了今天所有委托！
+              {t('chest_congrats')}
             </p>
 
             <button
@@ -180,12 +159,11 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
               }}
             >
               <Sparkles className="w-6 h-6" strokeWidth={4} />
-              {isOpening ? '开启中...' : '打开宝箱'}
+              {isOpening ? t('chest_opening') : t('chest_open_btn')}
             </button>
           </>
         ) : (
           <>
-            {/* Close Button */}
             <button
               onClick={onClose}
               className="absolute -top-4 -right-4 w-12 h-12 flex items-center justify-center"
@@ -198,7 +176,6 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
               <X className="w-7 h-7" strokeWidth={4} />
             </button>
 
-            {/* Loot Display */}
             <div className="text-center">
               {gotFreezeToken && (
                 <div 
@@ -211,17 +188,14 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
                 >
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <Shield className="w-8 h-8" strokeWidth={3} />
-                    <span className="text-2xl font-black">冻结券 +1</span>
+                    <span className="text-2xl font-black">{t('chest_freeze_token')} +1</span>
                   </div>
                   <p className="text-sm font-bold">
-                    {isPity 
-                      ? '🎊 保底触发！你已累积开启60个宝箱，获得保底冻结券！'
-                      : '恭喜！你在宝箱中发现了稀有的冻结券！'}
+                    {isPity ? t('chest_freeze_pity') : t('chest_freeze_lucky')}
                   </p>
                 </div>
               )}
 
-              {/* Rarity Badge */}
               <div className="flex justify-center mb-4">
                 <div 
                   className="px-4 py-2 font-black uppercase"
@@ -232,9 +206,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
                     boxShadow: '4px 4px 0px #000'
                   }}
                 >
-                  {loot.rarity === 'Common' ? '普通' : 
-                   loot.rarity === 'Rare' ? '稀有' : 
-                   loot.rarity === 'Epic' ? '史诗' : '传说'}
+                  {t(`rarity_${loot.rarity.toLowerCase()}`)}
                 </div>
               </div>
 
@@ -268,7 +240,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
                   boxShadow: '5px 5px 0px #000'
                 }}
               >
-                收入背包
+                {t('chest_collect')}
               </button>
             </div>
           </>

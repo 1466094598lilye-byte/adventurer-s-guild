@@ -154,7 +154,62 @@ export function LanguageProvider({ children }) {
       common_confirm: '确认',
       common_cancel: '取消',
       common_items: '项',
-      common_date: '日期'
+      common_date: '日期',
+
+      // Quest Card
+      questcard_reopen: '返回待办',
+      questcard_edit: '编辑',
+      questcard_delete: '删除',
+      questcard_confirm_reopen_title: '撤回完成报告？',
+      questcard_confirm_reopen_hint: '此委托将恢复至待办状态',
+      questcard_confirm_reopen: '确认撤回',
+      
+      // Quest Edit Form
+      questedit_title: '✏️ 编辑委托 ✏️',
+      questedit_current_title: '当前RPG任务名',
+      questedit_current_difficulty: '当前难度评级',
+      questedit_difficulty_hint: '修改任务内容时评级保持不变',
+      questedit_content_label: '任务内容',
+      questedit_content_placeholder: '例如：跑步5km',
+      questedit_content_hint: '💡 保存后AI将重新生成RPG风格的任务名称（难度评级保持不变）',
+      questedit_routine: '设为每日修炼',
+      questedit_routine_hint: '勾选后，此任务将每天自动出现在任务板上',
+      questedit_saving: '保存中...',
+      questedit_save: '保存',
+      
+      // End of Day Planning
+      planning_celebration_title: '🎊 今日圆满 🎊',
+      planning_planning_title: '📋 规划明日 📋',
+      planning_loading: '工会高层正在联名撰写表扬信...',
+      planning_tomorrow_summary: '明日委托总数',
+      planning_routine_quests: '每日修炼（自动出现）',
+      planning_routine_hint: '💡 这些任务每天自动出现，无需单独规划',
+      planning_add_temp_quests: '规划明日临时任务',
+      planning_input_placeholder: '输入明天的任务...',
+      planning_manual_add: '手动添加任务',
+      planning_edit_content: '任务内容：',
+      planning_edit_difficulty: '难度评级：',
+      planning_delete_task: '删除此任务',
+      planning_confirm_register: '确认登记',
+      planning_temp_tasks: '项临时委托',
+      planning_close: '关闭',
+      
+      // Long-term Project
+      longterm_title: '🎯 大项目规划 🎯',
+      longterm_subtitle: '粘贴你的长期计划，冒险者工会将自动分配到每日委托板',
+      longterm_placeholder: '粘贴你的长期计划...\n\n例如：\n周一：完成项目方案设计\n周二：与团队讨论方案\n周三：修改并提交方案\n12月25日：准备年终总结',
+      longterm_parsing: '工会管理员正在更新委托板...',
+      longterm_start_parse: '开始解析',
+      longterm_identified: '识别到',
+      longterm_epic_quests: '项史诗委托',
+      longterm_reenter: '重新输入',
+      longterm_edit_date: '日期：',
+      longterm_edit_title: 'RPG 史诗标题：',
+      longterm_edit_content: '原始任务内容：',
+      longterm_edit_done: '完成编辑',
+      longterm_task_content_label: '任务内容：',
+      longterm_creating: '正在添加到委托板...',
+      longterm_confirm_add: '确认并添加到委托板'
     },
     en: {
       // Navigation
@@ -291,7 +346,62 @@ export function LanguageProvider({ children }) {
       common_confirm: 'Confirm',
       common_cancel: 'Cancel',
       common_items: 'items',
-      common_date: 'Date'
+      common_date: 'Date',
+
+      // Quest Card
+      questcard_reopen: 'Reopen',
+      questcard_edit: 'Edit',
+      questcard_delete: 'Delete',
+      questcard_confirm_reopen_title: 'Withdraw Completion Report?',
+      questcard_confirm_reopen_hint: 'This quest will return to pending status',
+      questcard_confirm_reopen: 'Confirm Withdraw',
+      
+      // Quest Edit Form
+      questedit_title: '✏️ Edit Quest ✏️',
+      questedit_current_title: 'Current RPG Quest Name',
+      questedit_current_difficulty: 'Current Difficulty Rating',
+      questedit_difficulty_hint: 'Rating remains unchanged when editing content',
+      questedit_content_label: 'Quest Content',
+      questedit_content_placeholder: 'e.g.: Run 5km',
+      questedit_content_hint: '💡 AI will regenerate RPG-style title after saving (difficulty rating unchanged)',
+      questedit_routine: 'Set as Daily Routine',
+      questedit_routine_hint: 'When checked, this quest will automatically appear on the board daily',
+      questedit_saving: 'Saving...',
+      questedit_save: 'Save',
+      
+      // End of Day Planning
+      planning_celebration_title: '🎊 Day Complete 🎊',
+      planning_planning_title: '📋 Plan Tomorrow 📋',
+      planning_loading: 'Guild leaders are writing commendation letter...',
+      planning_tomorrow_summary: 'Tomorrow\'s Total Quests',
+      planning_routine_quests: 'Daily Routines (Auto-appear)',
+      planning_routine_hint: '💡 These quests appear automatically daily, no separate planning needed',
+      planning_add_temp_quests: 'Plan Tomorrow\'s Temporary Quests',
+      planning_input_placeholder: 'Enter tomorrow\'s quest...',
+      planning_manual_add: 'Add Quest Manually',
+      planning_edit_content: 'Quest Content:',
+      planning_edit_difficulty: 'Difficulty Rating:',
+      planning_delete_task: 'Delete This Quest',
+      planning_confirm_register: 'Confirm Registration for',
+      planning_temp_tasks: 'temporary quests',
+      planning_close: 'Close',
+      
+      // Long-term Project
+      longterm_title: '🎯 Long-term Project Planning 🎯',
+      longterm_subtitle: 'Paste your long-term plans, the Guild will automatically distribute them to daily quest board',
+      longterm_placeholder: 'Paste your long-term plans...\n\nExample:\nMonday: Complete project proposal design\nTuesday: Discuss proposal with team\nWednesday: Revise and submit proposal\nDecember 25: Prepare year-end summary',
+      longterm_parsing: 'Guild administrator is updating quest board...',
+      longterm_start_parse: 'Start Parsing',
+      longterm_identified: 'Identified',
+      longterm_epic_quests: 'epic quests',
+      longterm_reenter: 'Re-enter',
+      longterm_edit_date: 'Date:',
+      longterm_edit_title: 'RPG Epic Title:',
+      longterm_edit_content: 'Original Quest Content:',
+      longterm_edit_done: 'Done Editing',
+      longterm_task_content_label: 'Quest Content:',
+      longterm_creating: 'Adding to quest board...',
+      longterm_confirm_add: 'Confirm and Add to Quest Board'
     }
   };
 

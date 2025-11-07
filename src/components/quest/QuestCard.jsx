@@ -3,11 +3,13 @@ import { useState } from 'react';
 import { Check, MoreVertical, Edit, Trash2, RotateCcw } from 'lucide-react';
 import DifficultyBadge from './DifficultyBadge';
 import { format } from 'date-fns';
+import { useLanguage } from '@/components/LanguageContext';
 
 export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReopen }) {
   const [showMenu, setShowMenu] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isGlowing, setIsGlowing] = useState(false);
+  const { t } = useLanguage();
   
   const isDone = quest.status === 'done';
 
@@ -105,7 +107,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                           className="w-full px-3 py-2 text-left text-xs font-bold hover:bg-gray-100 flex items-center gap-2"
                           style={{ borderBottom: '2px solid #000' }}
                         >
-                          <RotateCcw className="w-3 h-3" /> 返回待办
+                          <RotateCcw className="w-3 h-3" /> {t('questcard_reopen')}
                         </button>
                       )}
                       <button
@@ -116,7 +118,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                         className="w-full px-3 py-2 text-left text-xs font-bold hover:bg-gray-100 flex items-center gap-2"
                         style={{ borderBottom: '2px solid #000' }}
                       >
-                        <Edit className="w-3 h-3" /> 编辑
+                        <Edit className="w-3 h-3" /> {t('questcard_edit')}
                       </button>
                       <button
                         onClick={() => {
@@ -125,7 +127,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                         }}
                         className="w-full px-3 py-2 text-left text-xs font-bold hover:bg-gray-100 flex items-center gap-2"
                       >
-                        <Trash2 className="w-3 h-3" /> 删除
+                        <Trash2 className="w-3 h-3" /> {t('questcard_delete')}
                       </button>
                     </div>
                   </>
@@ -175,7 +177,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-xl font-black uppercase text-center mb-4">
-              撤回完成报告？
+              {t('questcard_confirm_reopen_title')}
             </h3>
             
             <div 
@@ -187,7 +189,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
             >
               <p className="font-bold text-sm mb-2">{quest.title}</p>
               <p className="text-xs font-bold" style={{ color: '#666' }}>
-                此委托将恢复至待办状态
+                {t('questcard_confirm_reopen_hint')}
               </p>
             </div>
 
@@ -201,7 +203,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                   boxShadow: '4px 4px 0px #000'
                 }}
               >
-                取消
+                {t('common_cancel')}
               </button>
               <button
                 onClick={confirmReopen}
@@ -213,7 +215,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                   boxShadow: '4px 4px 0px #000'
                 }}
               >
-                确认撤回
+                {t('questcard_confirm_reopen')}
               </button>
             </div>
           </div>

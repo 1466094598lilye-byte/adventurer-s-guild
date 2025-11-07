@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -5,11 +6,13 @@ import { Package, Sparkles, Filter, ChevronLeft, ChevronRight } from 'lucide-rea
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { useLanguage } from '@/components/LanguageContext';
 
 export default function Treasures() {
   const [rarityFilter, setRarityFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
+  const { t, language } = useLanguage();
 
   // 获取总数（用于计算总页数）
   const { data: allLoot = [] } = useQuery({
@@ -83,10 +86,10 @@ export default function Treasures() {
           }}
         >
           <h1 className="text-3xl font-black uppercase text-center">
-            💎 宝物收藏 💎
+            💎 {t('treasures_title')} 💎
           </h1>
           <p className="text-center font-bold mt-2 text-sm">
-            共收集 {allLoot.length} 件战利品
+            {t('treasures_collected')} {allLoot.length} {t('treasures_items')}
           </p>
         </div>
 
@@ -114,7 +117,7 @@ export default function Treasures() {
             </div>
 
             <h2 className="text-2xl font-black uppercase mb-4">
-              宝库尚未开启
+              {language === 'zh' ? '宝库尚未开启' : 'Treasury Not Yet Opened'}
             </h2>
 
             <div 
@@ -125,13 +128,19 @@ export default function Treasures() {
               }}
             >
               <p className="font-bold leading-relaxed mb-3">
-                冒险者，欢迎来到工会宝库！
+                {language === 'zh' 
+                  ? '冒险者，欢迎来到工会宝库！'
+                  : 'Welcome to the Guild Treasury, Adventurer!'}
               </p>
               <p className="font-bold leading-relaxed mb-3">
-                每当你完成一天的所有委托，就能开启当日的神秘宝箱，获得珍贵的战利品。这些宝物不仅是你努力的见证，更可能带来意想不到的奖励。
+                {language === 'zh'
+                  ? '每当你完成一天的所有委托，就能开启当日的神秘宝箱，获得珍贵的战利品。这些宝物不仅是你努力的见证，更可能带来意想不到的奖励。'
+                  : 'Complete all daily quests to unlock mysterious treasure chests and earn valuable loot. These treasures are not only proof of your efforts but may also bring unexpected rewards.'}
               </p>
               <p className="font-bold leading-relaxed">
-                从今天开始，完成任务清单，开启你的第一个宝箱吧！✨
+                {language === 'zh'
+                  ? '从今天开始，完成任务清单，开启你的第一个宝箱吧！✨'
+                  : 'Start today, complete your quest list, and unlock your first chest! ✨'}
               </p>
             </div>
 
@@ -145,7 +154,7 @@ export default function Treasures() {
               }}
             >
               <Sparkles className="w-6 h-6" strokeWidth={3} />
-              前往委托板
+              {language === 'zh' ? '前往委托板' : 'Go to Quest Board'}
             </Link>
           </div>
         ) : (
@@ -159,7 +168,7 @@ export default function Treasures() {
                 boxShadow: '6px 6px 0px #000'
               }}
             >
-              <h3 className="font-black uppercase mb-3 text-sm">稀有度统计</h3>
+              <h3 className="font-black uppercase mb-3 text-sm">{t('treasures_stats')}</h3>
               <div className="grid grid-cols-4 gap-2">
                 {['Common', 'Rare', 'Epic', 'Legendary'].map(r => (
                   <div 
@@ -173,7 +182,7 @@ export default function Treasures() {
                   >
                     <div className="text-2xl font-black">{rarityCounts[r]}</div>
                     <div className="text-xs font-bold">
-                      {r === 'Common' ? '普通' : r === 'Rare' ? '稀有' : r === 'Epic' ? '史诗' : '传说'}
+                      {t(`rarity_${r.toLowerCase()}`)}
                     </div>
                   </div>
                 ))}
@@ -193,7 +202,7 @@ export default function Treasures() {
                 }}
               >
                 <Filter className="w-4 h-4 inline mr-1" strokeWidth={3} />
-                全部
+                {t('treasures_filter_all')}
               </button>
               {['Common', 'Rare', 'Epic', 'Legendary'].map(r => (
                 <button
@@ -207,7 +216,7 @@ export default function Treasures() {
                     boxShadow: rarityFilter === r ? '4px 4px 0px #000' : '2px 2px 0px #000'
                   }}
                 >
-                  {r === 'Common' ? '普通' : r === 'Rare' ? '稀有' : r === 'Epic' ? '史诗' : '传说'}
+                  {t(`rarity_${r.toLowerCase()}`)}
                 </button>
               ))}
             </div>
@@ -222,9 +231,9 @@ export default function Treasures() {
                 }}
               >
                 <p className="text-center font-black text-sm">
-                  第 {currentPage} / {totalPages} 页 
+                  {t('treasures_page')} {currentPage} / {totalPages} 
                   <span className="ml-2 font-bold">
-                    (共 {filteredAllLoot.length} 件)
+                    ({filteredAllLoot.length} {t('treasures_items')})
                   </span>
                 </p>
               </div>
@@ -244,7 +253,9 @@ export default function Treasures() {
                   boxShadow: '6px 6px 0px #000'
                 }}
               >
-                <p className="font-black text-xl">暂无该稀有度的宝物</p>
+                <p className="font-black text-xl">
+                  {language === 'zh' ? '暂无该稀有度的宝物' : 'No items of this rarity'}
+                </p>
               </div>
             ) : (
               <div className="grid gap-4 mb-6">
@@ -279,16 +290,14 @@ export default function Treasures() {
                               border: '2px solid #000'
                             }}
                           >
-                            {item.rarity === 'Common' ? '普通' : 
-                             item.rarity === 'Rare' ? '稀有' : 
-                             item.rarity === 'Epic' ? '史诗' : '传说'}
+                            {t(`rarity_${item.rarity.toLowerCase()}`)}
                           </span>
                         </div>
                         <p className="font-bold text-sm mb-2" style={{ color: '#666' }}>
                           {item.flavorText}
                         </p>
                         <p className="text-xs font-bold" style={{ color: '#999' }}>
-                          获得于 {format(new Date(item.obtainedAt), 'yyyy/MM/dd HH:mm')}
+                          {language === 'zh' ? '获得于' : 'Obtained on'} {format(new Date(item.obtainedAt), language === 'zh' ? 'yyyy/MM/dd HH:mm' : 'MMM dd, yyyy HH:mm')}
                         </p>
                       </div>
                     </div>
@@ -313,7 +322,7 @@ export default function Treasures() {
                   }}
                 >
                   <ChevronLeft className="w-5 h-5" strokeWidth={3} />
-                  上一页
+                  {t('treasures_prev')}
                 </button>
 
                 <div 
@@ -338,7 +347,7 @@ export default function Treasures() {
                     cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  下一页
+                  {t('treasures_next')}
                   <ChevronRight className="w-5 h-5" strokeWidth={3} />
                 </button>
               </div>

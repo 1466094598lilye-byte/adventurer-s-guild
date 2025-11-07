@@ -94,7 +94,7 @@ export default function EndOfDaySummaryAndPlanning({
             title: { 
               type: "string",
               description: language === 'zh' 
-                ? "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！"
+                ? "必须严格是【XX】+完整RPG描述格式！XX是2字动作类型，描述要充满史诗感（通常30-50个汉字）！"
                 : "Must strictly follow [Category]: <5-8 Word Epic Phrase> format!"
             },
             actionHint: { 

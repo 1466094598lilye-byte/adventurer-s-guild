@@ -134,7 +134,6 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       setLongTermQuests(updatedQuests);
 
       if (selectedDate) {
-        // Re-calculate groupedByDate after loadLongTermQuests, then update selectedDateQuests
         const updatedGroupedByDate = updatedQuests.reduce((acc, quest) => {
           if (!acc[quest.date]) {
             acc[quest.date] = [];

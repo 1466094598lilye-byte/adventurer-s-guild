@@ -1,4 +1,3 @@
-
 // AI Prompts for both Chinese and English versions
 
 export function getTaskNamingPrompt(language, userInput, isEdit = false) {
@@ -12,19 +11,19 @@ export function getTaskNamingPrompt(language, userInput, isEdit = false) {
 2. **为这个任务生成专属的RPG史诗风格标题**：
 
 【标题生成规则】（必须100%严格遵守）：
-- 格式：【X X】+ Y Y Y Y Y Y Y （X=动作类型2个字，Y=描述正好7个字）
-- 动作类型：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
-- **7字描述是硬性限制！必须正好7个汉字，不能多也不能少！**
-- 描述要充满幻想色彩，把现实任务转化为史诗叙事
+- 格式：【XX】+ 完整的RPG风格史诗描述
+- 【XX】是2字动作类型，从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
+- 描述部分要充满幻想色彩和史诗感，通常30-50个汉字，把现实任务转化为奇幻冒险叙事
+- 描述要生动、具体、有画面感，让人感受到冒险的氛围
 - **绝对禁止使用"任务"二字！**
 
-【标题示例】（注意每个描述都正好7个字）：
-"跑步5km" → "【征讨】踏破晨曦五里征途"（7字：踏破晨曦五里征途）
-"写周报" → "【记录】编撰冒险周志卷轴"（7字：编撰冒险周志卷轴）
-"开会" → "【议会】召开圆桌战术会议"（7字：召开圆桌战术会议）
-"买菜" → "【收集】前往集市采购补给"（7字：前往集市采购补给）
+【标题示例】：
+"跑步5km" → "【征讨】踏破晨曦迷雾，向着东方地平线发起挑战，以坚韧的意志征服五里长途"
+"写周报" → "【记录】于羊皮卷轴上镌刻本周冒险传奇，编撰属于自己的英雄史诗篇章"
+"开会" → "【议会】召集圆桌骑士团举行战略会议，共商征讨魔域的伟大作战方略"
+"买菜" → "【收集】前往繁华集市搜寻珍贵食材，为冒险者准备充足的补给和能量储备"
 
-**重要提醒**：描述部分必须正好7个汉字！
+**重要提醒**：描述要充满想象力和史诗感，让平凡的日常也能成为传奇冒险！
 
 ${isEdit ? '' : '3. 评定难度和稀有度\n4. 保留用户的完整输入作为 actionHint\n'}
 请返回任务：`;
@@ -290,21 +289,19 @@ ${userInput.trim()}
 - 只输出 MM-DD 格式，不要年份！
 
 【标题生成规则 - 必须100%严格遵守】：
-- **格式**：【XX】+ YYYYYYY（XX=2字动作类型，YYYYYYY=正好7个汉字的描述）
-- **2字动作类型**从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
-- **7字描述是硬性限制**！必须正好7个汉字，不能多也不能少！
-- 7字描述要充满幻想色彩，把现实任务转化为史诗叙事
+- **格式**：【XX】+ 完整的RPG风格史诗描述
+- **XX**=2字动作类型，从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
+- 描述要充满幻想色彩和史诗感，通常30-50个汉字，把现实任务转化为奇幻冒险叙事
 - **绝对禁止使用"任务"二字！**
 
-【标题示例】（注意每个描述都正好7个字）：
-- "跑步5km" → "【征讨】踏破晨曦五里征途"（7字：踏破晨曦五里征途）
-- "写周报" → "【记录】编撰冒险周志卷轴"（7字：编撰冒险周志卷轴）
-- "开会" → "【议会】召开圆桌战术会议"（7字：召开圆桌战术会议）
-- "准备PPT" → "【铸造】炼制议会演说宝典"（7字：炼制议会演说宝典）
-- "整理菜单" → "【记录】编撰珍馐盛宴图录"（7字：编撰珍馐盛宴图录）
-- "制定方案" → "【铸造】铸造战略蓝图石板"（7字：铸造战略蓝图石板）
+【标题示例】：
+- "跑步5km" → "【征讨】踏破晨曦迷雾，向着东方地平线发起挑战，以坚韧的意志征服五里长途"
+- "写周报" → "【记录】于羊皮卷轴上镌刻本周冒险传奇，编撰属于自己的英雄史诗篇章"
+- "开会" → "【议会】召集圆桌骑士团举行战略会议，共商征讨魔域的伟大作战方略"
+- "准备PPT" → "【铸造】炼制充满魔力的演说宝典，为即将到来的议会做好万全准备"
+- "整理菜单" → "【记录】编撰珍馐盛宴图录，详细记载每一道菜肴的奇妙配方与制作工艺"
 
-**重要提醒**：描述部分必须正好7个汉字！数一下：踏（1）破（2）晨（3）曦（4）五（5）里（6）征（7）途 = 7个字！
+**重要提醒**：描述要充满想象力和史诗感，让每个任务都成为传奇冒险的一部分！
 
 【解析示例】：
 
@@ -315,26 +312,15 @@ ${userInput.trim()}
 - 准备会议PPT
 - 联系客户张三
 """
-应返回3个任务，每个标题都是【XX】+7字格式：
-1. 周一 / 【铸造】铸造战略蓝图石板 / 完成项目方案
-2. 周一 / 【铸造】炼制议会演说宝典 / 准备会议PPT  
-3. 周一 / 【外交】觐见商贸联盟使节 / 联系客户张三
-
-输入2：
-"""
-12月20日：写周报
-12月21日：开会讨论、修改方案、发邮件
-"""
-应返回4个任务，每个标题都是【XX】+7字格式：
-1. 12-20 / 【记录】编撰冒险周志卷轴 / 写周报
-2. 12-21 / 【议会】召开圆桌战术会议 / 开会讨论
-3. 12-21 / 【锻造】重铸战略蓝图石板 / 修改方案
-4. 12-21 / 【外交】传递星陨纪元密信 / 发邮件
+应返回3个任务，每个标题都是【XX】+完整描述格式：
+1. 周一 / 【铸造】铸造宏伟战略蓝图石板，为整个项目奠定坚实的基础 / 完成项目方案
+2. 周一 / 【铸造】炼制充满魔力的演说宝典，为议会做好万全准备 / 准备会议PPT  
+3. 周一 / 【外交】觐见商贸联盟的重要使节，商讨未来合作大计 / 联系客户张三
 
 【最终检查】：
 - 返回前数一数任务数量，确保每个独立任务点都被包含
 - 同一天的多个任务必须是独立的任务对象（不要合并成一个）
-- **每个标题必须严格是【XX】+7字格式，数一下确保正好7个汉字！**
+- **每个标题必须是【XX】+完整RPG描述格式，充满史诗感！**
 - 保留每个任务的原始描述作为 actionHint
 
 请返回任务数组（按日期排序）：`,
@@ -348,7 +334,7 @@ ${userInput.trim()}
               properties: {
                 title: { 
                   type: "string", 
-                  description: "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！例如：【征讨】踏破晨曦五里征途。描述必须正好7个字，不能多也不能少！绝对不能包含'任务'二字！"
+                  description: "必须严格是【XX】+完整RPG描述格式！XX是2字动作类型，描述要充满幻想色彩和史诗感（通常30-50个汉字），绝对不能包含'任务'二字！"
                 },
                 actionHint: { 
                   type: "string", 
@@ -400,39 +386,13 @@ ${userInput.trim()}
 - "Attend meeting" → "[Diplomacy]: Convene Round Table War Council" (6 words)
 - "Prepare PPT" → "[Forging]: Craft Grand Presentation Tome" (5 words)
 - "Organize menu" → "[Chronicle]: Compile Feast Bounty Registry" (5 words)
-- "Draft proposal" → "[Forging]: Forge Strategic Blueprint Tablet" (5 words)
 
 **Important Reminder**: The phrase must be 5-8 words! Count carefully!
-
-【Parsing Examples】:
-
-Input 1:
-"""
-Monday:
-- Complete project proposal
-- Prepare meeting PPT
-- Contact client John
-"""
-Should return 3 tasks, each title in [Category]: <Phrase> format:
-1. Monday / [Forging]: Forge Strategic Blueprint Tablet / Complete project proposal
-2. Monday / [Forging]: Craft Grand Presentation Tome / Prepare meeting PPT  
-3. Monday / [Diplomacy]: Meet Trade Alliance Envoy / Contact client John
-
-Input 2:
-"""
-December 20: Write weekly report
-December 21: Attend meeting, revise proposal, send email
-"""
-Should return 4 tasks, each title in [Category]: <Phrase> format:
-1. 12-20 / [Chronicle]: Forge Epic Weekly Adventure Scroll / Write weekly report
-2. 12-21 / [Diplomacy]: Convene Round Table War Council / Attend meeting
-3. 12-21 / [Forging]: Reforge Strategic Blueprint Tablet / Revise proposal
-4. 12-21 / [Diplomacy]: Dispatch Starfall Era Missive / Send email
 
 【Final Check】:
 - Count task quantity before returning, ensure every independent task point is included
 - Multiple tasks on the same day must be separate task objects (do not merge)
-- **Every title must strictly follow [Category]: <5-8 Word Phrase> format, count to ensure correct length!**
+- **Every title must strictly follow [Category]: <5-8 Word Phrase> format!**
 - Preserve original description of each task as actionHint
 
 Return task array (sorted by date):`,
@@ -446,7 +406,7 @@ Return task array (sorted by date):`,
               properties: {
                 title: { 
                   type: "string", 
-                  description: "Must strictly follow [Category]: <5-8 Word Epic Phrase> format! Category is action type, Phrase is 5-8 words. Example: [Conquest]: Dawn March Through Five Miles. Phrase must be 5-8 words exactly! Absolutely cannot include the word 'task' or 'quest'!"
+                  description: "Must strictly follow [Category]: <5-8 Word Epic Phrase> format! Category is action type, Phrase is 5-8 words. Absolutely cannot include the word 'task' or 'quest'!"
                 },
                 actionHint: { 
                   type: "string", 
@@ -504,23 +464,22 @@ export function getPlanningTaskPrompt(language, userInput) {
 2. **为这个任务生成专属的RPG史诗风格标题**：
 
 【标题生成规则】（必须100%严格遵守）：
-- 格式：【X X】+ Y Y Y Y Y Y Y （X=动作类型2个字，Y=描述正好7个字）
-- 动作类型：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判、议会
-- **7字描述是硬性限制！必须正好7个汉字，不能多也不能少！**
-- 描述要充满幻想色彩，把现实任务转化为史诗叙事
+- 格式：【XX】+ 完整的RPG风格史诗描述
+- XX=2字动作类型：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判、议会
+- 描述要充满幻想色彩和史诗感，通常30-50个汉字，把现实任务转化为奇幻冒险叙事
 - **绝对禁止使用"任务"二字！**
 
-【标题示例】（注意每个描述都正好7个字）：
-"跑步5km" → "【征讨】踏破晨曦五里征途"（7字：踏破晨曦五里征途）
-"写周报" → "【记录】编撰冒险周志卷轴"（7字：编撰冒险周志卷轴）
-"开会" → "【议会】召开圆桌战术会议"（7字：召开圆桌战术会议）
+【标题示例】：
+"跑步5km" → "【征讨】踏破晨曦迷雾，向着东方地平线发起挑战，以坚韧的意志征服五里长途"
+"写周报" → "【记录】于羊皮卷轴上镌刻本周冒险传奇，编撰属于自己的英雄史诗篇章"
+"开会" → "【议会】召集圆桌骑士团举行战略会议，共商征讨魔域的伟大作战方略"
 
-**重要提醒**：描述部分必须正好7个汉字！
+**重要提醒**：描述要充满想象力和史诗感！
 
 3. 评定难度和稀有度
 4. 保留用户的完整输入作为 actionHint
 
-**再次强调**：无论输入多长或多复杂，都只返回1个任务！标题的描述部分必须正好7个汉字！
+**再次强调**：无论输入多长或多复杂，都只返回1个任务！描述要充满史诗感！
 
 请返回任务：`;
   } else {
@@ -565,9 +524,9 @@ export function getCalendarAddTaskPrompt(language, newTaskInput) {
 请为这个大项目任务生成RPG风格标题（只需要标题）。
 
 【标题生成规则】：
-- 格式：【2字类型】+ 7字幻想描述
+- 格式：【2字类型】+ 完整的RPG风格史诗描述（30-50个汉字）
 - 2字类型必须从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
-- 7字描述必须充满幻想色彩
+- 描述必须充满幻想色彩和史诗感
 - **绝对禁止使用"任务"二字！**
 
 只返回标题：`,
@@ -576,7 +535,7 @@ export function getCalendarAddTaskPrompt(language, newTaskInput) {
         properties: {
           title: { 
             type: "string",
-            description: "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！"
+            description: "必须严格是【XX】+完整RPG描述格式！XX是2字动作类型，描述要充满史诗感（30-50个汉字）！"
           }
         },
         required: ["title"]

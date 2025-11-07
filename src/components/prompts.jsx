@@ -1,3 +1,4 @@
+
 // AI Prompts for both Chinese and English versions
 
 export function getTaskNamingPrompt(language, userInput, isEdit = false) {
@@ -11,19 +12,18 @@ export function getTaskNamingPrompt(language, userInput, isEdit = false) {
 2. **为这个任务生成专属的RPG史诗风格标题**：
 
 【标题生成规则】（必须100%严格遵守）：
-- 格式：【XX】+ 完整的RPG风格史诗描述
-- 【XX】是2字动作类型，从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
-- 描述部分要充满幻想色彩和史诗感，通常30-50个汉字，把现实任务转化为奇幻冒险叙事
-- 描述要生动、具体、有画面感，让人感受到冒险的氛围
+- 格式：【XX】+ YYYYYYY （XX=动作类型2个字，YYYYYYY=描述正好7个汉字）
+- 动作类型：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
+- **7字描述是硬性限制！必须正好7个汉字，不能多也不能少！**
+- 描述要充满幻想色彩，把现实任务转化为史诗叙事
 - **绝对禁止使用"任务"二字！**
 
-【标题示例】：
-"跑步5km" → "【征讨】踏破晨曦迷雾，向着东方地平线发起挑战，以坚韧的意志征服五里长途"
-"写周报" → "【记录】于羊皮卷轴上镌刻本周冒险传奇，编撰属于自己的英雄史诗篇章"
-"开会" → "【议会】召集圆桌骑士团举行战略会议，共商征讨魔域的伟大作战方略"
-"买菜" → "【收集】前往繁华集市搜寻珍贵食材，为冒险者准备充足的补给和能量储备"
+【标题示例】（注意每个描述都正好7个字）：
+"跑步5km" → "【征讨】踏破晨曦五里征途"（7字：踏破晨曦五里征途）
+"写周报" → "【记录】编撰冒险周志卷轴"（7字：编撰冒险周志卷轴）
+"开会" → "【议会】召开圆桌战术会议"（7字：召开圆桌战术会议）
 
-**重要提醒**：描述要充满想象力和史诗感，让平凡的日常也能成为传奇冒险！
+**重要提醒**：描述部分必须正好7个汉字！
 
 ${isEdit ? '' : '3. 评定难度和稀有度\n4. 保留用户的完整输入作为 actionHint\n'}
 请返回任务：`;
@@ -72,12 +72,13 @@ export function getPraisePrompt(language, quest, role) {
 - 难度：${quest.difficulty}级
 
 【核心要求】：
-1. **严格一句话**：必须是且只能是一句话，20-30字。
+1. **一段话，50字左右**：用一段连贯的话语表达肯定，大约50个汉字。
 2. **角色化表达**：必须体现${role.name}的独特视角和语气，不能写成通用表扬。
 3. **融入关键词**：自然地使用至少1个该角色的专属关键词。
 4. **精准点评**：从${role.name}的视角，精准识别任务背后展现的品质或价值。
+5. **有温度有深度**：既要有鼓励的温暖，也要有深刻的洞察。
 
-请**完全以${role.name}的身份和视角**，为这位冒险者写**严格一句话**的肯定（20-30字）：`;
+请**完全以${role.name}的身份和视角**，为这位冒险者写一段肯定的话（50字左右）：`;
   } else {
     return `You are the ${role.nameEn} of the [Starfall Era Adventurer's Guild]. An adventurer just completed a task, and you need to make them feel: their struggle has been truly "seen" and "understood" by you.
 
@@ -93,12 +94,13 @@ Key Phrases: ${role.keywordsEn.join(', ')} (naturally incorporate these in your 
 - Difficulty: ${quest.difficulty}-rank
 
 【Core Requirements】:
-1. **Strictly one sentence**: Must be exactly one sentence, 20-30 words total.
+1. **One coherent paragraph, around 50 words**: Express acknowledgment in one flowing statement, approximately 50 words.
 2. **Role-specific expression**: Must reflect ${role.nameEn}'s unique perspective and voice, not generic praise.
 3. **Incorporate key phrases**: Naturally use at least 1 of this role's signature phrases.
 4. **Precise recognition**: From ${role.nameEn}'s perspective, precisely identify the quality or value demonstrated.
+5. **Warmth and depth**: Balance encouragement with insightful observation.
 
-Please write **strictly one sentence** of acknowledgment (20-30 words total) **completely as ${role.nameEn}**:`;
+Please write acknowledgment (around 50 words) **completely as ${role.nameEn}**:`;
   }
 }
 
@@ -289,38 +291,26 @@ ${userInput.trim()}
 - 只输出 MM-DD 格式，不要年份！
 
 【标题生成规则 - 必须100%严格遵守】：
-- **格式**：【XX】+ 完整的RPG风格史诗描述
-- **XX**=2字动作类型，从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
-- 描述要充满幻想色彩和史诗感，通常30-50个汉字，把现实任务转化为奇幻冒险叙事
+- **格式**：【XX】+ YYYYYYY（XX=2字动作类型，YYYYYYY=正好7个汉字的描述）
+- **2字动作类型**从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
+- **7字描述是硬性限制**！必须正好7个汉字，不能多也不能少！
+- 7字描述要充满幻想色彩，把现实任务转化为史诗叙事
 - **绝对禁止使用"任务"二字！**
 
-【标题示例】：
-- "跑步5km" → "【征讨】踏破晨曦迷雾，向着东方地平线发起挑战，以坚韧的意志征服五里长途"
-- "写周报" → "【记录】于羊皮卷轴上镌刻本周冒险传奇，编撰属于自己的英雄史诗篇章"
-- "开会" → "【议会】召集圆桌骑士团举行战略会议，共商征讨魔域的伟大作战方略"
-- "准备PPT" → "【铸造】炼制充满魔力的演说宝典，为即将到来的议会做好万全准备"
-- "整理菜单" → "【记录】编撰珍馐盛宴图录，详细记载每一道菜肴的奇妙配方与制作工艺"
+【标题示例】（注意每个描述都正好7个字）：
+- "跑步5km" → "【征讨】踏破晨曦五里征途"（7字：踏破晨曦五里征途）
+- "写周报" → "【记录】编撰冒险周志卷轴"（7字：编撰冒险周志卷轴）
+- "开会" → "【议会】召开圆桌战术会议"（7字：召开圆桌战术会议）
+- "准备PPT" → "【铸造】炼制议会演说宝典"（7字：炼制议会演说宝典）
+- "整理菜单" → "【记录】编撰珍馐盛宴图录"（7字：编撰珍馐盛宴图录）
+- "制定方案" → "【铸造】铸造战略蓝图石板"（7字：铸造战略蓝图石板）
 
-**重要提醒**：描述要充满想象力和史诗感，让每个任务都成为传奇冒险的一部分！
-
-【解析示例】：
-
-输入1：
-"""
-周一：
-- 完成项目方案
-- 准备会议PPT
-- 联系客户张三
-"""
-应返回3个任务，每个标题都是【XX】+完整描述格式：
-1. 周一 / 【铸造】铸造宏伟战略蓝图石板，为整个项目奠定坚实的基础 / 完成项目方案
-2. 周一 / 【铸造】炼制充满魔力的演说宝典，为议会做好万全准备 / 准备会议PPT  
-3. 周一 / 【外交】觐见商贸联盟的重要使节，商讨未来合作大计 / 联系客户张三
+**重要提醒**：描述部分必须正好7个汉字！数一下：踏（1）破（2）晨（3）曦（4）五（5）里（6）征（7）途 = 7个字！
 
 【最终检查】：
 - 返回前数一数任务数量，确保每个独立任务点都被包含
 - 同一天的多个任务必须是独立的任务对象（不要合并成一个）
-- **每个标题必须是【XX】+完整RPG描述格式，充满史诗感！**
+- **每个标题必须严格是【XX】+7字格式，数一下确保正好7个汉字！**
 - 保留每个任务的原始描述作为 actionHint
 
 请返回任务数组（按日期排序）：`,
@@ -334,7 +324,7 @@ ${userInput.trim()}
               properties: {
                 title: { 
                   type: "string", 
-                  description: "必须严格是【XX】+完整RPG描述格式！XX是2字动作类型，描述要充满幻想色彩和史诗感（通常30-50个汉字），绝对不能包含'任务'二字！"
+                  description: "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！例如：【征讨】踏破晨曦五里征途。描述必须正好7个字，不能多也不能少！绝对不能包含'任务'二字！"
                 },
                 actionHint: { 
                   type: "string", 
@@ -464,22 +454,23 @@ export function getPlanningTaskPrompt(language, userInput) {
 2. **为这个任务生成专属的RPG史诗风格标题**：
 
 【标题生成规则】（必须100%严格遵守）：
-- 格式：【XX】+ 完整的RPG风格史诗描述
-- XX=2字动作类型：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判、议会
-- 描述要充满幻想色彩和史诗感，通常30-50个汉字，把现实任务转化为奇幻冒险叙事
+- 格式：【XX】+ YYYYYYY （XX=动作类型2个字，YYYYYYY=描述正好7个汉字）
+- 动作类型：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判、议会
+- **7字描述是硬性限制！必须正好7个汉字，不能多也不能少！**
+- 描述要充满幻想色彩，把现实任务转化为史诗叙事
 - **绝对禁止使用"任务"二字！**
 
-【标题示例】：
-"跑步5km" → "【征讨】踏破晨曦迷雾，向着东方地平线发起挑战，以坚韧的意志征服五里长途"
-"写周报" → "【记录】于羊皮卷轴上镌刻本周冒险传奇，编撰属于自己的英雄史诗篇章"
-"开会" → "【议会】召集圆桌骑士团举行战略会议，共商征讨魔域的伟大作战方略"
+【标题示例】（注意每个描述都正好7个字）：
+"跑步5km" → "【征讨】踏破晨曦五里征途"（7字：踏破晨曦五里征途）
+"写周报" → "【记录】编撰冒险周志卷轴"（7字：编撰冒险周志卷轴）
+"开会" → "【议会】召开圆桌战术会议"（7字：召开圆桌战术会议）
 
-**重要提醒**：描述要充满想象力和史诗感！
+**重要提醒**：描述部分必须正好7个汉字！
 
 3. 评定难度和稀有度
 4. 保留用户的完整输入作为 actionHint
 
-**再次强调**：无论输入多长或多复杂，都只返回1个任务！描述要充满史诗感！
+**再次强调**：无论输入多长或多复杂，都只返回1个任务！标题的描述部分必须正好7个汉字！
 
 请返回任务：`;
   } else {
@@ -524,9 +515,9 @@ export function getCalendarAddTaskPrompt(language, newTaskInput) {
 请为这个大项目任务生成RPG风格标题（只需要标题）。
 
 【标题生成规则】：
-- 格式：【2字类型】+ 完整的RPG风格史诗描述（30-50个汉字）
+- 格式：【2字类型】+ 7字幻想描述
 - 2字类型必须从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
-- 描述必须充满幻想色彩和史诗感
+- 7字描述必须充满幻想色彩
 - **绝对禁止使用"任务"二字！**
 
 只返回标题：`,
@@ -535,7 +526,7 @@ export function getCalendarAddTaskPrompt(language, newTaskInput) {
         properties: {
           title: { 
             type: "string",
-            description: "必须严格是【XX】+完整RPG描述格式！XX是2字动作类型，描述要充满史诗感（30-50个汉字）！"
+            description: "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！"
           }
         },
         required: ["title"]

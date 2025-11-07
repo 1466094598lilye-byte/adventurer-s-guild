@@ -4,7 +4,7 @@ import { Gift, Sparkles, X, Shield } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/components/LanguageContext';
-import { getTreasurePrompt } from '@/lib/prompts'; // Changed import path
+import { getTreasurePrompt } from '@/components/prompts'; // Changed import path
 
 export default function ChestOpening({ date, onClose, onLootGenerated }) {
   const { language, t } = useLanguage();

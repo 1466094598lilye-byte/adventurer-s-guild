@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Filter, Loader2, Sparkles, Coffee, Calendar, Briefcase, ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { Filter, Loader2, Sparkles, Coffee, Briefcase, ChevronDown, ChevronUp, Check, Plus, Timer, Calendar as CalendarIcon } from 'lucide-react';
 import QuestCard from '../components/quest/QuestCard';
 import PraiseDialog from '../components/quest/PraiseDialog';
 import ChestOpening from '../components/treasure/ChestOpening';
@@ -12,6 +12,10 @@ import LongTermProjectDialog from '../components/quest/LongTermProjectDialog';
 import LongTermCalendar from '../components/quest/LongTermCalendar';
 import JointPraiseDialog from '../components/quest/JointPraiseDialog';
 import { format, subDays } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useLanguage } from '@/components/LanguageContext';
+import { getTaskNamingPrompt } from '@/lib/prompts';
 
 export default function QuestBoard() {
   const [filter, setFilter] = useState('all');
@@ -33,6 +37,7 @@ export default function QuestBoard() {
   const [showJointPraise, setShowJointPraise] = useState(false);
   const [completedProject, setCompletedProject] = useState(null);
   const queryClient = useQueryClient();
+  const { language } = useLanguage();
 
   const hasProcessedDayRollover = useRef(false);
 
@@ -258,39 +263,7 @@ export default function QuestBoard() {
     setIsProcessing(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
-
-用户输入：${textInput.trim()}
-
-你的任务：
-1. 把整个输入作为**单个任务**处理（不要拆分！）
-2. **为这个任务生成专属的RPG史诗风格标题**：
-
-【标题生成规则】（必须100%严格遵守）：
-- 格式：【X X】+ Y Y Y Y Y Y Y （X=动作类型2个字，Y=描述正好7个字）
-- 动作类型：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
-- **7字描述是硬性限制！必须正好7个汉字，不能多也不能少！**
-- 描述要充满幻想色彩，把现实任务转化为史诗叙事
-- **绝对禁止使用"任务"二字！**
-
-【标题示例】（注意每个描述都正好7个字）：
-"跑步5km" → "【征讨】踏破晨曦五里征途"（7字：踏破晨曦五里征途）
-"写周报" → "【记录】编撰冒险周志卷轴"（7字：编撰冒险周志卷轴）
-"开会" → "【议会】召开圆桌战术会议"（7字：召开圆桌战术会议）
-"买菜" → "【收集】前往集市采购补给"（7字：前往集市采购补给）
-"学习英语" → "【研习】修炼古老语言魔法"（7字：修炼古老语言魔法）
-"健身" → "【锻造】淬炼冒险者之躯体"（7字：淬炼冒险者之躯体）
-"投资会议" → "【谈判】商讨战略资金分配"（7字：商讨战略资金分配）
-"准备PPT" → "【铸造】炼制议会演说宝典"（7字：炼制议会演说宝典）
-
-**重要提醒**：描述部分必须正好7个汉字！数一下：踏（1）破（2）晨（3）曦（4）五（5）里（6）征（7）途 = 7个字！
-
-3. 评定难度和稀有度
-4. 保留用户的完整输入作为 actionHint
-
-**再次强调**：无论输入多长或多复杂，都只返回1个任务！标题的描述部分必须正好7个汉字！
-
-请返回任务：`,
+        prompt: getTaskNamingPrompt(language, textInput.trim(), false),
         response_json_schema: {
           type: "object",
           properties: {
@@ -639,20 +612,7 @@ export default function QuestBoard() {
       
       if (contentChanged) {
         const result = await base44.integrations.Core.InvokeLLM({
-          prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
-
-**当前冒险者委托内容：** ${actionHint}
-
-请为这个任务生成RPG风格标题（只需要标题，不需要评级）。
-
-【标题生成规则】（必须100%严格遵守）：
-- 格式：【X X】+ Y Y Y Y Y Y Y （X=动作类型2个字，Y=描述正好7个字）
-- 动作类型：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
-- **7字描述是硬性限制！必须正好7个汉字，不能多也不能少！**
-- 描述要充满幻想色彩，把现实任务转化为史诗叙事
-- **绝对禁止使用"任务"二字！**
-
-只返回标题：`,
+          prompt: getTaskNamingPrompt(language, actionHint, true),
           response_json_schema: {
             type: "object",
             properties: {
@@ -832,7 +792,7 @@ export default function QuestBoard() {
           }}
         >
           <div className="flex gap-3 mb-3">
-            <input
+            <Input // Using shadcn Input component
               type="text"
               placeholder="输入今日任务，如：跑步5km"
               value={textInput}
@@ -851,7 +811,7 @@ export default function QuestBoard() {
               }}
             />
 
-            <button
+            <Button // Using shadcn Button component
               onClick={handleTextSubmit}
               disabled={isProcessing || !textInput.trim()}
               className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
@@ -867,10 +827,10 @@ export default function QuestBoard() {
               ) : (
                 <Sparkles className="w-8 h-8" strokeWidth={3} style={{ color: '#FFF', fill: 'none' }} />
               )}
-            </button>
+            </Button>
           </div>
 
-          <button
+          <Button // Using shadcn Button component
             onClick={() => setShowLongTermDialog(true)}
             className="w-full py-3 font-black uppercase text-sm flex items-center justify-center gap-2"
             style={{
@@ -882,7 +842,7 @@ export default function QuestBoard() {
           >
             <Briefcase className="w-5 h-5" strokeWidth={3} />
             大项目规划
-          </button>
+          </Button>
           
           <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
             💡 用于粘贴长期计划，冒险者工会将自动分配到每日委托板
@@ -946,7 +906,7 @@ export default function QuestBoard() {
                           <label className="block text-xs font-bold uppercase mb-2">
                             任务内容：
                           </label>
-                          <input
+                          <Input // Using shadcn Input component
                             type="text"
                             value={quest.actionHint}
                             onChange={(e) => handleUpdatePendingQuest(quest.tempId, 'actionHint', e.target.value)}
@@ -961,7 +921,7 @@ export default function QuestBoard() {
                           </label>
                           <div className="grid grid-cols-4 gap-2">
                             {['C', 'B', 'A', 'S'].map(level => (
-                              <button
+                              <Button // Using shadcn Button component
                                 key={level}
                                 onClick={() => handleUpdatePendingQuest(quest.tempId, 'difficulty', level)}
                                 className="py-2 font-black"
@@ -972,12 +932,12 @@ export default function QuestBoard() {
                                 }}
                               >
                                 {level}
-                              </button>
+                              </Button>
                             ))}
                           </div>
                         </div>
 
-                        <button
+                        <Button // Using shadcn Button component
                           onClick={() => handleDeletePendingQuest(quest.tempId)}
                           className="w-full py-2 font-bold uppercase text-sm"
                           style={{
@@ -987,14 +947,14 @@ export default function QuestBoard() {
                           }}
                         >
                           删除此任务
-                        </button>
+                        </Button>
                       </div>
                     )}
                   </div>
                 ))}
               </div>
 
-              <button
+              <Button // Using shadcn Button component
                 onClick={handleConfirmPendingQuests}
                 disabled={isConfirmingPending}
                 className="w-full py-3 font-black uppercase text-sm flex items-center justify-center gap-2"
@@ -1016,7 +976,7 @@ export default function QuestBoard() {
                     确认接取 {pendingQuests.length} 项委托
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -1030,13 +990,13 @@ export default function QuestBoard() {
               boxShadow: '6px 6px 0px #000'
             }}
           >
-            <button
+            <Button // Using shadcn Button component
               onClick={() => setShowCalendar(true)}
               className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3 text-white"
             >
-              <Calendar className="w-6 h-6" strokeWidth={3} />
+              <CalendarIcon className="w-6 h-6" strokeWidth={3} />
               限时活动日程表！
-            </button>
+            </Button>
             <p className="text-center text-xs font-bold mt-2 text-white">
               点击查看所有大项目任务的时间安排
             </p>
@@ -1054,7 +1014,7 @@ export default function QuestBoard() {
           >
             {nextDayPlannedCount > 0 && (
               <div className="flex items-center justify-center gap-2 mb-3">
-                <Calendar className="w-5 h-5 text-white" strokeWidth={3} />
+                <CalendarIcon className="w-5 h-5 text-white" strokeWidth={3} />
                 <p className="font-black uppercase text-white">
                   工会已登记明日 {nextDayPlannedCount} 项委托
                 </p>
@@ -1062,7 +1022,7 @@ export default function QuestBoard() {
             )}
             
             {canShowPlanningButton && (
-              <button
+              <Button // Using shadcn Button component
                 onClick={handleOpenPlanning}
                 className="w-full py-3 font-black uppercase flex items-center justify-center gap-2"
                 style={{
@@ -1071,16 +1031,16 @@ export default function QuestBoard() {
                   boxShadow: '4px 4px 0px #000'
                 }}
               >
-                <Calendar className="w-5 h-5" strokeWidth={3} />
+                <CalendarIcon className="w-5 h-5" strokeWidth={3} />
                 规划明日委托
-              </button>
+              </Button>
             )}
           </div>
         )}
 
         <div className="flex gap-3 mb-6">
           {['all', 'todo', 'done'].map(f => (
-            <button
+            <Button // Using shadcn Button component
               key={f}
               onClick={() => setFilter(f)}
               className="flex-1 py-2 font-black uppercase text-sm"
@@ -1092,7 +1052,7 @@ export default function QuestBoard() {
             >
               <Filter className="w-4 h-4 inline mr-1" strokeWidth={3} />
               {f === 'all' ? '全部' : f === 'todo' ? '未完成' : '已完成'}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -1128,7 +1088,7 @@ export default function QuestBoard() {
         )}
 
         <div className="mt-6">
-          <button
+          <Button // Using shadcn Button component
             onClick={() => setShowRestDayDialog(true)}
             disabled={quests.length > 0 && !isRestDay}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
@@ -1142,7 +1102,7 @@ export default function QuestBoard() {
           >
             <Coffee className="w-6 h-6" strokeWidth={3} />
             {isRestDay ? '取消工会休息日' : '设为工会休息日'}
-          </button>
+          </Button>
           {quests.length > 0 && !isRestDay && (
             <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
               💡 今日有任务，无法设为休息日。
@@ -1291,7 +1251,7 @@ export default function QuestBoard() {
                   </div>
                 </div>
 
-                <button
+                <Button // Using shadcn Button component
                   onClick={() => setMilestoneReward(null)}
                   className="w-full py-4 font-black uppercase text-xl"
                   style={{
@@ -1302,7 +1262,7 @@ export default function QuestBoard() {
                   }}
                 >
                   收入囊中
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -1355,7 +1315,7 @@ export default function QuestBoard() {
               </div>
 
               <div className="flex gap-3">
-                <button
+                <Button // Using shadcn Button component
                   onClick={() => setShowRestDayDialog(false)}
                   className="flex-1 py-3 font-black uppercase"
                   style={{
@@ -1365,8 +1325,8 @@ export default function QuestBoard() {
                   }}
                 >
                   取消
-                </button>
-                <button
+                </Button>
+                <Button // Using shadcn Button component
                   onClick={handleToggleRestDay}
                   className="flex-1 py-3 font-black uppercase"
                   style={{
@@ -1377,7 +1337,7 @@ export default function QuestBoard() {
                   }}
                 >
                   确认
-                </button>
+                </Button>
               </div>
             </div>
           </div>

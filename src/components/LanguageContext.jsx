@@ -35,6 +35,11 @@ export function LanguageProvider({ children }) {
       questboard_calendar_btn: '限时活动日程表！',
       questboard_calendar_hint: '点击查看所有大项目任务的时间安排',
       questboard_pending_title: '待确认任务',
+      questboard_pending_quests_title: '待确认 {count} 项任务',
+      questboard_pending_quest_content_label: '任务内容',
+      questboard_pending_quest_difficulty_label: '难度评级',
+      questboard_pending_quest_delete_button: '删除此任务',
+      questboard_pending_quest_confirm_button: '✓ 确认接取 {count} 项委托',
       questboard_confirm_btn: '确认接取',
       questboard_filter_all: '全部',
       questboard_filter_todo: '未完成',
@@ -47,6 +52,28 @@ export function LanguageProvider({ children }) {
       questboard_cancel_rest: '取消工会休息日',
       questboard_planned_quests: '工会已登记明日',
       questboard_plan_tomorrow: '规划明日委托',
+      questboard_cannot_set_rest_day_hint: '今日有任务时无法设为休息日',
+      questboard_toast_yesterday_quests_delayed: '昨日 {count} 项未完成任务已顺延至今日',
+      questboard_toast_planned_quests_loaded: '明日规划的 {count} 项任务已加载',
+      questboard_toast_quest_added_rest_canceled: '已添加任务，休息日已自动取消',
+      questboard_toast_quests_added_to_board: '{count} 项任务已添加到委托板！',
+      questboard_toast_set_as_routine: '已设为每日修炼任务！',
+      questboard_toast_quest_updated: '任务已更新！',
+      questboard_toast_changes_saved: '修改已保存！',
+      questboard_toast_rest_canceled_success: '休息日已取消',
+      questboard_toast_rest_set_success: '已设为工会休息日',
+      questboard_toast_plan_saved_success: '明日 {count} 项任务已登记成功',
+      questboard_toast_longterm_quests_added_success: '{count} 项史诗委托已添加到委托板',
+      questboard_alert_cannot_set_rest_day_with_quests: '今日有任务时无法设为休息日',
+      questboard_alert_task_parse_failed: '任务解析失败：{message}',
+      questboard_alert_create_quest_failed: '创建任务失败',
+      questboard_alert_update_failed: '更新失败',
+      questboard_alert_save_plan_failed: '保存规划失败',
+      questboard_reopen_toast_1: '好的，让我们重新审视这个委托',
+      questboard_reopen_toast_2: '撤回完成报告，任务重新开放',
+      questboard_reopen_toast_3: '没关系，我们再来一次',
+      questboard_reopen_toast_4: '返回任务板，准备再次挑战',
+      questboard_alert_review_notes_wip: '复盘笔记功能开发中',
       
       // Long-term Calendar
       calendar_title: '限时活动日程',
@@ -74,7 +101,7 @@ export function LanguageProvider({ children }) {
       calendar_confirm_add: '确认添加',
       calendar_reenter: '重新输入',
       calendar_identified: '识别到',
-
+      
       // Treasures
       treasures_title: '宝物收藏',
       treasures_collected: '共收集',
@@ -86,7 +113,7 @@ export function LanguageProvider({ children }) {
       treasures_page_items: '件）',
       treasures_prev: '上一页',
       treasures_next: '下一页',
-
+      
       // Journal
       journal_title: '冒险日志',
       journal_current_streak: '当前连胜',
@@ -128,6 +155,7 @@ export function LanguageProvider({ children }) {
       profile_chest_pity: '宝箱保底机制',
       profile_chest_pity_desc: '连续开启60个宝箱必得1张冻结券',
       profile_chest_counter: '当前进度',
+      profile_logout: '退出登录',
       
       // Praise Dialog
       praise_title: '工会表彰',
@@ -143,6 +171,24 @@ export function LanguageProvider({ children }) {
       chest_freeze_token: '冻结券',
       chest_freeze_pity: '连续60次开箱保底触发！',
       chest_freeze_lucky: '幸运抽中！',
+
+      // Milestones
+      milestone_reached: '里程碑达成',
+      milestone_days_streak: '天连胜',
+      milestone_congrats: '恭喜达成 {days} 天连胜里程碑！',
+      milestone_freeze_token_label: '冻结券',
+      milestone_title_badge_label: '称号徽章',
+      milestone_claim_button: '领取奖励',
+      
+      // Rest Day Dialog
+      rest_day_dialog_set_title: '设为工会休息日',
+      rest_day_dialog_cancel_title: '取消工会休息日',
+      rest_day_dialog_set_hint_1: '今日不会影响连胜计数',
+      rest_day_dialog_set_hint_2: '连胜不会中断，但也不会累积',
+      rest_day_dialog_set_hint_3: '适合临时有事无法完成任务的日子',
+      rest_day_dialog_set_hint_4: '只能在当天没有任务时设为休息日',
+      rest_day_dialog_cancel_hint_1: '今日将恢复为正常工作日',
+      rest_day_dialog_cancel_hint_2: '可以开始添加任务',
       
       // Rarity
       rarity_common: '普通',
@@ -155,6 +201,8 @@ export function LanguageProvider({ children }) {
       common_cancel: '取消',
       common_items: '项',
       common_date: '日期',
+      common_adding: '添加中',
+      common_try_again: '未知错误',
 
       // Quest Card
       questcard_reopen: '返回待办',
@@ -227,6 +275,11 @@ export function LanguageProvider({ children }) {
       questboard_calendar_btn: 'Limited Event Schedule!',
       questboard_calendar_hint: 'Click to view all long-term project task schedules',
       questboard_pending_title: 'Pending Quests',
+      questboard_pending_quests_title: '{count} Pending Quests',
+      questboard_pending_quest_content_label: 'Quest Content',
+      questboard_pending_quest_difficulty_label: 'Difficulty Rating',
+      questboard_pending_quest_delete_button: 'Delete This Quest',
+      questboard_pending_quest_confirm_button: '✓ Confirm & Accept {count} Quests',
       questboard_confirm_btn: 'Confirm & Accept',
       questboard_filter_all: 'All',
       questboard_filter_todo: 'Todo',
@@ -239,6 +292,28 @@ export function LanguageProvider({ children }) {
       questboard_cancel_rest: 'Cancel Guild Rest Day',
       questboard_planned_quests: 'Guild has registered',
       questboard_plan_tomorrow: 'Plan Tomorrow\'s Quests',
+      questboard_cannot_set_rest_day_hint: 'Cannot set as rest day when there are quests today',
+      questboard_toast_yesterday_quests_delayed: '{count} unfinished quests from yesterday have been delayed to today',
+      questboard_toast_planned_quests_loaded: '{count} planned quests have been loaded',
+      questboard_toast_quest_added_rest_canceled: 'Quest added, rest day automatically cancelled',
+      questboard_toast_quests_added_to_board: '{count} quests added to the board!',
+      questboard_toast_set_as_routine: 'Set as daily routine quest!',
+      questboard_toast_quest_updated: 'Quest updated!',
+      questboard_toast_changes_saved: 'Changes saved!',
+      questboard_toast_rest_canceled_success: 'Rest day cancelled',
+      questboard_toast_rest_set_success: 'Set as guild rest day',
+      questboard_toast_plan_saved_success: '{count} quests registered for tomorrow',
+      questboard_toast_longterm_quests_added_success: '{count} epic quests added to quest board',
+      questboard_alert_cannot_set_rest_day_with_quests: 'Cannot set as rest day when there are quests today',
+      questboard_alert_task_parse_failed: 'Task parsing failed: {message}',
+      questboard_alert_create_quest_failed: 'Failed to create quest',
+      questboard_alert_update_failed: 'Update failed',
+      questboard_alert_save_plan_failed: 'Failed to save plan',
+      questboard_reopen_toast_1: 'Okay, let\'s review this quest again',
+      questboard_reopen_toast_2: 'Completion report withdrawn, quest reopened',
+      questboard_reopen_toast_3: 'No problem, let\'s try again',
+      questboard_reopen_toast_4: 'Returning to quest board, ready to challenge again',
+      questboard_alert_review_notes_wip: 'Review notes feature under development',
       
       // Long-term Calendar
       calendar_title: 'Event Schedule',
@@ -320,6 +395,7 @@ export function LanguageProvider({ children }) {
       profile_chest_pity: 'Chest Pity System',
       profile_chest_pity_desc: 'Guaranteed 1 Freeze Token every 60 chests',
       profile_chest_counter: 'Current Progress',
+      profile_logout: 'Logout',
       
       // Praise Dialog
       praise_title: 'Guild Recognition',
@@ -336,6 +412,24 @@ export function LanguageProvider({ children }) {
       chest_freeze_pity: '60-chest pity triggered!',
       chest_freeze_lucky: 'Lucky drop!',
       
+      // Milestones
+      milestone_reached: 'Milestone Reached',
+      milestone_days_streak: '-Day Streak',
+      milestone_congrats: 'Congratulations on achieving a {days}-day streak milestone!',
+      milestone_freeze_token_label: 'Freeze Token',
+      milestone_title_badge_label: 'Title Badge',
+      milestone_claim_button: 'Claim Rewards',
+      
+      // Rest Day Dialog
+      rest_day_dialog_set_title: 'Set as Guild Rest Day',
+      rest_day_dialog_cancel_title: 'Cancel Guild Rest Day',
+      rest_day_dialog_set_hint_1: 'Today won\'t affect streak count',
+      rest_day_dialog_set_hint_2: 'Streak won\'t break, but won\'t accumulate either',
+      rest_day_dialog_set_hint_3: 'Suitable for days when you can\'t complete quests',
+      rest_day_dialog_set_hint_4: 'Can only be set as rest day when there are no quests today',
+      rest_day_dialog_cancel_hint_1: 'Today will return to normal working day',
+      rest_day_dialog_cancel_hint_2: 'You can start adding quests',
+      
       // Rarity
       rarity_common: 'Common',
       rarity_rare: 'Rare',
@@ -347,6 +441,8 @@ export function LanguageProvider({ children }) {
       common_cancel: 'Cancel',
       common_items: 'items',
       common_date: 'Date',
+      common_adding: 'Adding',
+      common_try_again: 'Unknown error',
 
       // Quest Card
       questcard_reopen: 'Reopen',
@@ -405,8 +501,17 @@ export function LanguageProvider({ children }) {
     }
   };
 
-  const t = (key) => {
-    return translations[language][key] || key;
+  const t = (key, params = {}) => {
+    let text = translations[language][key] || key;
+    
+    // Replace parameters like {count}, {days}, {message}
+    if (params && typeof params === 'object') {
+      Object.keys(params).forEach(paramKey => {
+        text = text.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), params[paramKey]);
+      });
+    }
+    
+    return text;
   };
 
   return (

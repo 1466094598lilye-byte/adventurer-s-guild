@@ -1,3 +1,4 @@
+
 // AI Prompts for both Chinese and English versions
 
 export function getTaskNamingPrompt(language, userInput, isEdit = false) {
@@ -72,13 +73,12 @@ export function getPraisePrompt(language, quest, role) {
 - 难度：${quest.difficulty}级
 
 【核心要求】：
-1. **严格两句话**：必须是且只能是两句话，40-60字。第一句"看见"过程，第二句点出价值或品质。
+1. **严格一句话**：必须是且只能是一句话，20-30字。
 2. **角色化表达**：必须体现${role.name}的独特视角和语气，不能写成通用表扬。
-3. **融入关键词**：自然地使用至少1-2个该角色的专属关键词。
-4. **看见过程**：第一句从${role.name}的视角，明确指出任务背后需要克服的"不容易"。
-5. **具体品质**：第二句从${role.name}的价值观出发，精准识别并命名展现的品质。
+3. **融入关键词**：自然地使用至少1个该角色的专属关键词。
+4. **精准点评**：从${role.name}的视角，精准识别任务背后展现的品质或价值。
 
-请**完全以${role.name}的身份和视角**，为这位冒险者写**严格两句话**的肯定（40-60字）：`;
+请**完全以${role.name}的身份和视角**，为这位冒险者写**严格一句话**的肯定（20-30字）：`;
   } else {
     return `You are the ${role.nameEn} of the [Starfall Era Adventurer's Guild]. An adventurer just completed a task, and you need to make them feel: their struggle has been truly "seen" and "understood" by you.
 
@@ -94,13 +94,12 @@ Key Phrases: ${role.keywordsEn.join(', ')} (naturally incorporate these in your 
 - Difficulty: ${quest.difficulty}-rank
 
 【Core Requirements】:
-1. **Strictly two sentences**: Must be exactly two sentences, 40-60 words total. First sentence "sees" the process, second identifies the quality.
+1. **Strictly one sentence**: Must be exactly one sentence, 20-30 words total.
 2. **Role-specific expression**: Must reflect ${role.nameEn}'s unique perspective and voice, not generic praise.
-3. **Incorporate key phrases**: Naturally use at least 1-2 of this role's signature phrases.
-4. **Witness the process**: First sentence from ${role.nameEn}'s perspective, clearly acknowledging what was "not easy" about the task.
-5. **Name the quality**: Second sentence from ${role.nameEn}'s values, precisely identifies and names the demonstrated quality.
+3. **Incorporate key phrases**: Naturally use at least 1 of this role's signature phrases.
+4. **Precise recognition**: From ${role.nameEn}'s perspective, precisely identify the quality or value demonstrated.
 
-Please write **strictly two sentences** of acknowledgment (40-60 words total) **completely as ${role.nameEn}**:`;
+Please write **strictly one sentence** of acknowledgment (20-30 words total) **completely as ${role.nameEn}**:`;
   }
 }
 

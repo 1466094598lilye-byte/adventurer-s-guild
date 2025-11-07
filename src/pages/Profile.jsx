@@ -266,9 +266,11 @@ export default function Profile() {
                 onClick={() => switchLanguage('zh')}
                 className="py-3 font-black uppercase"
                 style={{
-                  backgroundColor: language === 'zh' ? '#4ECDC4' : '#F0F0F0',
+                  backgroundColor: language === 'zh' ? '#4ECDC4' : '#FFE66D',
+                  color: '#000',
                   border: '3px solid #000',
-                  boxShadow: language === 'zh' ? '4px 4px 0px #000' : '2px 2px 0px #000'
+                  boxShadow: language === 'zh' ? '4px 4px 0px #000' : '2px 2px 0px #000',
+                  transform: language === 'zh' ? 'scale(1.02)' : 'scale(1)'
                 }}
               >
                 {t('profile_chinese')}
@@ -277,9 +279,11 @@ export default function Profile() {
                 onClick={() => switchLanguage('en')}
                 className="py-3 font-black uppercase"
                 style={{
-                  backgroundColor: language === 'en' ? '#4ECDC4' : '#F0F0F0',
+                  backgroundColor: language === 'en' ? '#4ECDC4' : '#FFE66D',
+                  color: '#000',
                   border: '3px solid #000',
-                  boxShadow: language === 'en' ? '4px 4px 0px #000' : '2px 2px 0px #000'
+                  boxShadow: language === 'en' ? '4px 4px 0px #000' : '2px 2px 0px #000',
+                  transform: language === 'en' ? 'scale(1.02)' : 'scale(1)'
                 }}
               >
                 {t('profile_english')}

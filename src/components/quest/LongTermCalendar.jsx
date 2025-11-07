@@ -4,6 +4,7 @@ import { X, Calendar as CalendarIcon, Trash2, Edit2, AlertTriangle, ChevronRight
 import { base44 } from '@/api/base44Client';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import { useLanguage } from '@/components/LanguageContext';
 
 export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const [longTermQuests, setLongTermQuests] = useState([]);
@@ -17,6 +18,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const [addingToDate, setAddingToDate] = useState(null);
   const [newTaskInput, setNewTaskInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     loadLongTermQuests();
@@ -262,10 +264,10 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         {/* Header */}
         <div className="text-center mb-6">
           <h2 className="text-3xl font-black uppercase text-white mb-2">
-            📅 限时活动日程 📅
+            📅 {t('calendar_title')} 📅
           </h2>
           <p className="font-bold text-white text-sm">
-            共 {longTermQuests.length} 项史诗委托
+            {t('calendar_total_quests')} {longTermQuests.length} {t('calendar_epic_quests')}
           </p>
         </div>
 
@@ -279,9 +281,9 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
             }}
           >
             <CalendarIcon className="w-16 h-16 mx-auto mb-4" strokeWidth={3} />
-            <p className="font-black text-xl mb-2">暂无限时活动</p>
+            <p className="font-black text-xl mb-2">{t('calendar_empty_title')}</p>
             <p className="font-bold text-sm">
-              使用"大项目规划"添加长期计划后，这里会显示日程表
+              {t('calendar_empty_hint')}
             </p>
           </div>
         ) : (
@@ -317,7 +319,9 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                           <div className="flex items-center gap-2 mb-2">
                             <CalendarIcon className="w-5 h-5 flex-shrink-0" strokeWidth={3} />
                             <span className="font-black text-lg">
-                              {format(parseISO(date), 'MM月dd日')}
+                              {language === 'zh' 
+                                ? format(parseISO(date), 'MM月dd日')
+                                : format(parseISO(date), 'MMM dd')}
                             </span>
                             {isToday && (
                               <span
@@ -328,7 +332,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                                   borderRadius: '4px'
                                 }}
                               >
-                                今天
+                                {t('calendar_today')}
                               </span>
                             )}
                           </div>
@@ -342,12 +346,12 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                                 borderRadius: '4px'
                               }}
                             >
-                              {status.done}/{status.total} 项
+                              {status.done}/{status.total} {t('calendar_items')}
                             </div>
 
                             {status.allDone && (
                               <span className="text-sm font-bold" style={{ color: '#4ECDC4' }}>
-                                ✓ 已完成
+                                ✓ {t('calendar_completed')}
                               </span>
                             )}
                           </div>
@@ -389,7 +393,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                                   </div>
                                   {quest.status === 'done' && (
                                     <span className="text-xs font-bold" style={{ color: '#4ECDC4' }}>
-                                      ✓ 已完成
+                                      ✓ {t('calendar_completed')}
                                     </span>
                                   )}
                                 </div>
@@ -456,7 +460,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                           }}
                         >
                           <Plus className="w-4 h-4" strokeWidth={3} />
-                          添加任务到此日期
+                          {t('calendar_add_task')}
                         </button>
                       </div>
                     )}
@@ -477,7 +481,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
               }}
             >
               <Trash2 className="w-5 h-5" strokeWidth={3} />
-              删除所有大项目任务
+              {t('calendar_delete_all')}
             </button>
           </>
         )}
@@ -517,7 +521,9 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
               </button>
 
               <h3 className="text-2xl font-black uppercase text-center mb-4">
-                📅 {format(selectedDate, 'MM月dd日')} 的任务
+                📅 {language === 'zh' 
+                  ? format(selectedDate, 'MM月dd日') 
+                  : format(selectedDate, 'MMM dd')} {t('calendar_date_tasks')}
               </h3>
 
               <div className="space-y-3">
@@ -555,7 +561,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                           onClick={() => setEditingQuest(null)}
                           className="text-sm font-bold underline"
                         >
-                          取消
+                          {t('common_cancel')}
                         </button>
                       </div>
                     ) : (
@@ -582,7 +588,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                               {quest.actionHint}
                             </p>
                             <p className="text-xs font-bold mt-2" style={{ color: '#999' }}>
-                              状态：{quest.status === 'done' ? '✅ 已完成' : '⏳ 待完成'}
+                              {t('calendar_status')}：{quest.status === 'done' ? t('calendar_status_done') : t('calendar_status_pending')}
                             </p>
                           </div>
                           <div className="flex gap-1">
@@ -654,7 +660,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
               </button>
 
               <h3 className="text-2xl font-black uppercase text-center mb-4">
-                添加任务
+                {t('calendar_add_task_title')}
               </h3>
 
               <div
@@ -665,18 +671,20 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                 }}
               >
                 <p className="font-bold text-sm">
-                  📅 日期：{format(parseISO(addingToDate), 'yyyy年MM月dd日')}
+                  📅 {t('common_date')}：{language === 'zh' 
+                    ? format(parseISO(addingToDate), 'yyyy年MM月dd日')
+                    : format(parseISO(addingToDate), 'MMMM dd, yyyy')}
                 </p>
               </div>
 
               <div className="mb-4">
                 <label className="block text-sm font-black uppercase mb-2">
-                  任务内容
+                  {t('calendar_task_content_label')}
                 </label>
                 <textarea
                   value={newTaskInput}
                   onChange={(e) => setNewTaskInput(e.target.value)}
-                  placeholder="例如：完成项目方案设计"
+                  placeholder={t('calendar_task_placeholder')}
                   rows={3}
                   className="w-full px-3 py-2 font-bold resize-none"
                   style={{
@@ -702,7 +710,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                     opacity: isProcessing ? 0.5 : 1
                   }}
                 >
-                  取消
+                  {t('common_cancel')}
                 </button>
                 <button
                   onClick={handleSaveNewTask}
@@ -715,7 +723,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                     opacity: (!newTaskInput.trim() || isProcessing) ? 0.5 : 1
                   }}
                 >
-                  {isProcessing ? '添加中...' : '确认添加'}
+                  {isProcessing ? t('calendar_adding') : t('calendar_confirm_add')}
                 </button>
               </div>
             </div>
@@ -743,7 +751,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                 <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-white" strokeWidth={3} />
 
                 <h3 className="text-2xl font-black uppercase text-white mb-4">
-                  确认删除？
+                  {t('calendar_confirm_delete_title')}
                 </h3>
 
                 <div
@@ -754,10 +762,10 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                   }}
                 >
                   <p className="font-bold mb-2">
-                    此操作将删除所有 {longTermQuests.length} 项大项目任务
+                    {t('calendar_delete_warning')} {longTermQuests.length} {language === 'zh' ? '项大项目任务' : 'long-term project tasks'}
                   </p>
                   <p className="text-sm font-bold" style={{ color: '#C44569' }}>
-                    ⚠️ 此操作不可恢复！
+                    {t('calendar_delete_cannot_undo')}
                   </p>
                 </div>
 
@@ -771,7 +779,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                       boxShadow: '4px 4px 0px #000'
                     }}
                   >
-                    取消
+                    {t('common_cancel')}
                   </button>
                   <button
                     onClick={handleDeleteAllProjects}
@@ -782,7 +790,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                       boxShadow: '4px 4px 0px #FFF'
                     }}
                   >
-                    确认删除
+                    {t('common_confirm')}
                   </button>
                 </div>
               </div>

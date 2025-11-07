@@ -48,6 +48,33 @@ export function LanguageProvider({ children }) {
       questboard_planned_quests: '工会已登记明日',
       questboard_plan_tomorrow: '规划明日委托',
       
+      // Long-term Calendar
+      calendar_title: '限时活动日程',
+      calendar_total_quests: '共',
+      calendar_epic_quests: '项史诗委托',
+      calendar_empty_title: '暂无限时活动',
+      calendar_empty_hint: '使用"大项目规划"添加长期计划后，这里会显示日程表',
+      calendar_today: '今天',
+      calendar_completed: '已完成',
+      calendar_items: '项',
+      calendar_add_task: '添加任务到此日期',
+      calendar_delete_all: '删除所有大项目任务',
+      calendar_date_tasks: '的任务',
+      calendar_task_content: '任务内容',
+      calendar_status: '状态',
+      calendar_status_done: '✅ 已完成',
+      calendar_status_pending: '⏳ 待完成',
+      calendar_confirm_delete_title: '确认删除？',
+      calendar_delete_warning: '此操作将删除所有',
+      calendar_delete_cannot_undo: '⚠️ 此操作不可恢复！',
+      calendar_add_task_title: '添加任务',
+      calendar_task_content_label: '任务内容',
+      calendar_task_placeholder: '例如：完成项目方案设计',
+      calendar_adding: '添加中...',
+      calendar_confirm_add: '确认添加',
+      calendar_reenter: '重新输入',
+      calendar_identified: '识别到',
+
       // Treasures
       treasures_title: '宝物收藏',
       treasures_collected: '共收集',
@@ -126,7 +153,8 @@ export function LanguageProvider({ children }) {
       // Common
       common_confirm: '确认',
       common_cancel: '取消',
-      common_items: '项'
+      common_items: '项',
+      common_date: '日期'
     },
     en: {
       // Navigation
@@ -156,6 +184,33 @@ export function LanguageProvider({ children }) {
       questboard_cancel_rest: 'Cancel Guild Rest Day',
       questboard_planned_quests: 'Guild has registered',
       questboard_plan_tomorrow: 'Plan Tomorrow\'s Quests',
+      
+      // Long-term Calendar
+      calendar_title: 'Event Schedule',
+      calendar_total_quests: 'Total',
+      calendar_epic_quests: 'epic quests',
+      calendar_empty_title: 'No Scheduled Events',
+      calendar_empty_hint: 'Use "Long-term Project Planning" to add plans, and they will appear here',
+      calendar_today: 'Today',
+      calendar_completed: 'Completed',
+      calendar_items: 'items',
+      calendar_add_task: 'Add Task to This Date',
+      calendar_delete_all: 'Delete All Long-term Projects',
+      calendar_date_tasks: 'Tasks',
+      calendar_task_content: 'Task Content',
+      calendar_status: 'Status',
+      calendar_status_done: '✅ Completed',
+      calendar_status_pending: '⏳ Pending',
+      calendar_confirm_delete_title: 'Confirm Deletion?',
+      calendar_delete_warning: 'This will delete all',
+      calendar_delete_cannot_undo: '⚠️ This action cannot be undone!',
+      calendar_add_task_title: 'Add Task',
+      calendar_task_content_label: 'Task Content',
+      calendar_task_placeholder: 'e.g.: Complete project proposal design',
+      calendar_adding: 'Adding...',
+      calendar_confirm_add: 'Confirm Add',
+      calendar_reenter: 'Re-enter',
+      calendar_identified: 'Identified',
       
       // Treasures
       treasures_title: 'Treasure Collection',
@@ -235,7 +290,8 @@ export function LanguageProvider({ children }) {
       // Common
       common_confirm: 'Confirm',
       common_cancel: 'Cancel',
-      common_items: 'items'
+      common_items: 'items',
+      common_date: 'Date'
     }
   };
 

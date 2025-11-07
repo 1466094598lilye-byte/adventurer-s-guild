@@ -269,11 +269,15 @@ export default function QuestBoard() {
           properties: {
             title: { 
               type: "string",
-              description: "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！例如：【征讨】踏破晨曦五里征途。描述必须正好7个字，不能多也不能少！绝对不能包含'任务'二字！"
+              description: language === 'zh'
+                ? "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！例如：【征讨】踏破晨曦五里征途。描述必须正好7个字，不能多也不能少！绝对不能包含'任务'二字！"
+                : "Must strictly follow [Category]: <5-8 Word Epic Phrase> format! Category is action type, Phrase is 5-8 words. Example: [Conquest]: Dawn March Through Five Miles. Phrase must be 5-8 words exactly! Absolutely cannot include the word 'task' or 'quest'!"
             },
             actionHint: { 
               type: "string",
-              description: "用户的原始输入，完全保持原样"
+              description: language === 'zh'
+                ? "用户的原始输入，完全保持原样"
+                : "User's original input, keep as-is"
             },
             difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
             rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
@@ -618,7 +622,9 @@ export default function QuestBoard() {
             properties: {
               title: { 
                 type: "string",
-                description: "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！"
+                description: language === 'zh'
+                  ? "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！"
+                  : "Must strictly follow [Category]: <5-8 Word Epic Phrase> format! Phrase must be 5-8 words exactly!"
               }
             },
             required: ["title"]

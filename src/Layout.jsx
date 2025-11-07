@@ -1,9 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Scroll, BookOpen, Gem, User } from "lucide-react";
-import { useLanguage } from "@/components/LanguageContext";
+import { LanguageProvider, useLanguage } from "@/components/LanguageContext";
 
-export default function Layout({ children }) {
+function LayoutContent({ children }) {
   const location = useLocation();
   const { t } = useLanguage();
 
@@ -111,5 +111,13 @@ export default function Layout({ children }) {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function Layout({ children }) {
+  return (
+    <LanguageProvider>
+      <LayoutContent children={children} />
+    </LanguageProvider>
   );
 }

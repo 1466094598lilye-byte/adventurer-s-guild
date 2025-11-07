@@ -554,3 +554,59 @@ Your task:
 Return task:`;
   }
 }
+
+export function getCalendarAddTaskPrompt(language, newTaskInput) {
+  if (language === 'zh') {
+    return {
+      prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
+
+**冒险者添加的大项目任务：** ${newTaskInput}
+
+请为这个大项目任务生成RPG风格标题（只需要标题）。
+
+【标题生成规则】：
+- 格式：【2字类型】+ 7字幻想描述
+- 2字类型必须从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
+- 7字描述必须充满幻想色彩
+- **绝对禁止使用"任务"二字！**
+
+只返回标题：`,
+      schema: {
+        type: "object",
+        properties: {
+          title: { 
+            type: "string",
+            description: "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！"
+          }
+        },
+        required: ["title"]
+      }
+    };
+  } else {
+    return {
+      prompt: `You are the Chief Epic Chronicler of the [Starfall Era Adventurer's Guild].
+
+**Adventurer's long-term project task:** ${newTaskInput}
+
+Please generate an RPG-style title for this long-term project task (title only).
+
+【Title Generation Rules】:
+- Format: [Category]: <5-8 Word Epic Phrase>
+- Category options: Conquest, Expedition, Forging, Research, Escort, Investigation, Collection, Crafting, Diplomacy, Chronicle, Guardian, Purification, Treasure Hunt, Ritual, Negotiation
+- Phrase must be filled with epic fantasy flair
+- **Absolutely forbidden: use the word "task" or "quest" in the phrase!**
+
+Return only the title:`,
+      schema: {
+        type: "object",
+        properties: {
+          title: { 
+            type: "string",
+            description: "Must strictly follow [Category]: <5-8 Word Epic Phrase> format!"
+          }
+        },
+        required: ["title"]
+      }
+    };
+  }
+}

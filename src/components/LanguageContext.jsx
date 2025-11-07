@@ -101,6 +101,7 @@ export function LanguageProvider({ children }) {
       calendar_confirm_add: '确认添加',
       calendar_reenter: '重新输入',
       calendar_identified: '识别到',
+      calendar_add_task_failed: '添加任务失败，请重试',
       
       // Treasures
       treasures_title: '宝物收藏',
@@ -341,6 +342,7 @@ export function LanguageProvider({ children }) {
       calendar_confirm_add: 'Confirm Add',
       calendar_reenter: 'Re-enter',
       calendar_identified: 'Identified',
+      calendar_add_task_failed: 'Failed to add task, please retry',
       
       // Treasures
       treasures_title: 'Treasure Collection',

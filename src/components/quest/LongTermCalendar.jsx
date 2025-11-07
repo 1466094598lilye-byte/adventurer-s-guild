@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { useLanguage } from '@/components/LanguageContext';
+import { getCalendarAddTaskPrompt } from '@/components/prompts';
 
 export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const [longTermQuests, setLongTermQuests] = useState([]);
@@ -117,14 +118,11 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
 
   const handleEditQuest = async (quest, newActionHint) => {
     try {
+      const { prompt, schema } = getCalendarAddTaskPrompt(language, newActionHint);
+      
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `为任务"${newActionHint}"生成RPG风格标题（【2字类型】+ 7字标题）`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            title: { type: "string" }
-          }
-        }
+        prompt: prompt,
+        response_json_schema: schema
       });
 
       await base44.entities.Quest.update(quest.id, {
@@ -156,7 +154,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       }
     } catch (error) {
       console.error('更新任务失败:', error);
-      alert('更新失败，请重试');
+      alert(t('questboard_alert_update_failed'));
     }
   };
 
@@ -176,27 +174,11 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
 
     setIsProcessing(true);
     try {
+      const { prompt, schema } = getCalendarAddTaskPrompt(language, newTaskInput.trim());
+      
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
-
-**冒险者添加的大项目任务：** ${newTaskInput.trim()}
-
-请为这个大项目任务生成RPG风格标题（只需要标题）。
-
-【标题生成规则】：
-- 格式：【2字类型】+ 7字幻想描述
-- 2字类型必须从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
-- 7字描述必须充满幻想色彩
-- **绝对禁止使用"任务"二字！**
-
-只返回标题：`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            title: { type: "string" }
-          },
-          required: ["title"]
-        }
+        prompt: prompt,
+        response_json_schema: schema
       });
 
       await base44.entities.Quest.create({
@@ -228,7 +210,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       }
     } catch (error) {
       console.error('添加任务失败:', error);
-      alert('添加失败，请重试');
+      alert(t('calendar_add_task_failed'));
     }
     setIsProcessing(false);
   };

@@ -9,8 +9,8 @@ import ChestOpening from '../components/treasure/ChestOpening';
 import QuestEditFormModal from '../components/quest/QuestEditFormModal';
 import EndOfDaySummaryAndPlanning from '../components/quest/EndOfDaySummaryAndPlanning';
 import LongTermProjectDialog from '../components/quest/LongTermProjectDialog';
-import LongTermCalendar from '../components/quest/LongTermCalendar'; // New Import
-import JointPraiseDialog from '../components/quest/JointPraiseDialog'; // New Import
+import LongTermCalendar from '../components/quest/LongTermCalendar';
+import JointPraiseDialog from '../components/quest/JointPraiseDialog';
 import { format, subDays } from 'date-fns';
 
 export default function QuestBoard() {
@@ -28,10 +28,10 @@ export default function QuestBoard() {
   const [showPlanningDialog, setShowPlanningDialog] = useState(false);
   const [showCelebrationInPlanning, setShowCelebrationInPlanning] = useState(false);
   const [showLongTermDialog, setShowLongTermDialog] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false); // New State
-  const [isConfirmingPending, setIsConfirmingPending] = useState(false); // 新增：确认待办任务的 loading 状态
-  const [showJointPraise, setShowJointPraise] = useState(false); // New State
-  const [completedProject, setCompletedProject] = useState(null); // New State
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [isConfirmingPending, setIsConfirmingPending] = useState(false);
+  const [showJointPraise, setShowJointPraise] = useState(false);
+  const [completedProject, setCompletedProject] = useState(null);
   const queryClient = useQueryClient();
 
   const hasProcessedDayRollover = useRef(false);
@@ -52,14 +52,13 @@ export default function QuestBoard() {
     queryFn: () => base44.auth.me()
   });
 
-  // Check if there are ANY long-term project quests (not just today's)
   const { data: hasAnyLongTermQuests = false } = useQuery({
     queryKey: ['hasLongTermQuests'],
     queryFn: async () => {
       const longTermQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 1);
       return longTermQuests.length > 0;
     },
-    initialData: false, // Ensure it's false before data loads
+    initialData: false,
   });
 
   // 日更逻辑：未完成任务顺延 + 明日规划任务创建 + 每日修炼任务生成
@@ -67,7 +66,6 @@ export default function QuestBoard() {
     const handleDayRollover = async () => {
       if (!user) return;
       
-      // 使用 ref 防止重复执行
       const rolloverKey = `${today}-${user.id}`;
       if (hasProcessedDayRollover.current === rolloverKey) {
         console.log('日更逻辑已执行过，跳过');
@@ -86,7 +84,6 @@ export default function QuestBoard() {
           console.log(`发现 ${oldQuests.length} 项昨日未完成任务，开始顺延...`);
           
           for (const quest of oldQuests) {
-            // 如果是每日修炼任务，不顺延（因为会重新生成）
             if (!quest.isRoutine) {
               await base44.entities.Quest.update(quest.id, { date: today });
             }
@@ -107,13 +104,11 @@ export default function QuestBoard() {
         if (nextDayPlanned.length > 0 && lastPlanned && lastPlanned < today) {
           console.log(`发现 ${nextDayPlanned.length} 项已规划任务，开始创建...`);
           
-          // 先清空用户的规划列表（防止重复创建）
           await base44.auth.updateMe({
             nextDayPlannedQuests: [],
             lastPlannedDate: today
           });
           
-          // 然后创建任务
           for (const plannedQuest of nextDayPlanned) {
             await base44.entities.Quest.create({
               ...plannedQuest,
@@ -129,14 +124,12 @@ export default function QuestBoard() {
           setTimeout(() => setToast(null), 3000);
         }
 
-        // 3. 处理每日修炼任务（自动生成今日任务）
+        // 3. 处理每日修炼任务（自动生成今日任务，保持原有评级）
         console.log('=== 开始处理每日修炼任务 ===');
         
-        // 先查询今天是否已有任务（防止重复创建）
         const todayQuests = await base44.entities.Quest.filter({ date: today });
         console.log(`今天已有 ${todayQuests.length} 个任务`);
         
-        // 查询所有标记为每日修炼的任务，只取最近的记录来识别有哪些每日修炼任务
         const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
         console.log(`数据库中找到 ${allRoutineQuests.length} 个标记为每日修炼的任务记录`);
         
@@ -146,7 +139,6 @@ export default function QuestBoard() {
           allRoutineQuests.forEach(quest => {
             const key = quest.originalActionHint;
             if (key) {
-              // 如果Map中还没有这个key，或者当前任务创建时间更晚，则更新
               if (!uniqueRoutinesMap.has(key) || 
                   new Date(quest.created_date) > new Date(uniqueRoutinesMap.get(key).created_date)) {
                 uniqueRoutinesMap.set(key, quest);
@@ -156,11 +148,9 @@ export default function QuestBoard() {
           
           console.log(`去重后识别出 ${uniqueRoutinesMap.size} 个不同的每日修炼任务`);
           
-          // 遍历每个独特的每日修炼任务
           for (const [actionHint, templateQuest] of uniqueRoutinesMap) {
             console.log(`检查每日修炼任务: ${actionHint}`);
             
-            // 检查今天是否已经有这个每日修炼任务
             const alreadyExists = todayQuests.some(
               q => q.isRoutine && q.originalActionHint === actionHint
             );
@@ -173,37 +163,35 @@ export default function QuestBoard() {
             console.log(`今天还没有，开始生成: ${actionHint}`);
             
             try {
-              // 用 LLM 重新生成 RPG 标题、难度和稀有度
+              // 只重新生成 RPG 标题，保持原有的难度和稀有度
               const result = await base44.integrations.Core.InvokeLLM({
                 prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
 
 **当前冒险者每日修炼内容：** ${actionHint}
 
-请为这个每日修炼任务生成**全新的**RPG风格标题、难度和稀有度。
+请为这个每日修炼任务生成**全新的**RPG风格标题（只需要标题，不需要重新评定难度）。
 
 要求：
 1. 标题要有变化，不要每天都一样（但核心内容要体现任务本质）
 2. 格式：【2字类型】+ 7字标题
 3. 保持任务的核心特征
 
-只返回标题、难度、稀有度。`,
+只返回标题。`,
                 response_json_schema: {
                   type: "object",
                   properties: {
-                    title: { type: "string" },
-                    difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
-                    rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
+                    title: { type: "string" }
                   },
-                  required: ["title", "difficulty", "rarity"]
+                  required: ["title"]
                 }
               });
 
-              // 创建今日的每日修炼任务
+              // 创建今日的每日修炼任务，保持原有的难度和稀有度
               await base44.entities.Quest.create({
                 title: result.title,
                 actionHint: actionHint,
-                difficulty: result.difficulty,
-                rarity: result.rarity,
+                difficulty: templateQuest.difficulty, // 保持原有难度
+                rarity: templateQuest.rarity, // 保持原有稀有度
                 date: today,
                 status: 'todo',
                 source: 'routine',
@@ -212,7 +200,7 @@ export default function QuestBoard() {
                 tags: []
               });
               
-              console.log(`成功创建今日每日修炼任务: ${actionHint}`);
+              console.log(`成功创建今日每日修炼任务: ${actionHint}，保持评级 ${templateQuest.difficulty}`);
             } catch (error) {
               console.error(`生成每日修炼任务失败: ${actionHint}`, error);
             }
@@ -227,7 +215,6 @@ export default function QuestBoard() {
       }
     };
 
-    // Only run if user data is loaded and available
     if (user) {
       handleDayRollover();
     }
@@ -322,11 +309,10 @@ export default function QuestBoard() {
         }
       });
 
-      // 添加到待确认列表，不直接创建
       setPendingQuests(prev => [...prev, {
         ...result,
         tags: [],
-        tempId: Date.now() // 临时ID用于React key
+        tempId: Date.now()
       }]);
       
       setTextInput('');
@@ -455,7 +441,6 @@ export default function QuestBoard() {
       await queryClient.invalidateQueries(['quests']);
       console.log('查询缓存已刷新');
 
-      // 检查是否是大项目任务，如果是，检查该项目的所有任务是否都完成
       if (quest.isLongTermProject && quest.longTermProjectId) {
         setTimeout(async () => {
           try {
@@ -468,29 +453,26 @@ export default function QuestBoard() {
             if (allDone && projectQuests.length > 0) {
               console.log('=== 大项目所有任务已完成 ===');
               
-              // 获取项目信息
               const project = await base44.entities.LongTermProject.filter({ 
                 id: quest.longTermProjectId 
               });
               
               if (project.length > 0 && project[0].status === 'active') {
-                // 更新项目状态
                 await base44.entities.LongTermProject.update(project[0].id, {
                   status: 'completed',
                   completionDate: today
                 });
                 
-                // 显示联名表扬信
                 setCompletedProject(project[0]);
                 setTimeout(() => {
                   setShowJointPraise(true);
-                }, 1000); // Small delay to allow other UI updates
+                }, 1000);
               }
             }
           } catch (error) {
             console.error('检查大项目完成状态时出错:', error);
           }
-        }, 500); // Delay for project check
+        }, 500);
       }
       
       setTimeout(async () => {
@@ -534,31 +516,25 @@ export default function QuestBoard() {
               return;
             }
             
-            // 计算新的连胜数 - 考虑休息日
             let newStreak = 1;
             const lastClearDate = currentUser?.lastClearDate;
             const restDays = currentUser?.restDays || [];
             
             if (lastClearDate) {
-              // 找到上一个非休息日的工作日
               let checkDate = new Date();
-              checkDate.setDate(checkDate.getDate() - 1); // 从昨天开始
+              checkDate.setDate(checkDate.getDate() - 1);
               
               let daysBack = 0;
               let foundLastWorkDay = false;
               
-              // 往前找，跳过所有休息日，直到找到第一个工作日
               while (daysBack < 365 && !foundLastWorkDay) {
                 const checkDateStr = format(checkDate, 'yyyy-MM-dd');
                 
                 if (!restDays.includes(checkDateStr)) {
-                  // 这是一个工作日
                   if (checkDateStr === lastClearDate) {
-                    // 找到了上次完成任务的日期，说明连续
                     newStreak = (currentUser?.streakCount || 0) + 1;
                     console.log('连续完成（跳过了休息日），连胜 +1，新连胜:', newStreak);
                   } else {
-                    // 找到的第一个工作日不是lastClearDate，说明中断了
                     console.log('中断了，连胜重置为1');
                     newStreak = 1;
                   }
@@ -570,7 +546,6 @@ export default function QuestBoard() {
               }
               
               if (!foundLastWorkDay) {
-                // 没找到上一个工作日（理论上不应该发生）
                 console.log('未找到上一个工作日，连胜设为1');
                 newStreak = 1;
               }
@@ -658,12 +633,10 @@ export default function QuestBoard() {
 
   const handleEditQuestSave = async ({ actionHint, isRoutine, originalActionHint }) => {
     try {
-      // 检查任务内容是否发生变化
       const contentChanged = actionHint !== editingQuest.actionHint;
       
-      let newTitle = editingQuest.title; // 默认保持原标题
+      let newTitle = editingQuest.title;
       
-      // 只有内容变化时才重新生成标题
       if (contentChanged) {
         const result = await base44.integrations.Core.InvokeLLM({
           prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
@@ -698,8 +671,8 @@ export default function QuestBoard() {
       const updateData = {
         title: newTitle,
         actionHint: actionHint,
-        difficulty: editingQuest.difficulty, // 保持原有难度
-        rarity: editingQuest.rarity, // 保持原有稀有度
+        difficulty: editingQuest.difficulty,
+        rarity: editingQuest.rarity,
         tags: editingQuest.tags || [],
         isRoutine: isRoutine,
         originalActionHint: isRoutine ? actionHint : null,
@@ -725,15 +698,13 @@ export default function QuestBoard() {
   };
 
   const handleToggleRestDay = async () => {
-    // This check is now redundant due to the new button disabled logic,
-    // but keeping it for a second layer of validation.
-    if (quests.length > 0 && !isRestDay) { // Only prevent if there are quests AND it's not already a rest day
+    if (quests.length > 0 && !isRestDay) {
       alert('今日已有任务，无法设置为休息日。请先完成或删除它们。');
       return;
     }
     
     const restDays = user?.restDays || [];
-    const isRestDayCurrently = restDays.includes(today); // Use a new variable to avoid conflict with state or prop 'isRestDay'
+    const isRestDayCurrently = restDays.includes(today);
     
     if (isRestDayCurrently) {
       await base44.auth.updateMe({
@@ -755,9 +726,8 @@ export default function QuestBoard() {
   const handleChestClose = () => {
     setShowChest(false);
     
-    // 开箱关闭后，检查是否需要显示规划弹窗
     const lastPlanned = user?.lastPlannedDate;
-    if (lastPlanned !== today) { // If planning hasn't been done for today yet
+    if (lastPlanned !== today) {
       setShowCelebrationInPlanning(true);
       setShowPlanningDialog(true);
     }
@@ -780,20 +750,20 @@ export default function QuestBoard() {
   };
 
   const handleOpenPlanning = () => {
-    setShowCelebrationInPlanning(false); // If opened manually, no celebration
+    setShowCelebrationInPlanning(false);
     setShowPlanningDialog(true);
   };
 
   const handleLongTermQuestsCreated = (count) => {
     queryClient.invalidateQueries(['quests']);
-    queryClient.invalidateQueries(['hasLongTermQuests']); // Also invalidate this when new long-term quests are created
+    queryClient.invalidateQueries(['hasLongTermQuests']);
     setToast(`已成功添加 ${count} 项大项目任务到委托板`);
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleCalendarUpdate = () => { // New handler
-    queryClient.invalidateQueries(['quests']); // Refresh main quest list
-    queryClient.invalidateQueries(['hasLongTermQuests']); // IMPORTANT: Also refresh this query
+  const handleCalendarUpdate = () => {
+    queryClient.invalidateQueries(['quests']);
+    queryClient.invalidateQueries(['hasLongTermQuests']);
   };
 
   const filteredQuests = quests.filter(quest => {
@@ -805,7 +775,6 @@ export default function QuestBoard() {
 
   const isRestDay = (user?.restDays || []).includes(today);
   const nextDayPlannedCount = (user?.nextDayPlannedQuests || []).length;
-  // Show planning button if it's 9 PM (21:00) or later AND planning hasn't been done for today yet
   const canShowPlanningButton = currentHour >= 21 && user?.lastPlannedDate !== today;
 
   const difficultyColors = {
@@ -835,7 +804,6 @@ export default function QuestBoard() {
           </p>
         </div>
 
-        {/* Rest Day Banner */}
         {isRestDay && (
           <div 
             className="mb-6 p-4"
@@ -855,7 +823,6 @@ export default function QuestBoard() {
           </div>
         )}
 
-        {/* Text Input + Buttons - Mobile Optimized */}
         <div 
           className="p-4 mb-6"
           style={{
@@ -864,7 +831,6 @@ export default function QuestBoard() {
             boxShadow: '6px 6px 0px #000'
           }}
         >
-          {/* Input and AI Button */}
           <div className="flex gap-3 mb-3">
             <input
               type="text"
@@ -904,7 +870,6 @@ export default function QuestBoard() {
             </button>
           </div>
 
-          {/* Long Term Project Button - Full Width */}
           <button
             onClick={() => setShowLongTermDialog(true)}
             className="w-full py-3 font-black uppercase text-sm flex items-center justify-center gap-2"
@@ -923,7 +888,6 @@ export default function QuestBoard() {
             💡 用于粘贴长期计划，冒险者工会将自动分配到每日委托板
           </p>
 
-          {/* Pending Quests Preview */}
           {pendingQuests.length > 0 && (
             <div 
               className="mt-4 p-3"
@@ -1057,7 +1021,6 @@ export default function QuestBoard() {
           )}
         </div>
 
-        {/* Long-Term Calendar Entry - Only show if has long-term quests */}
         {hasAnyLongTermQuests && (
           <div 
             className="mb-6 p-4"
@@ -1080,7 +1043,6 @@ export default function QuestBoard() {
           </div>
         )}
 
-        {/* Next Day Planned Quests Display + Planning Button */}
         {(nextDayPlannedCount > 0 || canShowPlanningButton) && (
           <div 
             className="mb-6 p-4"
@@ -1094,7 +1056,7 @@ export default function QuestBoard() {
               <div className="flex items-center justify-center gap-2 mb-3">
                 <Calendar className="w-5 h-5 text-white" strokeWidth={3} />
                 <p className="font-black uppercase text-white">
-                  工会已登记明日 ${nextDayPlannedCount} 项委托
+                  工会已登记明日 {nextDayPlannedCount} 项委托
                 </p>
               </div>
             )}
@@ -1165,7 +1127,6 @@ export default function QuestBoard() {
           </div>
         )}
 
-        {/* Rest Day Button */}
         <div className="mt-6">
           <button
             onClick={() => setShowRestDayDialog(true)}
@@ -1288,7 +1249,7 @@ export default function QuestBoard() {
                     「{milestoneReward.title}」
                   </p>
                   <p className="font-bold text-sm leading-relaxed mb-4">
-                    恭喜你达成${milestoneReward.days}天连续完成任务的非凡成就！
+                    恭喜你达成{milestoneReward.days}天连续完成任务的非凡成就！
                   </p>
                   
                   <div className="space-y-3">

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { X, Loader2, Sparkles, ChevronDown, ChevronUp, Plus, Repeat } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -36,7 +37,7 @@ export default function EndOfDaySummaryAndPlanning({
         if (key && !uniqueRoutinesMap.has(key)) {
           uniqueRoutinesMap.set(key, {
             title: quest.title,
-            actionHint: key,
+            actionHint: quest.actionHint, // Use actionHint for value
             difficulty: quest.difficulty,
             rarity: quest.rarity
           });
@@ -82,47 +83,61 @@ export default function EndOfDaySummaryAndPlanning({
     setIsProcessing(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。冒险者正在为明天规划任务。
+        prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
 
 用户输入：${textInput.trim()}
 
 你的任务：
-1. 识别并拆分用户输入中的所有独立任务
-2. 为每个任务创作专属的RPG风格标题（【2字类型】+ 7字标题）
-3. 评定难度和稀有度
-4. 保留用户的原始任务描述作为 actionHint
+1. 把整个输入作为**单个任务**处理（不要拆分！）
+2. **为这个任务生成专属的RPG史诗风格标题**：
 
-请返回任务数组：`,
+【标题生成规则】（必须100%严格遵守）：
+- 格式：【X X】+ Y Y Y Y Y Y Y （X=动作类型2个字，Y=描述正好7个字）
+- 动作类型：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判、议会
+- **7字描述是硬性限制！必须正好7个汉字，不能多也不能少！**
+- 描述要充满幻想色彩，把现实任务转化为史诗叙事
+- **绝对禁止使用"任务"二字！**
+
+【标题示例】（注意每个描述都正好7个字）：
+"跑步5km" → "【征讨】踏破晨曦五里征途"（7字：踏破晨曦五里征途）
+"写周报" → "【记录】编撰冒险周志卷轴"（7字：编撰冒险周志卷轴）
+"开会" → "【议会】召开圆桌战术会议"（7字：召开圆桌战术会议）
+
+**重要提醒**：描述部分必须正好7个汉字！
+
+3. 评定难度和稀有度
+4. 保留用户的完整输入作为 actionHint
+
+**再次强调**：无论输入多长或多复杂，都只返回1个任务！标题的描述部分必须正好7个汉字！
+
+请返回任务：`,
         response_json_schema: {
           type: "object",
           properties: {
-            tasks: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  title: { type: "string" },
-                  actionHint: { type: "string" },
-                  difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
-                  rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
-                },
-                required: ["title", "actionHint", "difficulty", "rarity"]
-              }
-            }
+            title: { 
+              type: "string",
+              description: "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！"
+            },
+            actionHint: { 
+              type: "string",
+              description: "用户的原始输入，完全保持原样"
+            },
+            difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
+            rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
           },
-          required: ["tasks"]
+          required: ["title", "actionHint", "difficulty", "rarity"]
         }
       });
 
-      const newQuests = result.tasks.map(task => ({
-        title: task.title,
-        actionHint: task.actionHint,
-        difficulty: task.difficulty,
-        rarity: task.rarity,
+      // 直接添加单个任务
+      setPlannedQuests(prev => [...prev, {
+        title: result.title,
+        actionHint: result.actionHint,
+        difficulty: result.difficulty,
+        rarity: result.rarity,
         tags: []
-      }));
-
-      setPlannedQuests(prev => [...prev, ...newQuests]);
+      }]);
+      
       setTextInput('');
     } catch (error) {
       console.error('任务解析失败:', error);

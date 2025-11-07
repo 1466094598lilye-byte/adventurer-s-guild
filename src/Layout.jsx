@@ -1,15 +1,18 @@
+
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Scroll, BookOpen, Gem, User } from "lucide-react";
+import { useLanguage } from "@/components/LanguageContext";
 
 export default function Layout({ children }) {
   const location = useLocation();
+  const { t } = useLanguage();
 
   const tabs = [
-    { name: 'QuestBoard', label: '委托板', icon: Scroll },
-    { name: 'Journal', label: '日志', icon: BookOpen },
-    { name: 'Treasures', label: '宝物', icon: Gem },
-    { name: 'Profile', label: '我', icon: User }
+    { name: 'QuestBoard', label: t('nav_questboard'), icon: Scroll },
+    { name: 'Journal', label: t('nav_journal'), icon: BookOpen },
+    { name: 'Treasures', label: t('nav_treasures'), icon: Gem },
+    { name: 'Profile', label: t('nav_profile'), icon: User }
   ];
 
   const isActive = (pageName) => {

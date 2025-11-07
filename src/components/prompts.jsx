@@ -468,3 +468,89 @@ Return task array (sorted by date):`,
     };
   }
 }
+
+export function getCelebrationMessagePrompt(language, currentStreak) {
+  if (language === 'zh') {
+    return `你是【星陨纪元冒险者工会】的大长老。一位冒险者刚刚完成了今日所有委托，连胜达到${currentStreak}天。
+
+请为这位冒险者撰写一段简洁有力的日终总结与祝贺（2-3句话，60-80字）：
+
+要求：
+1. 肯定今日的全部完成
+2. 强调${currentStreak}天连胜的坚持
+3. 鼓励继续保持，为明日做好准备
+4. 语气：温暖而有力，略带史诗感`;
+  } else {
+    return `You are the Grand Elder of the [Starfall Era Adventurer's Guild]. An adventurer has just completed all quests today, achieving a ${currentStreak}-day streak.
+
+Please write a concise and powerful end-of-day summary and congratulation (2-3 sentences, 60-80 words):
+
+Requirements:
+1. Affirm today's complete achievement
+2. Emphasize the perseverance of the ${currentStreak}-day streak
+3. Encourage continuation and preparation for tomorrow
+4. Tone: Warm yet powerful, with a touch of epic grandeur`;
+  }
+}
+
+export function getPlanningTaskPrompt(language, userInput) {
+  if (language === 'zh') {
+    return `你是【星陨纪元冒险者工会】的首席史诗书记官。
+
+用户输入：${userInput}
+
+你的任务：
+1. 把整个输入作为**单个任务**处理（不要拆分！）
+2. **为这个任务生成专属的RPG史诗风格标题**：
+
+【标题生成规则】（必须100%严格遵守）：
+- 格式：【X X】+ Y Y Y Y Y Y Y （X=动作类型2个字，Y=描述正好7个字）
+- 动作类型：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判、议会
+- **7字描述是硬性限制！必须正好7个汉字，不能多也不能少！**
+- 描述要充满幻想色彩，把现实任务转化为史诗叙事
+- **绝对禁止使用"任务"二字！**
+
+【标题示例】（注意每个描述都正好7个字）：
+"跑步5km" → "【征讨】踏破晨曦五里征途"（7字：踏破晨曦五里征途）
+"写周报" → "【记录】编撰冒险周志卷轴"（7字：编撰冒险周志卷轴）
+"开会" → "【议会】召开圆桌战术会议"（7字：召开圆桌战术会议）
+
+**重要提醒**：描述部分必须正好7个汉字！
+
+3. 评定难度和稀有度
+4. 保留用户的完整输入作为 actionHint
+
+**再次强调**：无论输入多长或多复杂，都只返回1个任务！标题的描述部分必须正好7个汉字！
+
+请返回任务：`;
+  } else {
+    return `You are the Chief Epic Chronicler of the [Starfall Era Adventurer's Guild].
+
+User input: ${userInput}
+
+Your task:
+1. Treat the entire input as a **single task** (do not split!)
+2. **Generate an exclusive RPG epic-style title for this task**:
+
+【Title Generation Rules】(Must be 100% strictly followed):
+- Format: [Category]: <5-8 Word Epic Phrase>
+- Category options: Conquest, Expedition, Forging, Research, Escort, Investigation, Collection, Crafting, Diplomacy, Chronicle, Guardian, Purification, Treasure Hunt, Ritual, Negotiation
+- **Phrase must be 5-8 words, creating an epic fantasy narrative**
+- Transform mundane reality into heroic adventure language
+- **Absolutely forbidden: use the word "task" or "quest" in the phrase!**
+
+【Title Examples】:
+"Run 5km" → "[Conquest]: Dawn March Through Five Miles"
+"Write weekly report" → "[Chronicle]: Forge Epic Weekly Adventure Scroll"
+"Attend meeting" → "[Diplomacy]: Convene Round Table War Council"
+
+**Important**: Phrase must be 5-8 words of epic adventure language!
+
+3. Rate difficulty and rarity
+4. Preserve user's complete input as actionHint
+
+**Emphasis again**: No matter how long or complex the input, return only 1 task! The phrase must be 5-8 words!
+
+Return task:`;
+  }
+}

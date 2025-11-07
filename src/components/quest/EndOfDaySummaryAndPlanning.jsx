@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { X, Loader2, Sparkles, ChevronDown, ChevronUp, Plus, Repeat } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { useLanguage } from '@/components/LanguageContext';
+import { getCelebrationMessagePrompt, getPlanningTaskPrompt } from '@/components/prompts';
 
 export default function EndOfDaySummaryAndPlanning({ 
   showCelebration, 
@@ -17,6 +19,8 @@ export default function EndOfDaySummaryAndPlanning({
   const [plannedQuests, setPlannedQuests] = useState([]);
   const [routineQuests, setRoutineQuests] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
+
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     if (showCelebration) {
@@ -52,16 +56,10 @@ export default function EndOfDaySummaryAndPlanning({
 
   const generateCelebrationMessage = async () => {
     try {
+      const promptText = getCelebrationMessagePrompt(language, currentStreak);
+      
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `你是【星陨纪元冒险者工会】的大长老。一位冒险者刚刚完成了今日所有委托，连胜达到${currentStreak}天。
-
-请为这位冒险者撰写一段简洁有力的日终总结与祝贺（2-3句话，60-80字）：
-
-要求：
-1. 肯定今日的全部完成
-2. 强调${currentStreak}天连胜的坚持
-3. 鼓励继续保持，为明日做好准备
-4. 语气：温暖而有力，略带史诗感`,
+        prompt: promptText,
         response_json_schema: {
           type: "object",
           properties: {
@@ -70,9 +68,13 @@ export default function EndOfDaySummaryAndPlanning({
         }
       });
       
-      setCelebrationMessage(result.message || '恭喜完成今日所有委托！');
+      setCelebrationMessage(result.message || (language === 'zh' 
+        ? '恭喜完成今日所有委托！' 
+        : 'Congratulations on completing all quests today!'));
     } catch (error) {
-      setCelebrationMessage('恭喜完成今日所有委托！');
+      setCelebrationMessage(language === 'zh' 
+        ? '恭喜完成今日所有委托！' 
+        : 'Congratulations on completing all quests today!');
     }
     setLoadingCelebration(false);
   };
@@ -82,45 +84,24 @@ export default function EndOfDaySummaryAndPlanning({
     
     setIsProcessing(true);
     try {
+      const promptText = getPlanningTaskPrompt(language, textInput.trim());
+      
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
-
-用户输入：${textInput.trim()}
-
-你的任务：
-1. 把整个输入作为**单个任务**处理（不要拆分！）
-2. **为这个任务生成专属的RPG史诗风格标题**：
-
-【标题生成规则】（必须100%严格遵守）：
-- 格式：【X X】+ Y Y Y Y Y Y Y （X=动作类型2个字，Y=描述正好7个字）
-- 动作类型：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判、议会
-- **7字描述是硬性限制！必须正好7个汉字，不能多也不能少！**
-- 描述要充满幻想色彩，把现实任务转化为史诗叙事
-- **绝对禁止使用"任务"二字！**
-
-【标题示例】（注意每个描述都正好7个字）：
-"跑步5km" → "【征讨】踏破晨曦五里征途"（7字：踏破晨曦五里征途）
-"写周报" → "【记录】编撰冒险周志卷轴"（7字：编撰冒险周志卷轴）
-"开会" → "【议会】召开圆桌战术会议"（7字：召开圆桌战术会议）
-
-**重要提醒**：描述部分必须正好7个汉字！
-
-3. 评定难度和稀有度
-4. 保留用户的完整输入作为 actionHint
-
-**再次强调**：无论输入多长或多复杂，都只返回1个任务！标题的描述部分必须正好7个汉字！
-
-请返回任务：`,
+        prompt: promptText,
         response_json_schema: {
           type: "object",
           properties: {
             title: { 
               type: "string",
-              description: "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！"
+              description: language === 'zh' 
+                ? "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！"
+                : "Must strictly follow [Category]: <5-8 Word Epic Phrase> format!"
             },
             actionHint: { 
               type: "string",
-              description: "用户的原始输入，完全保持原样"
+              description: language === 'zh' 
+                ? "用户的原始输入，完全保持原样"
+                : "User's original input, keep as-is"
             },
             difficulty: { type: "string", enum: ["C", "B", "A", "S"] },
             rarity: { type: "string", enum: ["Common", "Rare", "Epic", "Legendary"] }
@@ -141,14 +122,14 @@ export default function EndOfDaySummaryAndPlanning({
       setTextInput('');
     } catch (error) {
       console.error('任务解析失败:', error);
-      alert('任务解析失败，请重试');
+      alert(t('questboard_alert_task_parse_failed', { message: error.message || t('common_try_again') }));
     }
     setIsProcessing(false);
   };
 
   const handleAddManualQuest = () => {
     const newQuest = {
-      title: '【新任务】待命名任务',
+      title: language === 'zh' ? '【新任务】待命名任务' : '[New Quest]: Unnamed Task',
       actionHint: '',
       difficulty: 'C',
       rarity: 'Common',
@@ -167,8 +148,10 @@ export default function EndOfDaySummaryAndPlanning({
     
     if (newActionHint.trim()) {
       try {
+        const promptText = getPlanningTaskPrompt(language, newActionHint.trim());
+        
         const result = await base44.integrations.Core.InvokeLLM({
-          prompt: `为任务"${newActionHint}"生成RPG风格标题、难度和稀有度`,
+          prompt: promptText,
           response_json_schema: {
             type: "object",
             properties: {
@@ -252,7 +235,7 @@ export default function EndOfDaySummaryAndPlanning({
         </button>
 
         <h2 className="text-3xl font-black uppercase text-center mb-6">
-          {showCelebration ? '🎊 今日圆满 🎊' : '📋 规划明日 📋'}
+          {showCelebration ? t('planning_celebration_title') : t('planning_planning_title')}
         </h2>
 
         {showCelebration && (
@@ -287,10 +270,10 @@ export default function EndOfDaySummaryAndPlanning({
             }}
           >
             <p className="font-black text-center">
-              📋 明日委托总数：{totalTomorrowQuests} 项
+              📋 {t('planning_tomorrow_summary')}：{totalTomorrowQuests} {t('common_items')}
               {routineQuests.length > 0 && (
                 <span className="text-sm font-bold ml-2" style={{ color: '#666' }}>
-                  （{routineQuests.length}项每日修炼 + {plannedQuests.length}项临时任务）
+                  （{routineQuests.length}{language === 'zh' ? '项每日修炼' : ' daily routines'} + {plannedQuests.length}{language === 'zh' ? '项临时任务' : ' temporary quests'}）
                 </span>
               )}
             </p>
@@ -308,7 +291,7 @@ export default function EndOfDaySummaryAndPlanning({
           >
             <div className="flex items-center gap-2 mb-3">
               <Repeat className="w-5 h-5" strokeWidth={3} />
-              <h3 className="font-black uppercase text-sm">每日修炼（自动出现）</h3>
+              <h3 className="font-black uppercase text-sm">{t('planning_routine_quests')}</h3>
             </div>
             
             <div className="space-y-2">
@@ -344,7 +327,7 @@ export default function EndOfDaySummaryAndPlanning({
               ))}
             </div>
             <p className="text-xs font-bold mt-2 text-center" style={{ color: '#666' }}>
-              💡 这些任务每天自动出现，无需单独规划
+              💡 {t('planning_routine_hint')}
             </p>
           </div>
         )}
@@ -357,12 +340,12 @@ export default function EndOfDaySummaryAndPlanning({
             border: '4px solid #000'
           }}
         >
-          <h3 className="font-black uppercase mb-3">规划明日临时任务</h3>
+          <h3 className="font-black uppercase mb-3">{t('planning_add_temp_quests')}</h3>
           
           <div className="flex gap-3 mb-4">
             <input
               type="text"
-              placeholder="输入明天的任务..."
+              placeholder={t('planning_input_placeholder')}
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
               onKeyPress={(e) => {
@@ -415,13 +398,13 @@ export default function EndOfDaySummaryAndPlanning({
                       <p className="font-black text-sm mb-1 truncate">{quest.title}</p>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-gray-600 truncate">
-                          ({quest.actionHint || '待填写'})
+                          ({quest.actionHint || (language === 'zh' ? '待填写' : 'To be filled')})
                         </span>
                         <span 
                           className="px-2 py-0.5 text-xs font-black"
                           style={{
                             backgroundColor: difficultyColors[quest.difficulty],
-                            color: quest.difficulty === 'S' ? '#FFE66D' : '#000',
+                            color: quest.difficulty === 'S' && quest.difficulty === level ? '#FFE66D' : '#000',
                             border: '2px solid #000'
                           }}
                         >
@@ -440,13 +423,13 @@ export default function EndOfDaySummaryAndPlanning({
                     <div className="px-3 pb-3 pt-0" style={{ borderTop: '2px solid #000' }}>
                       <div className="mb-3 mt-3">
                         <label className="block text-xs font-bold uppercase mb-2">
-                          任务内容：
+                          {t('planning_edit_content')}
                         </label>
                         <input
                           type="text"
                           value={quest.actionHint}
                           onChange={(e) => handleChangeActionHint(i, e.target.value)}
-                          placeholder="请输入任务内容..."
+                          placeholder={language === 'zh' ? '请输入任务内容...' : 'Enter quest content...'}
                           className="w-full px-3 py-2 font-bold text-sm"
                           style={{ border: '2px solid #000' }}
                         />
@@ -454,7 +437,7 @@ export default function EndOfDaySummaryAndPlanning({
 
                       <div className="mb-3">
                         <label className="block text-xs font-bold uppercase mb-2">
-                          难度评级：
+                          {t('planning_edit_difficulty')}
                         </label>
                         <div className="grid grid-cols-4 gap-2">
                           {['C', 'B', 'A', 'S'].map(level => (
@@ -483,7 +466,7 @@ export default function EndOfDaySummaryAndPlanning({
                           border: '2px solid #FF6B35'
                         }}
                       >
-                        删除此任务
+                        {t('planning_delete_task')}
                       </button>
                     </div>
                   )}
@@ -502,7 +485,7 @@ export default function EndOfDaySummaryAndPlanning({
             }}
           >
             <Plus className="w-4 h-4" strokeWidth={3} />
-            手动添加任务
+            {t('planning_manual_add')}
           </button>
         </div>
 
@@ -516,8 +499,8 @@ export default function EndOfDaySummaryAndPlanning({
           }}
         >
           {plannedQuests.length > 0 
-            ? `确认登记 ${plannedQuests.length} 项临时委托` 
-            : '关闭'}
+            ? `${t('planning_confirm_register')} ${plannedQuests.length} ${t('planning_temp_tasks')}` 
+            : t('planning_close')}
         </button>
       </div>
     </div>

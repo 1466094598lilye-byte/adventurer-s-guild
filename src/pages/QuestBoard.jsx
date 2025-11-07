@@ -15,7 +15,7 @@ import { format, subDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/components/LanguageContext';
-import { getTaskNamingPrompt } from '@/lib/prompts.js';
+import { getTaskNamingPrompt } from '@/lib/prompts';
 
 export default function QuestBoard() {
   const [filter, setFilter] = useState('all');

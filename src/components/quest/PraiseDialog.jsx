@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { X, BookMarked, Star } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useLanguage } from '@/components/LanguageContext';
-import { getPraisePrompt, getPraiseRoles } from '@/lib/prompts.js';
+import { getPraisePrompt, getPraiseRoles } from '@/lib/prompts';
 
 export default function PraiseDialog({ quest, onClose, onAddNote }) {
   const { language, t } = useLanguage();

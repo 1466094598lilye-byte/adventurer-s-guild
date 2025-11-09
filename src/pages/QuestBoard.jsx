@@ -475,7 +475,14 @@ export default function QuestBoard() {
         console.log('是否全部完成:', allDone);
         
         if (allDone && updatedQuests.length > 0) {
-          console.log('=== 所有任务已完成 ===');
+          console.log('=== 所有任务已完成，开始处理连胜和宝箱 ===');
+          
+          // 先关闭所有其他对话框，避免层级冲突
+          console.log('关闭所有其他对话框...');
+          setShowCalendar(false);
+          setShowLongTermDialog(false);
+          setShowRestDayDialog(false);
+          await new Promise(resolve => setTimeout(resolve, 100));
           
           const currentUser = await base44.auth.me();
           console.log('当前用户数据:', currentUser);
@@ -495,12 +502,18 @@ export default function QuestBoard() {
                 opened: false 
               });
               console.log('宝箱创建成功，准备显示');
-              setTimeout(() => setShowChest(true), 300);
+              setTimeout(() => {
+                console.log('执行 setShowChest(true)');
+                setShowChest(true);
+              }, 500);
             } else {
               console.log('宝箱已存在，opened 状态:', chests[0].opened);
               if (!chests[0].opened) {
                 console.log('宝箱未开启，显示宝箱界面');
-                setTimeout(() => setShowChest(true), 300);
+                setTimeout(() => {
+                  console.log('执行 setShowChest(true)');
+                  setShowChest(true);
+                }, 500);
               } else {
                 console.log('宝箱已开启过，不显示');
               }
@@ -580,7 +593,7 @@ export default function QuestBoard() {
             setTimeout(() => {
               console.log('显示宝箱界面');
               setShowChest(true);
-            }, 300);
+            }, 500);
           } else {
             const chest = chests[0];
             console.log('今日宝箱已存在');
@@ -593,7 +606,7 @@ export default function QuestBoard() {
               setTimeout(() => {
                 console.log('执行 setShowChest(true)');
                 setShowChest(true);
-              }, 300);
+              }, 500);
             } else {
               console.log('宝箱已开启过，不显示');
             }
@@ -709,13 +722,17 @@ export default function QuestBoard() {
   };
 
   const handleChestClose = async () => {
+    console.log('=== 宝箱关闭 ===');
     setShowChest(false);
+    
+    // 等待一下确保状态更新
+    await new Promise(resolve => setTimeout(resolve, 200));
     
     // 重新获取最新的用户数据，不依赖缓存
     const currentUser = await base44.auth.me();
     const lastPlanned = currentUser?.lastPlannedDate;
     
-    console.log('=== 宝箱关闭，检查是否需要显示规划对话框 ===');
+    console.log('=== 检查是否需要显示规划对话框 ===');
     console.log('lastPlannedDate:', lastPlanned);
     console.log('今日日期:', today);
     console.log('是否需要显示规划:', lastPlanned !== today);
@@ -723,8 +740,17 @@ export default function QuestBoard() {
     // 如果今天还没有规划过明日任务，显示规划对话框
     if (lastPlanned !== today) {
       console.log('显示规划明日任务对话框');
-      setShowCelebrationInPlanning(true);
-      setShowPlanningDialog(true);
+      
+      // 确保其他对话框都关闭
+      setShowCalendar(false);
+      setShowLongTermDialog(false);
+      setShowRestDayDialog(false);
+      
+      // 稍微延迟一下再显示，确保其他对话框完全关闭
+      setTimeout(() => {
+        setShowCelebrationInPlanning(true);
+        setShowPlanningDialog(true);
+      }, 300);
     } else {
       console.log('今天已经规划过，不显示规划对话框');
     }

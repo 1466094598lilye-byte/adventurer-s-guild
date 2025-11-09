@@ -104,8 +104,11 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
+      className="fixed inset-0 flex items-center justify-center p-4"
+      style={{ 
+        backgroundColor: 'rgba(0,0,0,0.95)',
+        zIndex: 70
+      }}
     >
       <div 
         className="relative max-w-md w-full p-8 transform"

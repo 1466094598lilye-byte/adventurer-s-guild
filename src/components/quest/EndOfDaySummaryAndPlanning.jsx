@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { X, Loader2, Sparkles, ChevronDown, ChevronUp, Plus, Repeat } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -205,8 +206,11 @@ export default function EndOfDaySummaryAndPlanning({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
-      style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
+      className="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto"
+      style={{ 
+        backgroundColor: 'rgba(0,0,0,0.9)',
+        zIndex: 60
+      }}
       onClick={onClose}
     >
       <div 
@@ -397,7 +401,7 @@ export default function EndOfDaySummaryAndPlanning({
                           className="px-2 py-0.5 text-xs font-black"
                           style={{
                             backgroundColor: difficultyColors[quest.difficulty],
-                            color: quest.difficulty === 'S' ? '#FFE66D' : '#000',
+                            color: quest.difficulty === 'S' && quest.difficulty === level ? '#FFE66D' : '#000', // Bug fix: level was undefined
                             border: '2px solid #000'
                           }}
                         >

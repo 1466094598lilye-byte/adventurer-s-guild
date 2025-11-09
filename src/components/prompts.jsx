@@ -1,4 +1,3 @@
-
 // AI Prompts for both Chinese and English versions
 
 export function getTaskNamingPrompt(language, userInput, isEdit = false) {
@@ -106,60 +105,100 @@ Please write acknowledgment (around 50 words) **completely as ${role.nameEn}**:`
 
 export function getTreasurePrompt(language, rarity) {
   if (language === 'zh') {
-    const rarityContext = {
-      'Common': '普通 - 简单朴素',
-      'Rare': '稀有 - 有些特别', 
-      'Epic': '史诗 - 强大华丽',
-      'Legendary': '传说 - 传奇神话'
+    const raritySettings = {
+      'Common': {
+        nameRange: '4-8个汉字',
+        descRange: '15-25个汉字',
+        context: '普通 - 简单朴素，日常可见'
+      },
+      'Rare': {
+        nameRange: '5-10个汉字',
+        descRange: '25-35个汉字',
+        context: '稀有 - 有些特别，蕴含故事'
+      },
+      'Epic': {
+        nameRange: '6-12个汉字',
+        descRange: '35-50个汉字',
+        context: '史诗 - 强大华丽，传说之物'
+      },
+      'Legendary': {
+        nameRange: '7-14个汉字',
+        descRange: '50-70个汉字',
+        context: '传说 - 传奇神话，改变命运'
+      }
     };
+
+    const settings = raritySettings[rarity];
 
     return {
       prompt: `生成一个RPG风格的战利品道具。
 
-稀有度：${rarity}（${rarityContext[rarity]}）
+稀有度：${rarity}（${settings.context}）
 
 要求：
-1. 名称：10-20个汉字，符合该稀有度特点
-2. 简介：20-40个汉字，RPG风味，体现该稀有度的价值和来历
+1. 名称：${settings.nameRange}，符合该稀有度特点
+2. 简介：${settings.descRange}，RPG风味，体现该稀有度的价值和来历
+   ${rarity === 'Epic' ? '- 史诗级：描述要展现其强大力量和传奇背景，让人感受到珍贵' : ''}
+   ${rarity === 'Legendary' ? '- 传说级：描述要充满神话色彩，详细讲述其神秘起源和改变命运的力量，让人感到敬畏' : ''}
 3. 选择合适的emoji作为图标
 
 示例：
-- Common: "风化的石板" / "记录着冒险者日常足迹的普通石板，虽平凡却见证时光流转。"
-- Rare: "月光水晶" / "在月圆之夜才会发光的神秘水晶，据说能指引迷失者找到归途。"
-- Epic: "不灭之炎核心" / "传说中永不熄灭的圣火碎片，象征着永恒的意志，能赋予持有者不屈的勇气。"
-- Legendary: "时空枢纽钥匙" / "据说能开启任意时空之门的神器，只有真正的英雄才配拥有，承载着改变命运的力量。"
+- Common: "风化的石板" / "记录着冒险者日常足迹的普通石板，虽平凡却见证时光流转。"（22字）
+- Rare: "月光水晶碎片" / "在月圆之夜才会发光的神秘水晶，据说能指引迷失者找到归途，承载着古老的祝福。"（32字）
+- Epic: "不灭圣火的核心" / "传说中永不熄灭的圣火碎片，象征着永恒的意志与不屈的勇气。持有者能在最黑暗的时刻点燃希望之光，驱散一切绝望。"（49字）
+- Legendary: "时空枢纽的钥匙" / "据说能开启任意时空之门的神器，由创世之初的古神锻造而成。只有真正的英雄才配拥有这份力量，它承载着改变命运、重塑历史的无上权能，是冒险者梦寐以求的终极圣物。"（68字）
 
 请生成：`,
-      nameRange: '10-20个汉字',
-      descRange: '20-40个汉字'
+      nameRange: settings.nameRange,
+      descRange: settings.descRange
     };
   } else {
-    const rarityContext = {
-      'Common': 'Common - Simple and plain',
-      'Rare': 'Rare - Somewhat special',
-      'Epic': 'Epic - Powerful and magnificent',
-      'Legendary': 'Legendary - Mythic and legendary'
+    const raritySettings = {
+      'Common': {
+        nameRange: '2-4 words',
+        descRange: '15-25 words',
+        context: 'Common - Simple and plain, mundane'
+      },
+      'Rare': {
+        nameRange: '3-5 words',
+        descRange: '25-35 words',
+        context: 'Rare - Somewhat special, carries a story'
+      },
+      'Epic': {
+        nameRange: '3-6 words',
+        descRange: '35-50 words',
+        context: 'Epic - Powerful and magnificent, legendary item'
+      },
+      'Legendary': {
+        nameRange: '4-7 words',
+        descRange: '50-70 words',
+        context: 'Legendary - Mythic and fate-altering'
+      }
     };
+
+    const settings = raritySettings[rarity];
 
     return {
       prompt: `Generate an RPG-style treasure item.
 
-Rarity: ${rarity} (${rarityContext[rarity]})
+Rarity: ${rarity} (${settings.context})
 
 Requirements:
-1. Name: 3-6 words, fitting this rarity level
-2. Description: 20-40 words, RPG flavor, reflecting this rarity's value and origin
+1. Name: ${settings.nameRange}, fitting this rarity level
+2. Description: ${settings.descRange}, RPG flavor, reflecting this rarity's value and origin
+   ${rarity === 'Epic' ? '- Epic tier: Description should showcase its powerful abilities and legendary background, conveying its precious nature' : ''}
+   ${rarity === 'Legendary' ? '- Legendary tier: Description should be filled with mythic grandeur, detailing its mysterious origins and fate-altering power, inspiring awe' : ''}
 3. Choose appropriate emoji as icon
 
 Examples:
-- Common: "Weathered Stone Tablet" / "An ordinary stone tablet recording adventurer's daily steps. Though plain, it witnesses the passage of time."
-- Rare: "Moonlight Crystal Shard" / "A mysterious crystal that glows only during full moons, said to guide lost souls back to their path."
-- Epic: "Eternal Flame Core Fragment" / "A sacred fire shard that never extinguishes, symbolizing eternal will and granting its bearer unwavering courage in darkest hours."
-- Legendary: "Chrono Nexus Key Artifact" / "A mythical artifact said to unlock any temporal gateway. Only true heroes may wield it, bearing the power to alter destiny itself."
+- Common: "Weathered Stone Tablet" / "An ordinary stone tablet recording adventurer's daily steps. Though plain, it witnesses the passage of time." (18 words)
+- Rare: "Moonlight Crystal Shard" / "A mysterious crystal that glows only during full moons, said to guide lost souls back to their path, bearing ancient blessings." (23 words)
+- Epic: "Eternal Flame Core Fragment" / "A sacred fire shard that never extinguishes, symbolizing eternal will and unwavering courage. Its bearer can ignite hope's light in the darkest hours, dispelling all despair and bringing warmth to frozen hearts." (36 words)
+- Legendary: "Chrono Nexus Key Artifact" / "A mythical artifact said to unlock any temporal gateway, forged by ancient gods at creation's dawn. Only true heroes may wield this power, bearing the supreme authority to alter destiny and reshape history itself. This is the ultimate sacred relic that adventurers dream of possessing." (53 words)
 
 Generate:`,
-      nameRange: '3-6 words',
-      descRange: '20-40 words'
+      nameRange: settings.nameRange,
+      descRange: settings.descRange
     };
   }
 }

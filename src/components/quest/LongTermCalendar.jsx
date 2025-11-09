@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { X, Calendar as CalendarIcon, Trash2, Edit2, AlertTriangle, ChevronRight, ChevronDown, Plus } from 'lucide-react';
+import { X, Calendar as CalendarIcon, Trash2, Edit2, AlertTriangle, ChevronRight, ChevronDown, Plus, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -19,6 +19,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const [addingToDate, setAddingToDate] = useState(null);
   const [newTaskInput, setNewTaskInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { t, language } = useLanguage();
 
   useEffect(() => {
@@ -61,6 +62,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   };
 
   const handleDeleteAllProjects = async () => {
+    setIsDeleting(true);
     try {
       for (const quest of longTermQuests) {
         await base44.entities.Quest.delete(quest.id);
@@ -72,6 +74,8 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
     } catch (error) {
       console.error('删除失败:', error);
       alert('删除失败，请重试');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -453,16 +457,27 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
             {/* Delete All Button */}
             <button
               onClick={() => setShowDeleteConfirm(true)}
+              disabled={isDeleting}
               className="w-full py-3 font-black uppercase flex items-center justify-center gap-2"
               style={{
                 backgroundColor: '#FF6B35',
                 color: '#FFF',
                 border: '4px solid #000',
-                boxShadow: '6px 6px 0px #000'
+                boxShadow: '6px 6px 0px #000',
+                opacity: isDeleting ? 0.5 : 1
               }}
             >
-              <Trash2 className="w-5 h-5" strokeWidth={3} />
-              {t('calendar_delete_all')}
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" strokeWidth={3} />
+                  {language === 'zh' ? '工会成员正在擦除委托板...' : 'Guild members erasing quest board...'}
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-5 h-5" strokeWidth={3} />
+                  {t('calendar_delete_all')}
+                </>
+              )}
             </button>
           </>
         )}
@@ -717,7 +732,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
           <div
             className="fixed inset-0 z-60 flex items-center justify-center p-4"
             style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
-            onClick={() => setShowDeleteConfirm(false)}
+            onClick={() => !isDeleting && setShowDeleteConfirm(false)}
           >
             <div
               className="relative max-w-md w-full p-6"
@@ -753,25 +768,36 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowDeleteConfirm(false)}
+                    disabled={isDeleting}
                     className="flex-1 py-3 font-black uppercase"
                     style={{
                       backgroundColor: '#FFF',
                       border: '4px solid #000',
-                      boxShadow: '4px 4px 0px #000'
+                      boxShadow: '4px 4px 0px #000',
+                      opacity: isDeleting ? 0.5 : 1
                     }}
                   >
                     {t('common_cancel')}
                   </button>
                   <button
                     onClick={handleDeleteAllProjects}
-                    className="flex-1 py-3 font-black uppercase text-white"
+                    disabled={isDeleting}
+                    className="flex-1 py-3 font-black uppercase text-white flex items-center justify-center gap-2"
                     style={{
                       backgroundColor: '#000',
                       border: '4px solid #FFF',
-                      boxShadow: '4px 4px 0px #FFF'
+                      boxShadow: '4px 4px 0px #FFF',
+                      opacity: isDeleting ? 0.5 : 1
                     }}
                   >
-                    {t('common_confirm')}
+                    {isDeleting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" strokeWidth={3} />
+                        {language === 'zh' ? '擦除中...' : 'Erasing...'}
+                      </>
+                    ) : (
+                      t('common_confirm')
+                    )}
                   </button>
                 </div>
               </div>

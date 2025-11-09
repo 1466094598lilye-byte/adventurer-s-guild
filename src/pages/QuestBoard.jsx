@@ -11,6 +11,7 @@ import EndOfDaySummaryAndPlanning from '../components/quest/EndOfDaySummaryAndPl
 import LongTermProjectDialog from '../components/quest/LongTermProjectDialog';
 import LongTermCalendar from '../components/quest/LongTermCalendar';
 import JointPraiseDialog from '../components/quest/JointPraiseDialog';
+import TimedEventCalendar from '../components/quest/TimedEventCalendar'; // New import
 import { format, subDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,7 @@ export default function QuestBoard() {
   const [showCelebrationInPlanning, setShowCelebrationInPlanning] = useState(false);
   const [showLongTermDialog, setShowLongTermDialog] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showTimedEvents, setShowTimedEvents] = useState(false); // New state
   const [isConfirmingPending, setIsConfirmingPending] = useState(false);
   const [showJointPraise, setShowJointPraise] = useState(false);
   const [completedProject, setCompletedProject] = useState(null);
@@ -64,6 +66,12 @@ export default function QuestBoard() {
       return longTermQuests.length > 0;
     },
     initialData: false,
+  });
+
+  // New query for timed events
+  const { data: timedEvents = [] } = useQuery({
+    queryKey: ['timedEvents'],
+    queryFn: () => base44.entities.TimedEvent.filter({}, '-date'), // Fetch all timed events, sorted by date
   });
 
   // 日更逻辑：未完成任务顺延 + 明日规划任务创建 + 每日修炼任务生成
@@ -482,6 +490,7 @@ export default function QuestBoard() {
           setShowCalendar(false);
           setShowLongTermDialog(false);
           setShowRestDayDialog(false);
+          setShowTimedEvents(false); // Close timed events dialog
           await new Promise(resolve => setTimeout(resolve, 100));
           
           const currentUser = await base44.auth.me();
@@ -737,16 +746,17 @@ export default function QuestBoard() {
     console.log('今日日期:', today);
     console.log('是否需要显示规划:', lastPlanned !== today);
     
-    // 如果今天还没有规划过明日任务，显示规划对话框
+    // If today hasn't been planned for, show the planning dialog
     if (lastPlanned !== today) {
       console.log('显示规划明日任务对话框');
       
-      // 确保其他对话框都关闭
+      // Ensure other dialogs are closed
       setShowCalendar(false);
       setShowLongTermDialog(false);
       setShowRestDayDialog(false);
-      
-      // 稍微延迟一下再显示，确保其他对话框完全关闭
+      setShowTimedEvents(false); // Close timed events dialog
+
+      // Delay a bit to ensure other dialogs are fully closed
       setTimeout(() => {
         setShowCelebrationInPlanning(true);
         setShowPlanningDialog(true);
@@ -789,6 +799,10 @@ export default function QuestBoard() {
     queryClient.invalidateQueries(['hasLongTermQuests']);
   };
 
+  const handleTimedEventsUpdate = () => { // New handler for timed event updates
+    queryClient.invalidateQueries(['timedEvents']);
+  };
+
   const filteredQuests = quests.filter(quest => {
     if (filter === 'all') return true;
     if (filter === 'done') return quest.status === 'done';
@@ -799,6 +813,7 @@ export default function QuestBoard() {
   const isRestDay = (user?.restDays || []).includes(today);
   const nextDayPlannedCount = (user?.nextDayPlannedQuests || []).length;
   const canShowPlanningButton = currentHour >= 21 && user?.lastPlannedDate !== today;
+  const canShowTimedEventsButton = user?.isAdmin || timedEvents.length > 0; // Show if admin or if there are events
 
   const difficultyColors = {
     C: '#FFE66D',
@@ -1111,6 +1126,29 @@ export default function QuestBoard() {
           </div>
         )}
 
+        {/* New section for Timed Events */}
+        {canShowTimedEventsButton && (
+          <div 
+            className="mb-6 p-4"
+            style={{
+              backgroundColor: '#FF6B35', /* A new vibrant color */
+              border: '4px solid #000',
+              boxShadow: '6px 6px 0px #000'
+            }}
+          >
+            <Button // Using shadcn Button component
+              onClick={() => setShowTimedEvents(true)}
+              className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3 text-white"
+            >
+              <Timer className="w-6 h-6" strokeWidth={3} />
+              {t('questboard_timed_events_btn')}
+            </Button>
+            <p className="text-center text-xs font-bold mt-2 text-white">
+              {t('questboard_timed_events_hint')}
+            </p>
+          </div>
+        )}
+
         <div className="flex gap-3 mb-6">
           {['all', 'todo', 'done'].map(f => (
             <Button // Using shadcn Button component
@@ -1236,6 +1274,13 @@ export default function QuestBoard() {
           <LongTermCalendar
             onClose={() => setShowCalendar(false)}
             onQuestsUpdated={handleCalendarUpdate}
+          />
+        )}
+
+        {showTimedEvents && ( // New dialog for TimedEventCalendar
+          <TimedEventCalendar
+            onClose={() => setShowTimedEvents(false)}
+            onEventsUpdated={handleTimedEventsUpdate}
           />
         )}
 

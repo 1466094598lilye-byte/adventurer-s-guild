@@ -251,8 +251,7 @@ export default function Profile() {
             boxShadow: '6px 6px 0px #000'
           }}
         >
-          <h3 className="flex items-center gap-2 text-xl font-black uppercase mb-4">
-            <Settings className="w-6 h-6" strokeWidth={3} />
+          <h3 className="text-xl font-black uppercase mb-4">
             {t('profile_settings')}
           </h3>
 

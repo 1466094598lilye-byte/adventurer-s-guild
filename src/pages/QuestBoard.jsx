@@ -407,6 +407,7 @@ export default function QuestBoard() {
     console.log('任务信息:', quest);
     
     try {
+      // 1. 更新任务状态
       await updateQuestMutation.mutateAsync({
         id: quest.id,
         data: { status: 'done' }
@@ -415,9 +416,11 @@ export default function QuestBoard() {
       
       setSelectedQuest(quest);
 
+      // 2. 等待缓存刷新完成
       await queryClient.invalidateQueries(['quests']);
       console.log('查询缓存已刷新');
 
+      // 3. 处理大项目完成检查
       if (quest.isLongTermProject && quest.longTermProjectId) {
         setTimeout(async () => {
           try {
@@ -452,139 +455,155 @@ export default function QuestBoard() {
         }, 500);
       }
       
-      setTimeout(async () => {
-        console.log('=== 开始检查是否全部完成 ===');
-        console.log('今日日期:', today);
+      // 4. 延迟一下确保状态完全更新，然后检查是否全部完成
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      console.log('=== 开始检查是否全部完成 ===');
+      console.log('今日日期:', today);
+      
+      try {
+        // 直接从服务器获取最新数据，不依赖缓存
+        const updatedQuests = await base44.entities.Quest.filter({ date: today });
+        console.log('找到的任务数量:', updatedQuests.length);
+        console.log('任务列表:', updatedQuests.map(q => ({ 
+          title: q.title, 
+          status: q.status,
+          date: q.date 
+        })));
         
-        try {
-          const updatedQuests = await base44.entities.Quest.filter({ date: today });
-          console.log('找到的任务数量:', updatedQuests.length);
-          console.log('任务列表:', updatedQuests.map(q => ({ 
-            title: q.title, 
-            status: q.status,
-            date: q.date 
-          })));
+        const allDone = updatedQuests.every(q => q.status === 'done');
+        console.log('是否全部完成:', allDone);
+        
+        if (allDone && updatedQuests.length > 0) {
+          console.log('=== 所有任务已完成 ===');
           
-          const allDone = updatedQuests.every(q => q.status === 'done');
-          console.log('是否全部完成:', allDone);
+          const currentUser = await base44.auth.me();
+          console.log('当前用户数据:', currentUser);
+          console.log('lastClearDate:', currentUser?.lastClearDate);
+          console.log('今日日期:', today);
           
-          if (allDone && updatedQuests.length > 0) {
-            console.log('=== 所有任务已完成 ===');
-            
-            const currentUser = await base44.auth.me();
-            console.log('当前用户数据:', currentUser);
-            console.log('lastClearDate:', currentUser?.lastClearDate);
-            console.log('今日日期:', today);
-            
-            if (currentUser?.lastClearDate === today) {
-              console.log('今天已经完成过所有任务，不重复增加连胜');
-              
-              const chests = await base44.entities.DailyChest.filter({ date: today });
-              if (chests.length === 0) {
-                await base44.entities.DailyChest.create({ 
-                  date: today, 
-                  opened: false 
-                });
-                setTimeout(() => setShowChest(true), 500);
-              } else if (!chests[0].opened) {
-                setTimeout(() => setShowChest(true), 500);
-              }
-              
-              return;
-            }
-            
-            let newStreak = 1;
-            const lastClearDate = currentUser?.lastClearDate;
-            const restDays = currentUser?.restDays || [];
-            
-            if (lastClearDate) {
-              let checkDate = new Date();
-              checkDate.setDate(checkDate.getDate() - 1);
-              
-              let daysBack = 0;
-              let foundLastWorkDay = false;
-              
-              while (daysBack < 365 && !foundLastWorkDay) {
-                const checkDateStr = format(checkDate, 'yyyy-MM-dd');
-                
-                if (!restDays.includes(checkDateStr)) {
-                  if (checkDateStr === lastClearDate) {
-                    newStreak = (currentUser?.streakCount || 0) + 1;
-                    console.log('连续完成（跳过了休息日），连胜 +1，新连胜:', newStreak);
-                  } else {
-                    console.log('中断了，连胜重置为1');
-                    newStreak = 1;
-                  }
-                  foundLastWorkDay = true;
-                }
-                
-                daysBack++;
-                checkDate.setDate(checkDate.getDate() - 1);
-              }
-              
-              if (!foundLastWorkDay) {
-                console.log('未找到上一个工作日，连胜设为1');
-                newStreak = 1;
-              }
-            } else {
-              console.log('第一次完成所有任务，连胜设为1');
-              newStreak = 1;
-            }
-            
-            const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
-            console.log('新的最长连胜:', newLongestStreak);
-            
-            await base44.auth.updateMe({
-              streakCount: newStreak,
-              longestStreak: newLongestStreak,
-              lastClearDate: today
-            });
-            console.log('用户连胜数据已更新');
-            
-            await queryClient.invalidateQueries(['user']);
-            
-            await checkAndAwardMilestone(newStreak);
+          if (currentUser?.lastClearDate === today) {
+            console.log('今天已经完成过所有任务，不重复增加连胜');
             
             const chests = await base44.entities.DailyChest.filter({ date: today });
-            console.log('现有宝箱数量:', chests.length);
-            console.log('宝箱详情:', chests);
+            console.log('检查宝箱 - 数量:', chests.length);
             
             if (chests.length === 0) {
-              console.log('创建新宝箱...');
-              const newChest = await base44.entities.DailyChest.create({ 
+              console.log('没有宝箱，创建新宝箱');
+              await base44.entities.DailyChest.create({ 
                 date: today, 
                 opened: false 
               });
-              console.log('宝箱创建成功:', newChest);
-              
-              setTimeout(() => {
-                console.log('显示宝箱界面');
-                setShowChest(true);
-              }, 500);
+              console.log('宝箱创建成功，准备显示');
+              setTimeout(() => setShowChest(true), 300);
             } else {
-              const chest = chests[0];
-              console.log('今日宝箱已存在');
-              console.log('宝箱ID:', chest.id);
-              console.log('宝箱opened状态:', chest.opened);
-              console.log('宝箱opened类型:', typeof chest.opened);
-              
-              if (!chest.opened) {
-                console.log('宝箱未开启，显示开箱界面');
-                setTimeout(() => {
-                  console.log('执行 setShowChest(true)');
-                  setShowChest(true);
-                }, 500);
+              console.log('宝箱已存在，opened 状态:', chests[0].opened);
+              if (!chests[0].opened) {
+                console.log('宝箱未开启，显示宝箱界面');
+                setTimeout(() => setShowChest(true), 300);
               } else {
                 console.log('宝箱已开启过，不显示');
               }
             }
-          } else {
-            console.log('还有任务未完成或任务列表为空');
+            
+            return;
           }
-        } catch (error) {
-          console.error('检查任务时出错:', error);
+          
+          // 计算连胜
+          let newStreak = 1;
+          const lastClearDate = currentUser?.lastClearDate;
+          const restDays = currentUser?.restDays || [];
+          
+          if (lastClearDate) {
+            let checkDate = new Date();
+            checkDate.setDate(checkDate.getDate() - 1);
+            
+            let daysBack = 0;
+            let foundLastWorkDay = false;
+            
+            while (daysBack < 365 && !foundLastWorkDay) {
+              const checkDateStr = format(checkDate, 'yyyy-MM-dd');
+              
+              if (!restDays.includes(checkDateStr)) {
+                if (checkDateStr === lastClearDate) {
+                  newStreak = (currentUser?.streakCount || 0) + 1;
+                  console.log('连续完成（跳过了休息日），连胜 +1，新连胜:', newStreak);
+                } else {
+                  console.log('中断了，连胜重置为1');
+                  newStreak = 1;
+                }
+                foundLastWorkDay = true;
+              }
+              
+              daysBack++;
+              checkDate.setDate(checkDate.getDate() - 1);
+            }
+            
+            if (!foundLastWorkDay) {
+              console.log('未找到上一个工作日，连胜设为1');
+              newStreak = 1;
+            }
+          } else {
+            console.log('第一次完成所有任务，连胜设为1');
+            newStreak = 1;
+          }
+          
+          const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
+          console.log('新的最长连胜:', newLongestStreak);
+          
+          // 更新用户连胜数据
+          await base44.auth.updateMe({
+            streakCount: newStreak,
+            longestStreak: newLongestStreak,
+            lastClearDate: today
+          });
+          console.log('用户连胜数据已更新');
+          
+          await queryClient.invalidateQueries(['user']);
+          
+          // 检查里程碑奖励
+          await checkAndAwardMilestone(newStreak);
+          
+          // 处理宝箱
+          const chests = await base44.entities.DailyChest.filter({ date: today });
+          console.log('现有宝箱数量:', chests.length);
+          console.log('宝箱详情:', chests);
+          
+          if (chests.length === 0) {
+            console.log('创建新宝箱...');
+            const newChest = await base44.entities.DailyChest.create({ 
+              date: today, 
+              opened: false 
+            });
+            console.log('宝箱创建成功:', newChest);
+            
+            setTimeout(() => {
+              console.log('显示宝箱界面');
+              setShowChest(true);
+            }, 300);
+          } else {
+            const chest = chests[0];
+            console.log('今日宝箱已存在');
+            console.log('宝箱ID:', chest.id);
+            console.log('宝箱opened状态:', chest.opened);
+            console.log('宝箱opened类型:', typeof chest.opened);
+            
+            if (!chest.opened) {
+              console.log('宝箱未开启，显示开箱界面');
+              setTimeout(() => {
+                console.log('执行 setShowChest(true)');
+                setShowChest(true);
+              }, 300);
+            } else {
+              console.log('宝箱已开启过，不显示');
+            }
+          }
+        } else {
+          console.log('还有任务未完成或任务列表为空');
         }
-      }, 500);
+      } catch (error) {
+        console.error('检查任务时出错:', error);
+      }
     } catch (error) {
       console.error('更新任务状态失败:', error);
     }

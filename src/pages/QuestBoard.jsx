@@ -708,13 +708,25 @@ export default function QuestBoard() {
     setTimeout(() => setToast(null), 2000);
   };
 
-  const handleChestClose = () => {
+  const handleChestClose = async () => {
     setShowChest(false);
     
-    const lastPlanned = user?.lastPlannedDate;
+    // 重新获取最新的用户数据，不依赖缓存
+    const currentUser = await base44.auth.me();
+    const lastPlanned = currentUser?.lastPlannedDate;
+    
+    console.log('=== 宝箱关闭，检查是否需要显示规划对话框 ===');
+    console.log('lastPlannedDate:', lastPlanned);
+    console.log('今日日期:', today);
+    console.log('是否需要显示规划:', lastPlanned !== today);
+    
+    // 如果今天还没有规划过明日任务，显示规划对话框
     if (lastPlanned !== today) {
+      console.log('显示规划明日任务对话框');
       setShowCelebrationInPlanning(true);
       setShowPlanningDialog(true);
+    } else {
+      console.log('今天已经规划过，不显示规划对话框');
     }
   };
 
@@ -1061,6 +1073,14 @@ export default function QuestBoard() {
                 <CalendarIcon className="w-5 h-5" strokeWidth={3} />
                 {t('questboard_plan_tomorrow')}
               </Button>
+            )}
+            
+            {!canShowPlanningButton && nextDayPlannedCount === 0 && user?.lastPlannedDate !== today && (
+              <p className="text-center text-xs font-bold text-white mt-2">
+                💡 {language === 'zh' 
+                  ? '晚上9点后可规划明日任务（或完成今日所有任务后自动弹出）' 
+                  : 'Plan tomorrow\'s quests after 9 PM (or automatically after completing all today\'s quests)'}
+              </p>
             )}
           </div>
         )}

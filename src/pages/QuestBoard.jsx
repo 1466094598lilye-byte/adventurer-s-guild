@@ -1072,7 +1072,7 @@ export default function QuestBoard() {
               onClick={() => setFilter(f)}
               className="flex-1 py-2 font-black uppercase text-sm"
               style={{
-                backgroundColor: filter === f ? '#4ECDC4' : '#FFE66D',
+                backgroundColor: filter === f ? '#4ECDC4' : '#FFF',
                 color: '#000',
                 border: '3px solid #000',
                 boxShadow: filter === f ? '4px 4px 0px #000' : '2px 2px 0px #000',

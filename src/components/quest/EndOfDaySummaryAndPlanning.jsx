@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { X, Loader2, Sparkles, ChevronDown, ChevronUp, Plus, Repeat } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -31,17 +30,15 @@ export default function EndOfDaySummaryAndPlanning({
 
   const loadRoutineQuests = async () => {
     try {
-      // 查询所有每日修炼任务
       const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
       
-      // 去重：按 originalActionHint 去重
       const uniqueRoutinesMap = new Map();
       allRoutineQuests.forEach(quest => {
         const key = quest.originalActionHint;
         if (key && !uniqueRoutinesMap.has(key)) {
           uniqueRoutinesMap.set(key, {
             title: quest.title,
-            actionHint: quest.actionHint, // Use actionHint for value
+            actionHint: quest.actionHint,
             difficulty: quest.difficulty,
             rarity: quest.rarity
           });
@@ -110,7 +107,6 @@ export default function EndOfDaySummaryAndPlanning({
         }
       });
 
-      // 直接添加单个任务
       setPlannedQuests(prev => [...prev, {
         title: result.title,
         actionHint: result.actionHint,
@@ -259,7 +255,6 @@ export default function EndOfDaySummaryAndPlanning({
           </div>
         )}
 
-        {/* Tomorrow's Task Count Summary */}
         {totalTomorrowQuests > 0 && (
           <div 
             className="mb-4 p-3"
@@ -280,7 +275,6 @@ export default function EndOfDaySummaryAndPlanning({
           </div>
         )}
 
-        {/* Routine Quests Display (Read-only) */}
         {routineQuests.length > 0 && (
           <div 
             className="mb-4 p-4"
@@ -332,7 +326,6 @@ export default function EndOfDaySummaryAndPlanning({
           </div>
         )}
 
-        {/* Plan New Quests */}
         <div 
           className="mb-4 p-4"
           style={{
@@ -404,7 +397,7 @@ export default function EndOfDaySummaryAndPlanning({
                           className="px-2 py-0.5 text-xs font-black"
                           style={{
                             backgroundColor: difficultyColors[quest.difficulty],
-                            color: quest.difficulty === 'S' && quest.difficulty === 'S' ? '#FFE66D' : '#000', // Corrected 'level' to 'quest.difficulty'
+                            color: quest.difficulty === 'S' ? '#FFE66D' : '#000',
                             border: '2px solid #000'
                           }}
                         >

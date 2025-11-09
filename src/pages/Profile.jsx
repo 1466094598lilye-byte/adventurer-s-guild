@@ -252,7 +252,7 @@ export default function Profile() {
           }}
         >
           <h3 className="text-xl font-black uppercase mb-4">
-            {t('profile_settings')}
+            ⚙️ {t('profile_settings')}
           </h3>
 
           {/* Language Selector */}

@@ -1,3 +1,4 @@
+
 // AI Prompts for both Chinese and English versions
 
 export function getTaskNamingPrompt(language, userInput, isEdit = false) {
@@ -105,100 +106,126 @@ Please write acknowledgment (around 50 words) **completely as ${role.nameEn}**:`
 
 export function getTreasurePrompt(language, rarity) {
   if (language === 'zh') {
-    const raritySettings = {
+    const rarityConfig = {
       'Common': {
-        nameRange: '4-8个汉字',
-        descRange: '15-25个汉字',
-        context: '普通 - 简单朴素，日常可见'
+        context: '普通 - 简单朴素',
+        nameLength: '4-8个汉字',
+        descLength: '15-25个汉字',
+        nameExample: '风化的石板',
+        descExample: '记录着冒险者日常足迹的普通石板，虽平凡却见证时光流转。'
       },
       'Rare': {
-        nameRange: '5-10个汉字',
-        descRange: '25-35个汉字',
-        context: '稀有 - 有些特别，蕴含故事'
+        context: '稀有 - 有些特别',
+        nameLength: '5-10个汉字',
+        descLength: '25-35个汉字',
+        nameExample: '月光水晶',
+        descExample: '在月圆之夜才会发光的神秘水晶，据说能指引迷失者找到归途，是夜行冒险者的珍贵护符。'
       },
       'Epic': {
-        nameRange: '6-12个汉字',
-        descRange: '35-50个汉字',
-        context: '史诗 - 强大华丽，传说之物'
+        context: '史诗 - 强大华丽',
+        nameLength: '6-12个汉字',
+        descLength: '40-60个汉字',
+        nameExample: '不灭之炎核心',
+        descExample: '传说中永不熄灭的圣火碎片，象征着永恒的意志与不屈的精神。能赋予持有者在绝境中燃起希望的勇气，是英雄们代代相传的信念图腾，见证了无数史诗般的战役与传奇。'
       },
       'Legendary': {
-        nameRange: '7-14个汉字',
-        descRange: '50-70个汉字',
-        context: '传说 - 传奇神话，改变命运'
+        context: '传说 - 传奇神话',
+        nameLength: '8-15个汉字',
+        descLength: '60-90个汉字',
+        nameExample: '时空枢纽钥匙',
+        descExample: '据说能开启任意时空之门的终极神器，只有真正的英雄才配拥有。它承载着改变命运、扭转乾坤的至高力量，在历史长河中仅出现过三次，每一次都改写了整个纪元的走向。持有者将获得穿梭维度、掌控时间之流的神秘能力，成为星陨纪元最伟大的传说。'
       }
     };
 
-    const settings = raritySettings[rarity];
+    const config = rarityConfig[rarity];
 
     return {
       prompt: `生成一个RPG风格的战利品道具。
 
-稀有度：${rarity}（${settings.context}）
+稀有度：${rarity}（${config.context}）
 
 要求：
-1. 名称：${settings.nameRange}，符合该稀有度特点
-2. 简介：${settings.descRange}，RPG风味，体现该稀有度的价值和来历
-   ${rarity === 'Epic' ? '- 史诗级：描述要展现其强大力量和传奇背景，让人感受到珍贵' : ''}
-   ${rarity === 'Legendary' ? '- 传说级：描述要充满神话色彩，详细讲述其神秘起源和改变命运的力量，让人感到敬畏' : ''}
+1. 名称：${config.nameLength}，${rarity === 'Legendary' ? '要有史诗感和传奇色彩' : rarity === 'Epic' ? '要有力量感和华丽感' : rarity === 'Rare' ? '要有些神秘和特别' : '简洁朴素'}
+2. 简介：${config.descLength}，RPG风味，${rarity === 'Legendary' ? '详细描述其传说来历、神话力量、历史影响，展现其改变命运的至高地位' : rarity === 'Epic' ? '详细描述其史诗来历、强大能力、象征意义，展现其英雄级价值' : rarity === 'Rare' ? '描述其特殊之处、神秘背景、实用价值' : '简单描述其平凡用途和见证意义'}
 3. 选择合适的emoji作为图标
 
 示例：
-- Common: "风化的石板" / "记录着冒险者日常足迹的普通石板，虽平凡却见证时光流转。"（22字）
-- Rare: "月光水晶碎片" / "在月圆之夜才会发光的神秘水晶，据说能指引迷失者找到归途，承载着古老的祝福。"（32字）
-- Epic: "不灭圣火的核心" / "传说中永不熄灭的圣火碎片，象征着永恒的意志与不屈的勇气。持有者能在最黑暗的时刻点燃希望之光，驱散一切绝望。"（49字）
-- Legendary: "时空枢纽的钥匙" / "据说能开启任意时空之门的神器，由创世之初的古神锻造而成。只有真正的英雄才配拥有这份力量，它承载着改变命运、重塑历史的无上权能，是冒险者梦寐以求的终极圣物。"（68字）
+- Common (${rarityConfig.Common.nameLength} / ${rarityConfig.Common.descLength}): 
+  "${rarityConfig.Common.nameExample}" / "${rarityConfig.Common.descExample}"
+
+- Rare (${rarityConfig.Rare.nameLength} / ${rarityConfig.Rare.descLength}):
+  "${rarityConfig.Rare.nameExample}" / "${rarityConfig.Rare.descExample}"
+
+- Epic (${rarityConfig.Epic.nameLength} / ${rarityConfig.Epic.descLength}):
+  "${rarityConfig.Epic.nameExample}" / "${rarityConfig.Epic.descExample}"
+
+- Legendary (${rarityConfig.Legendary.nameLength} / ${rarityConfig.Legendary.descLength}):
+  "${rarityConfig.Legendary.nameExample}" / "${rarityConfig.Legendary.descExample}"
 
 请生成：`,
-      nameRange: settings.nameRange,
-      descRange: settings.descRange
+      nameRange: config.nameLength,
+      descRange: config.descLength
     };
   } else {
-    const raritySettings = {
+    const rarityConfig = {
       'Common': {
-        nameRange: '2-4 words',
-        descRange: '15-25 words',
-        context: 'Common - Simple and plain, mundane'
+        context: 'Common - Simple and plain',
+        nameLength: '2-4 words',
+        descLength: '15-25 words',
+        nameExample: 'Weathered Stone Tablet',
+        descExample: 'An ordinary stone tablet recording adventurer\'s daily steps. Though plain, it witnesses the passage of time.'
       },
       'Rare': {
-        nameRange: '3-5 words',
-        descRange: '25-35 words',
-        context: 'Rare - Somewhat special, carries a story'
+        context: 'Rare - Somewhat special',
+        nameLength: '3-5 words',
+        descLength: '25-35 words',
+        nameExample: 'Moonlight Crystal Shard',
+        descExample: 'A mysterious crystal that glows only during full moons, said to guide lost souls back to their path. A precious talisman for night travelers.'
       },
       'Epic': {
-        nameRange: '3-6 words',
-        descRange: '35-50 words',
-        context: 'Epic - Powerful and magnificent, legendary item'
+        context: 'Epic - Powerful and magnificent',
+        nameLength: '4-6 words',
+        descLength: '40-60 words',
+        nameExample: 'Eternal Flame Core Fragment',
+        descExample: 'A sacred fire shard that never extinguishes, symbolizing eternal will and unwavering spirit. Grants its bearer the courage to ignite hope in the darkest hours. A totem of belief passed down through generations of heroes, witnessing countless epic battles and legendary tales.'
       },
       'Legendary': {
-        nameRange: '4-7 words',
-        descRange: '50-70 words',
-        context: 'Legendary - Mythic and fate-altering'
+        context: 'Legendary - Mythic and legendary',
+        nameLength: '5-8 words',
+        descLength: '60-90 words',
+        nameExample: 'Chrono Nexus Key Artifact',
+        descExample: 'The ultimate mythical artifact said to unlock any temporal gateway, destined only for true heroes. It bears the supreme power to alter fate and reshape reality itself. Throughout history, it has appeared only three times, each rewriting the course of entire eras. Its wielder gains mystical abilities to traverse dimensions and command the flow of time, becoming the greatest legend of the Starfall Era.'
       }
     };
 
-    const settings = raritySettings[rarity];
+    const config = rarityConfig[rarity];
 
     return {
       prompt: `Generate an RPG-style treasure item.
 
-Rarity: ${rarity} (${settings.context})
+Rarity: ${rarity} (${config.context})
 
 Requirements:
-1. Name: ${settings.nameRange}, fitting this rarity level
-2. Description: ${settings.descRange}, RPG flavor, reflecting this rarity's value and origin
-   ${rarity === 'Epic' ? '- Epic tier: Description should showcase its powerful abilities and legendary background, conveying its precious nature' : ''}
-   ${rarity === 'Legendary' ? '- Legendary tier: Description should be filled with mythic grandeur, detailing its mysterious origins and fate-altering power, inspiring awe' : ''}
+1. Name: ${config.nameLength}, ${rarity === 'Legendary' ? 'epic and legendary feel' : rarity === 'Epic' ? 'powerful and magnificent feel' : rarity === 'Rare' ? 'mysterious and special' : 'simple and plain'}
+2. Description: ${config.descLength}, RPG flavor, ${rarity === 'Legendary' ? 'detail its legendary origin, mythic powers, historical impact, showing its supreme status in changing destiny' : rarity === 'Epic' ? 'detail its epic origin, powerful abilities, symbolic meaning, showing its heroic-level value' : rarity === 'Rare' ? 'describe its special features, mysterious background, practical value' : 'simply describe its mundane purpose and witnessing significance'}
 3. Choose appropriate emoji as icon
 
 Examples:
-- Common: "Weathered Stone Tablet" / "An ordinary stone tablet recording adventurer's daily steps. Though plain, it witnesses the passage of time." (18 words)
-- Rare: "Moonlight Crystal Shard" / "A mysterious crystal that glows only during full moons, said to guide lost souls back to their path, bearing ancient blessings." (23 words)
-- Epic: "Eternal Flame Core Fragment" / "A sacred fire shard that never extinguishes, symbolizing eternal will and unwavering courage. Its bearer can ignite hope's light in the darkest hours, dispelling all despair and bringing warmth to frozen hearts." (36 words)
-- Legendary: "Chrono Nexus Key Artifact" / "A mythical artifact said to unlock any temporal gateway, forged by ancient gods at creation's dawn. Only true heroes may wield this power, bearing the supreme authority to alter destiny and reshape history itself. This is the ultimate sacred relic that adventurers dream of possessing." (53 words)
+- Common (${rarityConfig.Common.nameLength} / ${rarityConfig.Common.descLength}): 
+  "${rarityConfig.Common.nameExample}" / "${rarityConfig.Common.descExample}"
+
+- Rare (${rarityConfig.Rare.nameLength} / ${rarityConfig.Rare.descLength}):
+  "${rarityConfig.Rare.nameExample}" / "${rarityConfig.Rare.descExample}"
+
+- Epic (${rarityConfig.Epic.nameLength} / ${rarityConfig.Epic.descLength}):
+  "${rarityConfig.Epic.nameExample}" / "${rarityConfig.Epic.descExample}"
+
+- Legendary (${rarityConfig.Legendary.nameLength} / ${rarityConfig.Legendary.descLength}):
+  "${rarityConfig.Legendary.nameExample}" / "${rarityConfig.Legendary.descExample}"
 
 Generate:`,
-      nameRange: settings.nameRange,
-      descRange: settings.descRange
+      nameRange: config.nameLength,
+      descRange: config.descLength
     };
   }
 }

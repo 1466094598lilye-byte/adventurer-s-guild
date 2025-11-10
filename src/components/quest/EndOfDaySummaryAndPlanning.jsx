@@ -4,7 +4,6 @@ import { X, Loader2, Sparkles, ChevronDown, ChevronUp, Plus, Repeat } from 'luci
 import { base44 } from '@/api/base44Client';
 import { useLanguage } from '@/components/LanguageContext';
 import { getCelebrationMessagePrompt, getPlanningTaskPrompt } from '@/components/prompts';
-import { deobfuscateQuests } from '@/utils';
 
 export default function EndOfDaySummaryAndPlanning({ 
   showCelebration, 
@@ -23,6 +22,29 @@ export default function EndOfDaySummaryAndPlanning({
 
   const { language, t } = useLanguage();
 
+  // 辅助函数：解密任务
+  const decryptQuest = async (quest) => {
+    try {
+      const { data } = await base44.functions.invoke('decryptQuestData', {
+        encryptedTitle: quest.title,
+        encryptedActionHint: quest.actionHint
+      });
+      return {
+        ...quest,
+        title: data.title,
+        actionHint: data.actionHint
+      };
+    } catch (error) {
+      console.error('解密任务失败:', error);
+      return quest;
+    }
+  };
+
+  // 辅助函数：批量解密任务
+  const decryptQuests = async (quests) => {
+    return await Promise.all(quests.map(quest => decryptQuest(quest)));
+  };
+
   useEffect(() => {
     if (showCelebration) {
       generateCelebrationMessage();
@@ -34,11 +56,11 @@ export default function EndOfDaySummaryAndPlanning({
     try {
       const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
       
-      // 反混淆
-      const deobfuscatedQuests = deobfuscateQuests(allRoutineQuests);
+      // 解密
+      const decryptedQuests = await decryptQuests(allRoutineQuests);
       
       const uniqueRoutinesMap = new Map();
-      deobfuscatedQuests.forEach(quest => {
+      decryptedQuests.forEach(quest => {
         const key = quest.originalActionHint;
         if (key && !uniqueRoutinesMap.has(key)) {
           uniqueRoutinesMap.set(key, {

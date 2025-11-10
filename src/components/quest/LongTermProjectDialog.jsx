@@ -1,10 +1,10 @@
+
 import { useState } from 'react';
 import { X, Loader2, ChevronDown, ChevronUp, Edit2, Calendar as CalendarIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { format } from 'date-fns';
 import { useLanguage } from '@/components/LanguageContext';
 import { getLongTermParsingPrompt } from '@/components/prompts';
-import { obfuscateQuest } from '@/utils';
 
 export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
   const [textInput, setTextInput] = useState('');
@@ -63,10 +63,15 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
       });
 
       for (const quest of parsedQuests) {
-        // 混淆后再创建
-        const obfuscatedQuest = obfuscateQuest({
+        // 加密后再创建
+        const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
           title: quest.title,
-          actionHint: quest.actionHint,
+          actionHint: quest.actionHint
+        });
+        
+        await base44.entities.Quest.create({
+          title: encrypted.encryptedTitle,
+          actionHint: encrypted.encryptedActionHint,
           date: quest.date,
           difficulty: quest.difficulty,
           rarity: quest.rarity,
@@ -76,8 +81,6 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
           longTermProjectId: project.id,
           tags: []
         });
-        
-        await base44.entities.Quest.create(obfuscatedQuest);
       }
 
       if (onQuestsCreated) {

@@ -238,19 +238,48 @@ export default function QuestBoard() {
   }, [user, today, queryClient, t]);
 
   const createQuestMutation = useMutation({
-    mutationFn: (questData) => {
-      // 🔍 添加调试日志
-      console.log('=== 创建任务前 ===');
-      console.log('原始数据:', questData);
+    mutationFn: async (questData) => {
+      // 🔍 详细调试日志
+      console.log('=== createQuestMutation 开始 ===');
+      console.log('1. 原始数据:', questData);
+      console.log('2. 原始 title:', questData.title);
+      console.log('3. 原始 actionHint:', questData.actionHint);
       
-      // 创建前混淆
+      // 测试混淆函数是否可用
+      console.log('4. obfuscateQuest 函数:', typeof obfuscateQuest);
+      console.log('5. obfuscateText 函数:', typeof obfuscateText);
+      
+      // 单独测试混淆
+      const testTitle = obfuscateText(questData.title);
+      const testHint = obfuscateText(questData.actionHint);
+      console.log('6. 测试 title 混淆:', questData.title, '->', testTitle);
+      console.log('7. 测试 actionHint 混淆:', questData.actionHint, '->', testHint);
+      
+      // 创建混淆对象
       const obfuscatedQuest = obfuscateQuest(questData);
+      console.log('8. 混淆后完整对象:', obfuscatedQuest);
+      console.log('9. 混淆后 title:', obfuscatedQuest.title);
+      console.log('10. 混淆后 actionHint:', obfuscatedQuest.actionHint);
       
-      console.log('混淆后数据:', obfuscatedQuest);
-      console.log('title 混淆:', questData.title, '->', obfuscatedQuest.title);
-      console.log('actionHint 混淆:', questData.actionHint, '->', obfuscatedQuest.actionHint);
+      // 验证混淆是否真的生效
+      if (obfuscatedQuest.title === questData.title) {
+        console.error('❌ 警告：title 没有被混淆！');
+      } else {
+        console.log('✅ title 已混淆');
+      }
       
-      return base44.entities.Quest.create(obfuscatedQuest);
+      if (obfuscatedQuest.actionHint === questData.actionHint) {
+        console.error('❌ 警告：actionHint 没有被混淆！');
+      } else {
+        console.log('✅ actionHint 已混淆');
+      }
+      
+      console.log('11. 准备调用 base44.entities.Quest.create');
+      const result = await base44.entities.Quest.create(obfuscatedQuest);
+      console.log('12. 创建结果:', result);
+      console.log('=== createQuestMutation 结束 ===');
+      
+      return result;
     },
     onSuccess: async () => {
       queryClient.invalidateQueries(['quests']);
@@ -1478,4 +1507,3 @@ export default function QuestBoard() {
     </div>
   );
 }
-

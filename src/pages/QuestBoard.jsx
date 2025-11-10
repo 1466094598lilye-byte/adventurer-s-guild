@@ -49,14 +49,6 @@ export default function QuestBoard() {
     queryKey: ['quests', today],
     queryFn: async () => {
       const allQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
-      console.log('📥 从数据库读取的原始数据（前3条）:', allQuests.slice(0, 3).map(q => ({
-        id: q.id,
-        title: q.title,
-        actionHint: q.actionHint,
-        titleLength: q.title?.length,
-        isBase64Like: /^[A-Za-z0-9+/=]+$/.test(q.title || '')
-      })));
-
       // 反混淆后返回
       return deobfuscateQuests(allQuests);
     }
@@ -80,13 +72,13 @@ export default function QuestBoard() {
   useEffect(() => {
     const handleDayRollover = async () => {
       if (!user) return;
-
+      
       const rolloverKey = `${today}-${user.id}`;
       if (hasProcessedDayRollover.current === rolloverKey) {
         console.log('日更逻辑已执行过，跳过');
         return;
       }
-
+      
       console.log('=== 开始执行日更逻辑 ===');
       hasProcessedDayRollover.current = rolloverKey;
 
@@ -94,16 +86,16 @@ export default function QuestBoard() {
         // 1. 处理昨天未完成的任务（顺延到今天）
         const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
         const oldQuests = await base44.entities.Quest.filter({ date: yesterday, status: 'todo' });
-
+        
         if (oldQuests.length > 0) {
           console.log(`发现 ${oldQuests.length} 项昨日未完成任务，开始顺延...`);
-
+          
           for (const quest of oldQuests) {
             if (!quest.isRoutine) {
               await base44.entities.Quest.update(quest.id, { date: today });
             }
           }
-
+          
           queryClient.invalidateQueries(['quests']);
           const nonRoutineCount = oldQuests.filter(q => !q.isRoutine).length;
           if (nonRoutineCount > 0) {
@@ -118,12 +110,12 @@ export default function QuestBoard() {
 
         if (nextDayPlanned.length > 0 && lastPlanned && lastPlanned < today) {
           console.log(`发现 ${nextDayPlanned.length} 项已规划任务，开始创建...`);
-
+          
           await base44.auth.updateMe({
             nextDayPlannedQuests: [],
             lastPlannedDate: today
           });
-
+          
           for (const plannedQuest of nextDayPlanned) {
             // 混淆后再创建
             const obfuscatedQuest = obfuscateQuest({
@@ -143,48 +135,48 @@ export default function QuestBoard() {
 
         // 3. 处理每日修炼任务（自动生成今日任务，保持原有评级）
         console.log('=== 开始处理每日修炼任务 ===');
-
+        
         const todayQuests = await base44.entities.Quest.filter({ date: today });
         console.log(`今天已有 ${todayQuests.length} 个任务`);
-
+        
         const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
         console.log(`数据库中找到 ${allRoutineQuests.length} 个标记为每日修炼的任务记录`);
-
+        
         if (allRoutineQuests.length > 0) {
           // 反混淆所有每日修炼任务
           const deobfuscatedRoutineQuests = deobfuscateQuests(allRoutineQuests);
-
+          
           // 去重：按 originalActionHint 去重，只保留每个独特任务的最新一条记录
           const uniqueRoutinesMap = new Map();
           deobfuscatedRoutineQuests.forEach(quest => {
             const key = quest.originalActionHint;
             if (key) {
-              if (!uniqueRoutinesMap.has(key) ||
+              if (!uniqueRoutinesMap.has(key) || 
                   new Date(quest.created_date) > new Date(uniqueRoutinesMap.get(key).created_date)) {
                 uniqueRoutinesMap.set(key, quest);
               }
             }
           });
-
+          
           console.log(`去重后识别出 ${uniqueRoutinesMap.size} 个不同的每日修炼任务`);
-
+          
           // 反混淆今日任务用于检查
           const deobfuscatedTodayQuests = deobfuscateQuests(todayQuests);
-
+          
           for (const [actionHint, templateQuest] of uniqueRoutinesMap) {
             console.log(`检查每日修炼任务: ${actionHint}`);
-
+            
             const alreadyExists = deobfuscatedTodayQuests.some(
               q => q.isRoutine && q.originalActionHint === actionHint
             );
-
+            
             if (alreadyExists) {
               console.log(`今天已存在，跳过: ${actionHint}`);
               continue;
             }
-
+            
             console.log(`今天还没有，开始生成: ${actionHint}`);
-
+            
             try {
               // 只重新生成 RPG 标题，保持原有的难度和稀有度
               const result = await base44.integrations.Core.InvokeLLM({
@@ -222,18 +214,18 @@ export default function QuestBoard() {
                 originalActionHint: actionHint,
                 tags: []
               });
-
+              
               await base44.entities.Quest.create(newQuest);
-
+              
               console.log(`成功创建今日每日修炼任务: ${actionHint}，保持评级 ${templateQuest.difficulty}`);
             } catch (error) {
               console.error(`生成每日修炼任务失败: ${actionHint}`, error);
             }
           }
-
+          
           queryClient.invalidateQueries(['quests']);
         }
-
+        
         console.log('=== 日更逻辑执行完成 ===');
       } catch (error) {
         console.error('日更处理失败:', error);
@@ -247,27 +239,51 @@ export default function QuestBoard() {
 
   const createQuestMutation = useMutation({
     mutationFn: async (questData) => {
-      console.log('=== 创建任务前 ===');
-      console.log('原始数据:', questData);
-
+      // 🔍 详细调试日志
+      console.log('=== createQuestMutation 开始 ===');
+      console.log('1. 原始数据:', questData);
+      console.log('2. 原始 title:', questData.title);
+      console.log('3. 原始 actionHint:', questData.actionHint);
+      
+      // 测试混淆函数是否可用
+      console.log('4. obfuscateQuest 函数:', typeof obfuscateQuest);
+      console.log('5. obfuscateText 函数:', typeof obfuscateText);
+      
+      // 单独测试混淆
+      const testTitle = obfuscateText(questData.title);
+      const testHint = obfuscateText(questData.actionHint);
+      console.log('6. 测试 title 混淆:', questData.title, '->', testTitle);
+      console.log('7. 测试 actionHint 混淆:', questData.actionHint, '->', testHint);
+      
+      // 创建混淆对象
       const obfuscatedQuest = obfuscateQuest(questData);
-
-      console.log('混淆后数据:', obfuscatedQuest);
-      console.log('title 混淆:', questData.title, '->', obfuscatedQuest.title);
-      console.log('actionHint 混淆:', questData.actionHint, '->', obfuscatedQuest.actionHint);
-
-      const createdQuest = await base44.entities.Quest.create(obfuscatedQuest);
-
-      console.log('🔍 创建后从服务器返回的数据:', createdQuest);
-      console.log('🔍 返回的 title:', createdQuest.title, '（长度:', createdQuest.title?.length, '）');
-      console.log('🔍 返回的 actionHint:', createdQuest.actionHint, '（长度:', createdQuest.actionHint?.length, '）');
-      console.log('🔍 title 是否像 Base64:', /^[A-Za-z0-9+/=]+$/.test(createdQuest.title || ''));
-
-      return createdQuest;
+      console.log('8. 混淆后完整对象:', obfuscatedQuest);
+      console.log('9. 混淆后 title:', obfuscatedQuest.title);
+      console.log('10. 混淆后 actionHint:', obfuscatedQuest.actionHint);
+      
+      // 验证混淆是否真的生效
+      if (obfuscatedQuest.title === questData.title) {
+        console.error('❌ 警告：title 没有被混淆！');
+      } else {
+        console.log('✅ title 已混淆');
+      }
+      
+      if (obfuscatedQuest.actionHint === questData.actionHint) {
+        console.error('❌ 警告：actionHint 没有被混淆！');
+      } else {
+        console.log('✅ actionHint 已混淆');
+      }
+      
+      console.log('11. 准备调用 base44.entities.Quest.create');
+      const result = await base44.entities.Quest.create(obfuscatedQuest);
+      console.log('12. 创建结果:', result);
+      console.log('=== createQuestMutation 结束 ===');
+      
+      return result;
     },
     onSuccess: async () => {
       queryClient.invalidateQueries(['quests']);
-
+      
       const currentUser = await base44.auth.me();
       const restDays = currentUser?.restDays || [];
       if (restDays.includes(today)) {
@@ -306,7 +322,7 @@ export default function QuestBoard() {
 
   const handleTextSubmit = async () => {
     if (!textInput.trim() || isProcessing) return;
-
+    
     setIsProcessing(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
@@ -314,13 +330,13 @@ export default function QuestBoard() {
         response_json_schema: {
           type: "object",
           properties: {
-            title: {
+            title: { 
               type: "string",
               description: language === 'zh'
                 ? "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！例如：【征讨】踏破晨曦五里征途。描述必须正好7个字，不能多也不能少！绝对不能包含'任务'二字！"
                 : "Must strictly follow [Category]: <5-8 Word Epic Phrase> format! Category is action type, Phrase is 5-8 words. Example: [Conquest]: Dawn March Through Five Miles. Phrase must be 5-8 words exactly! Absolutely cannot include the word 'task' or 'quest'!"
             },
-            actionHint: {
+            actionHint: { 
               type: "string",
               description: language === 'zh'
                 ? "用户的原始输入，完全保持原样"
@@ -339,7 +355,7 @@ export default function QuestBoard() {
         tags: [],
         tempId: Date.now()
       }]);
-
+      
       setTextInput('');
     } catch (error) {
       console.error('任务处理错误:', error);
@@ -349,7 +365,7 @@ export default function QuestBoard() {
   };
 
   const handleUpdatePendingQuest = (tempId, field, value) => {
-    setPendingQuests(prev => prev.map(q =>
+    setPendingQuests(prev => prev.map(q => 
       q.tempId === tempId ? { ...q, [field]: value } : q
     ));
   };
@@ -363,7 +379,7 @@ export default function QuestBoard() {
 
   const handleConfirmPendingQuests = async () => {
     if (pendingQuests.length === 0 || isConfirmingPending) return;
-
+    
     setIsConfirmingPending(true);
     try {
       for (const quest of pendingQuests) {
@@ -379,7 +395,7 @@ export default function QuestBoard() {
           tags: quest.tags || []
         });
       }
-
+      
       setPendingQuests([]);
       setExpandedPending(null);
       setToast(t('questboard_toast_quests_added_to_board', { count: pendingQuests.length }));
@@ -400,7 +416,7 @@ export default function QuestBoard() {
     ];
 
     const unlockedMilestones = user?.unlockedMilestones || [];
-
+    
     for (const milestone of milestones) {
       if (newStreak === milestone.days && !unlockedMilestones.includes(milestone.days)) {
         const lootResult = await base44.integrations.Core.InvokeLLM({
@@ -445,7 +461,7 @@ export default function QuestBoard() {
 
         queryClient.invalidateQueries(['user']);
         queryClient.invalidateQueries(['loot']);
-
+        
         break;
       }
     }
@@ -454,7 +470,7 @@ export default function QuestBoard() {
   const handleComplete = async (quest) => {
     console.log('=== 开始处理任务完成 ===');
     console.log('任务信息:', quest);
-
+    
     try {
       // 1. 更新任务状态
       await updateQuestMutation.mutateAsync({
@@ -462,7 +478,7 @@ export default function QuestBoard() {
         data: { status: 'done' }
       });
       console.log('任务状态更新成功');
-
+      
       setSelectedQuest(quest);
 
       // 2. 等待缓存刷新完成
@@ -473,25 +489,25 @@ export default function QuestBoard() {
       if (quest.isLongTermProject && quest.longTermProjectId) {
         setTimeout(async () => {
           try {
-            const projectQuests = await base44.entities.Quest.filter({
-              longTermProjectId: quest.longTermProjectId
+            const projectQuests = await base44.entities.Quest.filter({ 
+              longTermProjectId: quest.longTermProjectId 
             });
-
+            
             const allDone = projectQuests.every(q => q.status === 'done');
-
+            
             if (allDone && projectQuests.length > 0) {
               console.log('=== 大项目所有任务已完成 ===');
-
-              const project = await base44.entities.LongTermProject.filter({
-                id: quest.longTermProjectId
+              
+              const project = await base44.entities.LongTermProject.filter({ 
+                id: quest.longTermProjectId 
               });
-
+              
               if (project.length > 0 && project[0].status === 'active') {
                 await base44.entities.LongTermProject.update(project[0].id, {
                   status: 'completed',
                   completionDate: today
                 });
-
+                
                 setCompletedProject(project[0]);
                 setTimeout(() => {
                   setShowJointPraise(true);
@@ -503,52 +519,52 @@ export default function QuestBoard() {
           }
         }, 500);
       }
-
+      
       // 4. 延迟一下确保状态完全更新，然后检查是否全部完成
       await new Promise(resolve => setTimeout(resolve, 300));
-
+      
       console.log('=== 开始检查是否全部完成 ===');
       console.log('今日日期:', today);
-
+      
       try {
         // 直接从服务器获取最新数据，不依赖缓存
         const updatedQuests = await base44.entities.Quest.filter({ date: today });
         console.log('找到的任务数量:', updatedQuests.length);
-        console.log('任务列表:', updatedQuests.map(q => ({
-          title: q.title,
+        console.log('任务列表:', updatedQuests.map(q => ({ 
+          title: q.title, 
           status: q.status,
-          date: q.date
+          date: q.date 
         })));
-
+        
         const allDone = updatedQuests.every(q => q.status === 'done');
         console.log('是否全部完成:', allDone);
-
+        
         if (allDone && updatedQuests.length > 0) {
           console.log('=== 所有任务已完成，开始处理连胜和宝箱 ===');
-
+          
           // 先关闭所有其他对话框，避免层级冲突
           console.log('关闭所有其他对话框...');
           setShowCalendar(false);
           setShowLongTermDialog(false);
           setShowRestDayDialog(false);
           await new Promise(resolve => setTimeout(resolve, 100));
-
+          
           const currentUser = await base44.auth.me();
           console.log('当前用户数据:', currentUser);
           console.log('lastClearDate:', currentUser?.lastClearDate);
           console.log('今日日期:', today);
-
+          
           if (currentUser?.lastClearDate === today) {
             console.log('今天已经完成过所有任务，不重复增加连胜');
-
+            
             const chests = await base44.entities.DailyChest.filter({ date: today });
             console.log('检查宝箱 - 数量:', chests.length);
-
+            
             if (chests.length === 0) {
               console.log('没有宝箱，创建新宝箱');
-              await base44.entities.DailyChest.create({
-                date: today,
-                opened: false
+              await base44.entities.DailyChest.create({ 
+                date: today, 
+                opened: false 
               });
               console.log('宝箱创建成功，准备显示');
               setTimeout(() => {
@@ -567,25 +583,25 @@ export default function QuestBoard() {
                 console.log('宝箱已开启过，不显示');
               }
             }
-
+            
             return;
           }
-
+          
           // 计算连胜
           let newStreak = 1;
           const lastClearDate = currentUser?.lastClearDate;
           const restDays = currentUser?.restDays || [];
-
+          
           if (lastClearDate) {
             let checkDate = new Date();
             checkDate.setDate(checkDate.getDate() - 1);
-
+            
             let daysBack = 0;
             let foundLastWorkDay = false;
-
+            
             while (daysBack < 365 && !foundLastWorkDay) {
               const checkDateStr = format(checkDate, 'yyyy-MM-dd');
-
+              
               if (!restDays.includes(checkDateStr)) {
                 if (checkDateStr === lastClearDate) {
                   newStreak = (currentUser?.streakCount || 0) + 1;
@@ -596,11 +612,11 @@ export default function QuestBoard() {
                 }
                 foundLastWorkDay = true;
               }
-
+              
               daysBack++;
               checkDate.setDate(checkDate.getDate() - 1);
             }
-
+            
             if (!foundLastWorkDay) {
               console.log('未找到上一个工作日，连胜设为1');
               newStreak = 1;
@@ -609,10 +625,10 @@ export default function QuestBoard() {
             console.log('第一次完成所有任务，连胜设为1');
             newStreak = 1;
           }
-
+          
           const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
           console.log('新的最长连胜:', newLongestStreak);
-
+          
           // 更新用户连胜数据
           await base44.auth.updateMe({
             streakCount: newStreak,
@@ -620,25 +636,25 @@ export default function QuestBoard() {
             lastClearDate: today
           });
           console.log('用户连胜数据已更新');
-
+          
           await queryClient.invalidateQueries(['user']);
-
+          
           // 检查里程碑奖励
           await checkAndAwardMilestone(newStreak);
-
+          
           // 处理宝箱
           const chests = await base44.entities.DailyChest.filter({ date: today });
           console.log('现有宝箱数量:', chests.length);
           console.log('宝箱详情:', chests);
-
+          
           if (chests.length === 0) {
             console.log('创建新宝箱...');
-            const newChest = await base44.entities.DailyChest.create({
-              date: today,
-              opened: false
+            const newChest = await base44.entities.DailyChest.create({ 
+              date: today, 
+              opened: false 
             });
             console.log('宝箱创建成功:', newChest);
-
+            
             setTimeout(() => {
               console.log('显示宝箱界面');
               setShowChest(true);
@@ -649,7 +665,7 @@ export default function QuestBoard() {
             console.log('宝箱ID:', chest.id);
             console.log('宝箱opened状态:', chest.opened);
             console.log('宝箱opened类型:', typeof chest.opened);
-
+            
             if (!chest.opened) {
               console.log('宝箱未开启，显示开箱界面');
               setTimeout(() => {
@@ -676,14 +692,14 @@ export default function QuestBoard() {
       id: quest.id,
       data: { status: 'todo' }
     });
-
+    
     const messages = [
       t('questboard_reopen_toast_1'),
       t('questboard_reopen_toast_2'),
       t('questboard_reopen_toast_3'),
       t('questboard_reopen_toast_4')
     ];
-
+    
     const message = messages[Math.floor(Math.random() * messages.length)];
     setToast(message);
     setTimeout(() => setToast(null), 2000);
@@ -692,16 +708,16 @@ export default function QuestBoard() {
   const handleEditQuestSave = async ({ actionHint, isRoutine, originalActionHint }) => {
     try {
       const contentChanged = actionHint !== editingQuest.actionHint;
-
+      
       let newTitle = editingQuest.title;
-
+      
       if (contentChanged) {
         const result = await base44.integrations.Core.InvokeLLM({
           prompt: getTaskNamingPrompt(language, actionHint, true),
           response_json_schema: {
             type: "object",
             properties: {
-              title: {
+              title: { 
                 type: "string",
                 description: language === 'zh'
                   ? "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！"
@@ -711,7 +727,7 @@ export default function QuestBoard() {
             required: ["title"]
           }
         });
-
+        
         newTitle = result.title;
       }
 
@@ -750,10 +766,10 @@ export default function QuestBoard() {
       alert(t('questboard_alert_cannot_set_rest_day_with_quests'));
       return;
     }
-
+    
     const restDays = user?.restDays || [];
     const isRestDayCurrently = restDays.includes(today);
-
+    
     if (isRestDayCurrently) {
       await base44.auth.updateMe({
         restDays: restDays.filter(d => d !== today)
@@ -765,7 +781,7 @@ export default function QuestBoard() {
       });
       setToast(t('questboard_toast_rest_set_success'));
     }
-
+    
     queryClient.invalidateQueries(['user']);
     setShowRestDayDialog(false);
     setTimeout(() => setToast(null), 2000);
@@ -774,20 +790,20 @@ export default function QuestBoard() {
   const handleChestClose = async () => {
     console.log('=== 宝箱关闭 ===');
     setShowChest(false);
-
+    
     await new Promise(resolve => setTimeout(resolve, 200));
-
+    
     const currentUser = await base44.auth.me();
     const lastPlanned = currentUser?.lastPlannedDate;
-
+    
     console.log('=== 检查是否需要显示规划对话框 ===');
     console.log('lastPlannedDate:', lastPlanned);
     console.log('今日日期:', today);
     console.log('是否需要显示规划:', lastPlanned !== today);
-
+    
     if (lastPlanned !== today) {
       console.log('显示规划明日任务对话框');
-
+      
       setShowCalendar(false);
       setShowLongTermDialog(false);
       setShowRestDayDialog(false);
@@ -807,7 +823,7 @@ export default function QuestBoard() {
         nextDayPlannedQuests: plannedQuests,
         lastPlannedDate: today
       });
-
+      
       queryClient.invalidateQueries(['user']);
       setToast(t('questboard_toast_plan_saved_success', { count: plannedQuests.length }));
       setTimeout(() => setToast(null), 3000);
@@ -855,7 +871,7 @@ export default function QuestBoard() {
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
       <div className="max-w-2xl mx-auto">
-        <div
+        <div 
           className="mb-6 p-4 transform -rotate-1"
           style={{
             backgroundColor: '#000',
@@ -868,14 +884,14 @@ export default function QuestBoard() {
             ⚔️ {t('questboard_title')} ⚔️
           </h1>
           <p className="text-center font-bold mt-2 text-sm">
-            {language === 'zh'
+            {language === 'zh' 
               ? format(new Date(), 'yyyy年MM月dd日')
               : format(new Date(), 'MMMM dd, yyyy')}
           </p>
         </div>
 
         {isRestDay && (
-          <div
+          <div 
             className="mb-6 p-4"
             style={{
               backgroundColor: '#4ECDC4',
@@ -893,7 +909,7 @@ export default function QuestBoard() {
           </div>
         )}
 
-        <div
+        <div 
           className="p-4 mb-6"
           style={{
             backgroundColor: '#FFE66D',
@@ -953,13 +969,13 @@ export default function QuestBoard() {
             <Briefcase className="w-5 h-5" strokeWidth={3} />
             {t('questboard_longterm_btn')}
           </Button>
-
+          
           <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
             💡 {t('questboard_longterm_hint')}
           </p>
 
           {pendingQuests.length > 0 && (
-            <div
+            <div 
               className="mt-4 p-3"
               style={{
                 backgroundColor: '#FFF',
@@ -974,23 +990,23 @@ export default function QuestBoard() {
 
               <div className="space-y-2 mb-3">
                 {pendingQuests.map((quest) => (
-                  <div
+                  <div 
                     key={quest.tempId}
                     style={{
                       backgroundColor: '#F9FAFB',
                       border: '3px solid #000'
                     }}
                   >
-                    <div
+                    <div 
                       className="p-3 flex items-center justify-between cursor-pointer"
                       onClick={() => setExpandedPending(expandedPending === quest.tempId ? null : quest.tempId)}
                     >
                       <div className="flex-1 min-w-0 flex items-center gap-3">
-                        <span
+                        <span 
                           className="px-2 py-1 text-sm font-black flex-shrink-0"
                           style={{
                             backgroundColor: difficultyColors[quest.difficulty],
-                            color: quest.difficulty === 'S' ? '#FFE66D' : '#000',
+                            color: quest.difficulty === 'S' && quest.difficulty === level ? '#FFE66D' : '#000',
                             border: '2px solid #000'
                           }}
                         >
@@ -1092,7 +1108,7 @@ export default function QuestBoard() {
         </div>
 
         {hasAnyLongTermQuests && (
-          <div
+          <div 
             className="mb-6 p-4"
             style={{
               backgroundColor: '#9B59B6',
@@ -1114,7 +1130,7 @@ export default function QuestBoard() {
         )}
 
         {(nextDayPlannedCount > 0 || canShowPlanningButton) && (
-          <div
+          <div 
             className="mb-6 p-4"
             style={{
               backgroundColor: '#C44569',
@@ -1130,7 +1146,7 @@ export default function QuestBoard() {
                 </p>
               </div>
             )}
-
+            
             {canShowPlanningButton && (
               <Button
                 onClick={handleOpenPlanning}
@@ -1145,11 +1161,11 @@ export default function QuestBoard() {
                 {t('questboard_plan_tomorrow')}
               </Button>
             )}
-
+            
             {!canShowPlanningButton && nextDayPlannedCount === 0 && user?.lastPlannedDate !== today && (
               <p className="text-center text-xs font-bold text-white mt-2">
-                💡 {language === 'zh'
-                  ? '晚上9点后可规划明日任务（或完成今日所有任务后自动弹出）'
+                💡 {language === 'zh' 
+                  ? '晚上9点后可规划明日任务（或完成今日所有任务后自动弹出）' 
                   : 'Plan tomorrow\'s quests after 9 PM (or automatically after completing all today\'s quests)'}
               </p>
             )}
@@ -1181,7 +1197,7 @@ export default function QuestBoard() {
             <Loader2 className="w-12 h-12 animate-spin" strokeWidth={4} />
           </div>
         ) : filteredQuests.length === 0 ? (
-          <div
+          <div 
             className="p-8 text-center"
             style={{
               backgroundColor: '#FFF',
@@ -1295,11 +1311,11 @@ export default function QuestBoard() {
         )}
 
         {milestoneReward && (
-          <div
+          <div 
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
           >
-            <div
+            <div 
               className="relative max-w-lg w-full p-8 transform"
               style={{
                 backgroundColor: '#FFE66D',
@@ -1309,15 +1325,15 @@ export default function QuestBoard() {
             >
               <div className="text-center">
                 <div className="text-7xl mb-4 animate-bounce">{milestoneReward.icon}</div>
-
-                <h2
+                
+                <h2 
                   className="text-3xl font-black uppercase mb-3"
                   style={{ color: '#000' }}
                 >
                   🎊 {t('milestone_reached')} 🎊
                 </h2>
 
-                <div
+                <div 
                   className="mb-6 p-4"
                   style={{
                     backgroundColor: '#FFF',
@@ -1331,9 +1347,9 @@ export default function QuestBoard() {
                   <p className="font-bold text-sm leading-relaxed mb-4">
                     {t('milestone_congrats', { days: milestoneReward.days })}
                   </p>
-
+                  
                   <div className="space-y-3">
-                    <div
+                    <div 
                       className="p-3"
                       style={{
                         backgroundColor: '#4ECDC4',
@@ -1342,8 +1358,8 @@ export default function QuestBoard() {
                     >
                       <p className="font-black">{t('milestone_freeze_token_label')} +{milestoneReward.tokens}</p>
                     </div>
-
-                    <div
+                    
+                    <div 
                       className="p-3"
                       style={{
                         backgroundColor: '#FF6B35',
@@ -1353,7 +1369,7 @@ export default function QuestBoard() {
                       <p className="font-black text-white">🏅 {milestoneReward.title} {t('milestone_title_badge_label')}</p>
                     </div>
 
-                    <div
+                    <div 
                       className="p-3 text-left"
                       style={{
                         backgroundColor: '#C44569',
@@ -1389,12 +1405,12 @@ export default function QuestBoard() {
         )}
 
         {showRestDayDialog && (
-          <div
+          <div 
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}
             onClick={() => setShowRestDayDialog(false)}
           >
-            <div
+            <div 
               className="relative max-w-lg w-full p-6 transform rotate-1"
               style={{
                 backgroundColor: '#4ECDC4',
@@ -1403,14 +1419,14 @@ export default function QuestBoard() {
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h2
+              <h2 
                 className="text-2xl font-black uppercase text-center mb-4"
                 style={{ color: '#000' }}
               >
                 {isRestDay ? t('rest_day_dialog_cancel_title') : t('rest_day_dialog_set_title')}
               </h2>
 
-              <div
+              <div 
                 className="mb-6 p-4"
                 style={{
                   backgroundColor: '#FFF',
@@ -1465,7 +1481,7 @@ export default function QuestBoard() {
       </div>
 
       {toast && (
-        <div
+        <div 
           className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 animate-fade-in-out"
           style={{
             backgroundColor: '#4ECDC4',

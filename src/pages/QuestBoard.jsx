@@ -239,8 +239,17 @@ export default function QuestBoard() {
 
   const createQuestMutation = useMutation({
     mutationFn: (questData) => {
+      // 🔍 添加调试日志
+      console.log('=== 创建任务前 ===');
+      console.log('原始数据:', questData);
+      
       // 创建前混淆
       const obfuscatedQuest = obfuscateQuest(questData);
+      
+      console.log('混淆后数据:', obfuscatedQuest);
+      console.log('title 混淆:', questData.title, '->', obfuscatedQuest.title);
+      console.log('actionHint 混淆:', questData.actionHint, '->', obfuscatedQuest.actionHint);
+      
       return base44.entities.Quest.create(obfuscatedQuest);
     },
     onSuccess: async () => {
@@ -1469,3 +1478,4 @@ export default function QuestBoard() {
     </div>
   );
 }
+

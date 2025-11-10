@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/components/LanguageContext';
 import { getTaskNamingPrompt } from '@/components/prompts';
+import { obfuscateQuest, deobfuscateQuest, deobfuscateQuests, obfuscateText } from '@/utils/dataObfuscation';
 
 export default function QuestBoard() {
   const [filter, setFilter] = useState('all');
@@ -48,7 +49,8 @@ export default function QuestBoard() {
     queryKey: ['quests', today],
     queryFn: async () => {
       const allQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
-      return allQuests;
+      // 反混淆后返回
+      return deobfuscateQuests(allQuests);
     }
   });
 
@@ -115,12 +117,14 @@ export default function QuestBoard() {
           });
           
           for (const plannedQuest of nextDayPlanned) {
-            await base44.entities.Quest.create({
+            // 混淆后再创建
+            const obfuscatedQuest = obfuscateQuest({
               ...plannedQuest,
               date: today,
               status: 'todo',
               source: 'ai'
             });
+            await base44.entities.Quest.create(obfuscatedQuest);
           }
 
           queryClient.invalidateQueries(['quests']);
@@ -139,9 +143,12 @@ export default function QuestBoard() {
         console.log(`数据库中找到 ${allRoutineQuests.length} 个标记为每日修炼的任务记录`);
         
         if (allRoutineQuests.length > 0) {
+          // 反混淆所有每日修炼任务
+          const deobfuscatedRoutineQuests = deobfuscateQuests(allRoutineQuests);
+          
           // 去重：按 originalActionHint 去重，只保留每个独特任务的最新一条记录
           const uniqueRoutinesMap = new Map();
-          allRoutineQuests.forEach(quest => {
+          deobfuscatedRoutineQuests.forEach(quest => {
             const key = quest.originalActionHint;
             if (key) {
               if (!uniqueRoutinesMap.has(key) || 
@@ -153,10 +160,13 @@ export default function QuestBoard() {
           
           console.log(`去重后识别出 ${uniqueRoutinesMap.size} 个不同的每日修炼任务`);
           
+          // 反混淆今日任务用于检查
+          const deobfuscatedTodayQuests = deobfuscateQuests(todayQuests);
+          
           for (const [actionHint, templateQuest] of uniqueRoutinesMap) {
             console.log(`检查每日修炼任务: ${actionHint}`);
             
-            const alreadyExists = todayQuests.some(
+            const alreadyExists = deobfuscatedTodayQuests.some(
               q => q.isRoutine && q.originalActionHint === actionHint
             );
             
@@ -191,12 +201,12 @@ export default function QuestBoard() {
                 }
               });
 
-              // 创建今日的每日修炼任务，保持原有的难度和稀有度
-              await base44.entities.Quest.create({
+              // 创建今日的每日修炼任务，保持原有的难度和稀有度，并混淆
+              const newQuest = obfuscateQuest({
                 title: result.title,
                 actionHint: actionHint,
-                difficulty: templateQuest.difficulty, // 保持原有难度
-                rarity: templateQuest.rarity, // 保持原有稀有度
+                difficulty: templateQuest.difficulty,
+                rarity: templateQuest.rarity,
                 date: today,
                 status: 'todo',
                 source: 'routine',
@@ -204,6 +214,8 @@ export default function QuestBoard() {
                 originalActionHint: actionHint,
                 tags: []
               });
+              
+              await base44.entities.Quest.create(newQuest);
               
               console.log(`成功创建今日每日修炼任务: ${actionHint}，保持评级 ${templateQuest.difficulty}`);
             } catch (error) {
@@ -226,7 +238,11 @@ export default function QuestBoard() {
   }, [user, today, queryClient, t]);
 
   const createQuestMutation = useMutation({
-    mutationFn: (questData) => base44.entities.Quest.create(questData),
+    mutationFn: (questData) => {
+      // 创建前混淆
+      const obfuscatedQuest = obfuscateQuest(questData);
+      return base44.entities.Quest.create(obfuscatedQuest);
+    },
     onSuccess: async () => {
       queryClient.invalidateQueries(['quests']);
       
@@ -244,7 +260,16 @@ export default function QuestBoard() {
   });
 
   const updateQuestMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Quest.update(id, data),
+    mutationFn: ({ id, data }) => {
+      // 更新前混淆
+      const obfuscatedData = {
+        ...data,
+        title: data.title ? obfuscateText(data.title) : data.title,
+        actionHint: data.actionHint ? obfuscateText(data.actionHint) : data.actionHint,
+        originalActionHint: data.originalActionHint ? obfuscateText(data.originalActionHint) : data.originalActionHint
+      };
+      return base44.entities.Quest.update(id, obfuscatedData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['quests']);
     }
@@ -286,6 +311,7 @@ export default function QuestBoard() {
         }
       });
 
+      // 添加到待确认列表（不混淆，因为还在前端展示）
       setPendingQuests(prev => [...prev, {
         ...result,
         tags: [],
@@ -319,6 +345,7 @@ export default function QuestBoard() {
     setIsConfirmingPending(true);
     try {
       for (const quest of pendingQuests) {
+        // 通过 mutation 创建（会自动混淆）
         await createQuestMutation.mutateAsync({
           title: quest.title,
           actionHint: quest.actionHint,
@@ -677,6 +704,7 @@ export default function QuestBoard() {
         date: editingQuest.date
       };
 
+      // 通过 mutation 更新（会自动混淆）
       await updateQuestMutation.mutateAsync({
         id: editingQuest.id,
         data: updateData
@@ -725,10 +753,8 @@ export default function QuestBoard() {
     console.log('=== 宝箱关闭 ===');
     setShowChest(false);
     
-    // 等待一下确保状态更新
     await new Promise(resolve => setTimeout(resolve, 200));
     
-    // 重新获取最新的用户数据，不依赖缓存
     const currentUser = await base44.auth.me();
     const lastPlanned = currentUser?.lastPlannedDate;
     
@@ -737,16 +763,13 @@ export default function QuestBoard() {
     console.log('今日日期:', today);
     console.log('是否需要显示规划:', lastPlanned !== today);
     
-    // If today hasn't been planned for, show the planning dialog
     if (lastPlanned !== today) {
       console.log('显示规划明日任务对话框');
       
-      // Ensure other dialogs are closed
       setShowCalendar(false);
       setShowLongTermDialog(false);
       setShowRestDayDialog(false);
 
-      // Delay a bit to ensure other dialogs are fully closed
       setTimeout(() => {
         setShowCelebrationInPlanning(true);
         setShowPlanningDialog(true);
@@ -857,7 +880,7 @@ export default function QuestBoard() {
           }}
         >
           <div className="flex gap-3 mb-3">
-            <Input // Using shadcn Input component
+            <Input
               type="text"
               placeholder={t('questboard_input_placeholder')}
               value={textInput}
@@ -876,7 +899,7 @@ export default function QuestBoard() {
               }}
             />
 
-            <Button // Using shadcn Button component
+            <Button
               onClick={handleTextSubmit}
               disabled={isProcessing || !textInput.trim()}
               className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
@@ -895,7 +918,7 @@ export default function QuestBoard() {
             </Button>
           </div>
 
-          <Button // Using shadcn Button component
+          <Button
             onClick={() => setShowLongTermDialog(true)}
             className="w-full py-3 font-black uppercase text-sm flex items-center justify-center gap-2"
             style={{
@@ -971,7 +994,7 @@ export default function QuestBoard() {
                           <label className="block text-xs font-bold uppercase mb-2">
                             {t('questboard_pending_quest_content_label')}
                           </label>
-                          <Input // Using shadcn Input component
+                          <Input
                             type="text"
                             value={quest.actionHint}
                             onChange={(e) => handleUpdatePendingQuest(quest.tempId, 'actionHint', e.target.value)}
@@ -986,7 +1009,7 @@ export default function QuestBoard() {
                           </label>
                           <div className="grid grid-cols-4 gap-2">
                             {['C', 'B', 'A', 'S'].map(level => (
-                              <Button // Using shadcn Button component
+                              <Button
                                 key={level}
                                 onClick={() => handleUpdatePendingQuest(quest.tempId, 'difficulty', level)}
                                 className="py-2 font-black"
@@ -1002,7 +1025,7 @@ export default function QuestBoard() {
                           </div>
                         </div>
 
-                        <Button // Using shadcn Button component
+                        <Button
                           onClick={() => handleDeletePendingQuest(quest.tempId)}
                           className="w-full py-2 font-bold uppercase text-sm"
                           style={{
@@ -1019,7 +1042,7 @@ export default function QuestBoard() {
                 ))}
               </div>
 
-              <Button // Using shadcn Button component
+              <Button
                 onClick={handleConfirmPendingQuests}
                 disabled={isConfirmingPending}
                 className="w-full py-3 font-black uppercase text-sm flex items-center justify-center gap-2"
@@ -1055,7 +1078,7 @@ export default function QuestBoard() {
               boxShadow: '6px 6px 0px #000'
             }}
           >
-            <Button // Using shadcn Button component
+            <Button
               onClick={() => setShowCalendar(true)}
               className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3 text-white"
             >
@@ -1087,7 +1110,7 @@ export default function QuestBoard() {
             )}
             
             {canShowPlanningButton && (
-              <Button // Using shadcn Button component
+              <Button
                 onClick={handleOpenPlanning}
                 className="w-full py-3 font-black uppercase flex items-center justify-center gap-2"
                 style={{
@@ -1113,7 +1136,7 @@ export default function QuestBoard() {
 
         <div className="flex gap-3 mb-6">
           {['all', 'todo', 'done'].map(f => (
-            <Button // Using shadcn Button component
+            <Button
               key={f}
               onClick={() => setFilter(f)}
               className="flex-1 py-2 font-black uppercase text-sm"
@@ -1163,7 +1186,7 @@ export default function QuestBoard() {
         )}
 
         <div className="mt-6">
-          <Button // Using shadcn Button component
+          <Button
             onClick={() => setShowRestDayDialog(true)}
             disabled={quests.length > 0 && !isRestDay}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
@@ -1326,7 +1349,7 @@ export default function QuestBoard() {
                   </div>
                 </div>
 
-                <Button // Using shadcn Button component
+                <Button
                   onClick={() => setMilestoneReward(null)}
                   className="w-full py-4 font-black uppercase text-xl"
                   style={{
@@ -1390,7 +1413,7 @@ export default function QuestBoard() {
               </div>
 
               <div className="flex gap-3">
-                <Button // Using shadcn Button component
+                <Button
                   onClick={() => setShowRestDayDialog(false)}
                   className="flex-1 py-3 font-black uppercase"
                   style={{
@@ -1401,7 +1424,7 @@ export default function QuestBoard() {
                 >
                   {t('common_cancel')}
                 </Button>
-                <Button // Using shadcn Button component
+                <Button
                   onClick={handleToggleRestDay}
                   className="flex-1 py-3 font-black uppercase"
                   style={{

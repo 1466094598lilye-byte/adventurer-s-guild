@@ -1,11 +1,10 @@
-
 import { useState } from 'react';
 import { X, Loader2, ChevronDown, ChevronUp, Edit2, Calendar as CalendarIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { format } from 'date-fns';
 import { useLanguage } from '@/components/LanguageContext';
 import { getLongTermParsingPrompt } from '@/components/prompts';
-import { obfuscateQuest } from '@/utils/dataObfuscation';
+import { obfuscateQuest } from '@/utils';
 
 export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
   const [textInput, setTextInput] = useState('');

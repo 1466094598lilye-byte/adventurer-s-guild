@@ -4,7 +4,7 @@ import { X, Loader2, Sparkles, ChevronDown, ChevronUp, Plus, Repeat } from 'luci
 import { base44 } from '@/api/base44Client';
 import { useLanguage } from '@/components/LanguageContext';
 import { getCelebrationMessagePrompt, getPlanningTaskPrompt } from '@/components/prompts';
-import { deobfuscateQuests } from '@/utils/dataObfuscation';
+import { deobfuscateQuests } from '@/utils';
 
 export default function EndOfDaySummaryAndPlanning({ 
   showCelebration, 

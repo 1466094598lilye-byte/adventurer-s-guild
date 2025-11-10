@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/components/LanguageContext';
 import { getTaskNamingPrompt } from '@/components/prompts';
-import { obfuscateQuest, deobfuscateQuest, deobfuscateQuests, obfuscateText } from '@/utils/dataObfuscation';
+import { obfuscateQuest, deobfuscateQuest, deobfuscateQuests, obfuscateText } from '@/utils';
 
 export default function QuestBoard() {
   const [filter, setFilter] = useState('all');
@@ -968,7 +968,7 @@ export default function QuestBoard() {
                           className="px-2 py-1 text-sm font-black flex-shrink-0"
                           style={{
                             backgroundColor: difficultyColors[quest.difficulty],
-                            color: quest.difficulty === 'S' ? '#FFE66D' : '#000',
+                            color: quest.difficulty === 'S' && quest.difficulty === level ? '#FFE66D' : '#000',
                             border: '2px solid #000'
                           }}
                         >

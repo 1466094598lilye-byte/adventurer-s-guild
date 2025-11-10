@@ -6,7 +6,7 @@ import { format, parseISO, isSameDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { useLanguage } from '@/components/LanguageContext';
 import { getCalendarAddTaskPrompt } from '@/components/prompts';
-import { deobfuscateQuests, obfuscateQuest, obfuscateText, deobfuscateText } from '@/utils/dataObfuscation';
+import { deobfuscateQuests, obfuscateQuest, obfuscateText, deobfuscateText } from '@/utils';
 
 export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const [longTermQuests, setLongTermQuests] = useState([]);

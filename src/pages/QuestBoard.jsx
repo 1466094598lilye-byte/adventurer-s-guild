@@ -16,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/components/LanguageContext';
 import { getTaskNamingPrompt } from '@/components/prompts';
-import { obfuscateQuest, deobfuscateQuest, deobfuscateQuests, obfuscateText } from '@/utils';
 
 export default function QuestBoard() {
   const [filter, setFilter] = useState('all');
@@ -45,12 +44,40 @@ export default function QuestBoard() {
   const today = format(new Date(), 'yyyy-MM-dd');
   const currentHour = new Date().getHours();
 
+  // 辅助函数：解密任务数据
+  const decryptQuest = async (quest) => {
+    try {
+      // If title or actionHint are null/undefined, treat them as empty strings for decryption
+      const encryptedTitle = quest.title || '';
+      const encryptedActionHint = quest.actionHint || '';
+
+      const { data } = await base44.functions.invoke('decryptQuestData', {
+        encryptedTitle: encryptedTitle,
+        encryptedActionHint: encryptedActionHint
+      });
+      return {
+        ...quest,
+        title: data.title,
+        actionHint: data.actionHint
+      };
+    } catch (error) {
+      console.error('解密任务失败:', error, quest);
+      // If decryption fails, return the original (likely still encrypted) data
+      return quest;
+    }
+  };
+
+  // 辅助函数：批量解密任务
+  const decryptQuests = async (quests) => {
+    return await Promise.all(quests.map(quest => decryptQuest(quest)));
+  };
+
   const { data: quests = [], isLoading } = useQuery({
     queryKey: ['quests', today],
     queryFn: async () => {
       const allQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
-      // 反混淆后返回
-      return deobfuscateQuests(allQuests);
+      // 解密后返回
+      return await decryptQuests(allQuests);
     }
   });
 
@@ -117,14 +144,22 @@ export default function QuestBoard() {
           });
           
           for (const plannedQuest of nextDayPlanned) {
-            // 混淆后再创建
-            const obfuscatedQuest = obfuscateQuest({
-              ...plannedQuest,
+            // 加密后再创建
+            const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
+              title: plannedQuest.title,
+              actionHint: plannedQuest.actionHint
+            });
+            
+            await base44.entities.Quest.create({
+              title: encrypted.encryptedTitle,
+              actionHint: encrypted.encryptedActionHint,
+              difficulty: plannedQuest.difficulty,
+              rarity: plannedQuest.rarity,
               date: today,
               status: 'todo',
-              source: 'ai'
+              source: 'ai',
+              tags: plannedQuest.tags || []
             });
-            await base44.entities.Quest.create(obfuscatedQuest);
           }
 
           queryClient.invalidateQueries(['quests']);
@@ -143,12 +178,12 @@ export default function QuestBoard() {
         console.log(`数据库中找到 ${allRoutineQuests.length} 个标记为每日修炼的任务记录`);
         
         if (allRoutineQuests.length > 0) {
-          // 反混淆所有每日修炼任务
-          const deobfuscatedRoutineQuests = deobfuscateQuests(allRoutineQuests);
+          // 解密所有每日修炼任务
+          const decryptedRoutineQuests = await decryptQuests(allRoutineQuests);
           
           // 去重：按 originalActionHint 去重，只保留每个独特任务的最新一条记录
           const uniqueRoutinesMap = new Map();
-          deobfuscatedRoutineQuests.forEach(quest => {
+          decryptedRoutineQuests.forEach(quest => {
             const key = quest.originalActionHint;
             if (key) {
               if (!uniqueRoutinesMap.has(key) || 
@@ -160,13 +195,13 @@ export default function QuestBoard() {
           
           console.log(`去重后识别出 ${uniqueRoutinesMap.size} 个不同的每日修炼任务`);
           
-          // 反混淆今日任务用于检查
-          const deobfuscatedTodayQuests = deobfuscateQuests(todayQuests);
+          // 解密今日任务用于检查
+          const decryptedTodayQuests = await decryptQuests(todayQuests);
           
           for (const [actionHint, templateQuest] of uniqueRoutinesMap) {
             console.log(`检查每日修炼任务: ${actionHint}`);
             
-            const alreadyExists = deobfuscatedTodayQuests.some(
+            const alreadyExists = decryptedTodayQuests.some(
               q => q.isRoutine && q.originalActionHint === actionHint
             );
             
@@ -201,10 +236,15 @@ export default function QuestBoard() {
                 }
               });
 
-              // 创建今日的每日修炼任务，保持原有的难度和稀有度，并混淆
-              const newQuest = obfuscateQuest({
+              // 加密后创建今日的每日修炼任务
+              const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
                 title: result.title,
-                actionHint: actionHint,
+                actionHint: actionHint
+              });
+              
+              await base44.entities.Quest.create({
+                title: encrypted.encryptedTitle,
+                actionHint: encrypted.encryptedActionHint,
                 difficulty: templateQuest.difficulty,
                 rarity: templateQuest.rarity,
                 date: today,
@@ -214,8 +254,6 @@ export default function QuestBoard() {
                 originalActionHint: actionHint,
                 tags: []
               });
-              
-              await base44.entities.Quest.create(newQuest);
               
               console.log(`成功创建今日每日修炼任务: ${actionHint}，保持评级 ${templateQuest.difficulty}`);
             } catch (error) {
@@ -239,46 +277,24 @@ export default function QuestBoard() {
 
   const createQuestMutation = useMutation({
     mutationFn: async (questData) => {
-      // 🔍 详细调试日志
       console.log('=== createQuestMutation 开始 ===');
-      console.log('1. 原始数据:', questData);
-      console.log('2. 原始 title:', questData.title);
-      console.log('3. 原始 actionHint:', questData.actionHint);
+      console.log('原始数据:', questData);
       
-      // 测试混淆函数是否可用
-      console.log('4. obfuscateQuest 函数:', typeof obfuscateQuest);
-      console.log('5. obfuscateText 函数:', typeof obfuscateText);
+      // 调用后端函数加密 title 和 actionHint
+      const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
+        title: questData.title,
+        actionHint: questData.actionHint
+      });
       
-      // 单独测试混淆
-      const testTitle = obfuscateText(questData.title);
-      const testHint = obfuscateText(questData.actionHint);
-      console.log('6. 测试 title 混淆:', questData.title, '->', testTitle);
-      console.log('7. 测试 actionHint 混淆:', questData.actionHint, '->', testHint);
+      console.log('加密完成，准备创建任务');
       
-      // 创建混淆对象
-      const obfuscatedQuest = obfuscateQuest(questData);
-      console.log('8. 混淆后完整对象:', obfuscatedQuest);
-      console.log('9. 混淆后 title:', obfuscatedQuest.title);
-      console.log('10. 混淆后 actionHint:', obfuscatedQuest.actionHint);
+      const result = await base44.entities.Quest.create({
+        ...questData,
+        title: encrypted.encryptedTitle,
+        actionHint: encrypted.encryptedActionHint
+      });
       
-      // 验证混淆是否真的生效
-      if (obfuscatedQuest.title === questData.title) {
-        console.error('❌ 警告：title 没有被混淆！');
-      } else {
-        console.log('✅ title 已混淆');
-      }
-      
-      if (obfuscatedQuest.actionHint === questData.actionHint) {
-        console.error('❌ 警告：actionHint 没有被混淆！');
-      } else {
-        console.log('✅ actionHint 已混淆');
-      }
-      
-      console.log('11. 准备调用 base44.entities.Quest.create');
-      const result = await base44.entities.Quest.create(obfuscatedQuest);
-      console.log('12. 创建结果:', result);
-      console.log('=== createQuestMutation 结束 ===');
-      
+      console.log('任务创建成功');
       return result;
     },
     onSuccess: async () => {
@@ -298,15 +314,25 @@ export default function QuestBoard() {
   });
 
   const updateQuestMutation = useMutation({
-    mutationFn: ({ id, data }) => {
-      // 更新前混淆
-      const obfuscatedData = {
-        ...data,
-        title: data.title ? obfuscateText(data.title) : data.title,
-        actionHint: data.actionHint ? obfuscateText(data.actionHint) : data.actionHint,
-        originalActionHint: data.originalActionHint ? obfuscateText(data.originalActionHint) : data.originalActionHint
-      };
-      return base44.entities.Quest.update(id, obfuscatedData);
+    mutationFn: async ({ id, data }) => {
+      // 如果更新的数据包含 title 或 actionHint，需要先加密
+      const updateData = { ...data };
+      
+      if (data.title || data.actionHint || data.originalActionHint) {
+        const toEncrypt = {
+          title: data.title || '',
+          actionHint: data.actionHint || '',
+          originalActionHint: data.originalActionHint || ''
+        };
+        
+        const { data: encrypted } = await base44.functions.invoke('encryptQuestData', toEncrypt);
+        
+        if (data.title !== undefined) updateData.title = encrypted.encryptedTitle;
+        if (data.actionHint !== undefined) updateData.actionHint = encrypted.encryptedActionHint;
+        if (data.originalActionHint !== undefined) updateData.originalActionHint = encrypted.originalActionHint; // Assuming originalActionHint is also encrypted/decrypted similarly
+      }
+      
+      return base44.entities.Quest.update(id, updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['quests']);
@@ -337,7 +363,7 @@ export default function QuestBoard() {
                 : "Must strictly follow [Category]: <5-8 Word Epic Phrase> format! Category is action type, Phrase is 5-8 words. Example: [Conquest]: Dawn March Through Five Miles. Phrase must be 5-8 words exactly! Absolutely cannot include the word 'task' or 'quest'!"
             },
             actionHint: { 
-              type: "string",
+              type: "string", 
               description: language === 'zh'
                 ? "用户的原始输入，完全保持原样"
                 : "User's original input, keep as-is"
@@ -349,7 +375,7 @@ export default function QuestBoard() {
         }
       });
 
-      // 添加到待确认列表（不混淆，因为还在前端展示）
+      // 添加到待确认列表（不加密，因为还在前端展示）
       setPendingQuests(prev => [...prev, {
         ...result,
         tags: [],
@@ -383,7 +409,7 @@ export default function QuestBoard() {
     setIsConfirmingPending(true);
     try {
       for (const quest of pendingQuests) {
-        // 通过 mutation 创建（会自动混淆）
+        // 通过 mutation 创建（会自动加密）
         await createQuestMutation.mutateAsync({
           title: quest.title,
           actionHint: quest.actionHint,
@@ -742,7 +768,7 @@ export default function QuestBoard() {
         date: editingQuest.date
       };
 
-      // 通过 mutation 更新（会自动混淆）
+      // 通过 mutation 更新（会自动加密）
       await updateQuestMutation.mutateAsync({
         id: editingQuest.id,
         data: updateData
@@ -1006,7 +1032,7 @@ export default function QuestBoard() {
                           className="px-2 py-1 text-sm font-black flex-shrink-0"
                           style={{
                             backgroundColor: difficultyColors[quest.difficulty],
-                            color: quest.difficulty === 'S' && quest.difficulty === level ? '#FFE66D' : '#000',
+                            color: quest.difficulty === 'S' && quest.difficulty === 'S' ? '#FFE66D' : '#000',
                             border: '2px solid #000'
                           }}
                         >

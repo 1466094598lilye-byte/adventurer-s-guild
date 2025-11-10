@@ -1,18 +1,18 @@
 
 import { useState } from 'react';
-import { X, Loader2, Sparkles, Calendar, Edit2, Trash2 } from 'lucide-react';
+import { X, Loader2, ChevronDown, ChevronUp, Calendar as CalendarIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { format, addDays, parse } from 'date-fns';
+import { format } from 'date-fns';
 import { useLanguage } from '@/components/LanguageContext';
 import { getLongTermParsingPrompt } from '@/components/prompts';
+import { obfuscateQuest } from '@/utils/dataObfuscation';
 
 export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
   const [textInput, setTextInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [parsedQuests, setParsedQuests] = useState([]);
-  const [editingIndex, setEditingIndex] = useState(null);
-  const [showPreview, setShowPreview] = useState(false);
-  const [isCreating, setIsCreating] = useState(false); // 新增：创建任务的 loading 状态
+  const [expandedIndex, setExpandedIndex] = useState(null);
+  const [isCreating, setIsCreating] = useState(false);
   const { language, t } = useLanguage();
 
   const handleParse = async () => {
@@ -20,46 +20,22 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
     
     setIsProcessing(true);
     try {
-      const { prompt, schema } = getLongTermParsingPrompt(language, textInput);
+      const { prompt, schema } = getLongTermParsingPrompt(language, textInput.trim());
       
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: prompt,
         response_json_schema: schema
       });
 
-      // 处理返回的任务，补充年份
-      const today = new Date();
-      const currentYear = today.getFullYear();
-      const currentMonth = today.getMonth() + 1; // 1-indexed
-      const currentDay = today.getDate();
-      
-      const tasksWithFullDate = (result.tasks || []).map(task => {
-        const [month, day] = task.date.split('-').map(Number);
-        
-        let year = currentYear;
-        // If the parsed month is earlier than the current month, or
-        // if the parsed month is the same as current month but the day is earlier,
-        // assume it's for the next year to avoid assigning to a past date.
-        if (month < currentMonth || (month === currentMonth && day < currentDay)) {
-          year = currentYear + 1;
-        }
-        
-        return {
-          ...task,
-          date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-        };
-      });
-
-      setParsedQuests(tasksWithFullDate);
-      setShowPreview(true);
+      setParsedQuests(result.tasks || []);
     } catch (error) {
       console.error('解析失败:', error);
-      alert(language === 'zh' ? '解析失败，请重试' : 'Parsing failed, please retry');
+      alert(t('questboard_alert_task_parse_failed', { message: error.message || t('common_try_again') }));
     }
     setIsProcessing(false);
   };
 
-  const handleEditQuest = (index, field, value) => {
+  const handleUpdateQuest = (index, field, value) => {
     const updated = [...parsedQuests];
     updated[index] = { ...updated[index], [field]: value };
     setParsedQuests(updated);
@@ -67,54 +43,64 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
 
   const handleDeleteQuest = (index) => {
     setParsedQuests(parsedQuests.filter((_, i) => i !== index));
+    if (expandedIndex === index) {
+      setExpandedIndex(null);
+    }
   };
 
   const handleConfirm = async () => {
     if (parsedQuests.length === 0 || isCreating) return;
-
+    
     setIsCreating(true);
     try {
-      // 先创建大项目实体
-      const projectName = `${language === 'zh' ? '大项目 - ' : 'Project - '}${format(new Date(), language === 'zh' ? 'yyyy年MM月dd日' : 'MMM dd, yyyy')}`;
+      const projectName = language === 'zh' 
+        ? `${format(new Date(), 'yyyy年MM月')}大项目计划`
+        : `${format(new Date(), 'MMMM yyyy')} Long-term Project`;
+      
       const project = await base44.entities.LongTermProject.create({
         projectName: projectName,
-        description: `${language === 'zh' ? '包含' : 'Contains'} ${parsedQuests.length} ${language === 'zh' ? '项任务' : 'tasks'}`,
+        description: `${parsedQuests.length} ${language === 'zh' ? '项史诗委托' : 'epic quests'}`,
         status: 'active'
       });
 
-      // 然后创建所有任务，并关联到这个项目
       for (const quest of parsedQuests) {
-        await base44.entities.Quest.create({
+        // 混淆后再创建
+        const obfuscatedQuest = obfuscateQuest({
           title: quest.title,
           actionHint: quest.actionHint,
           date: quest.date,
-          difficulty: 'S',
-          rarity: 'Epic',
+          difficulty: quest.difficulty,
+          rarity: quest.rarity,
           status: 'todo',
           source: 'longterm',
           isLongTermProject: true,
-          longTermProjectId: project.id, // Link to the newly created project
+          longTermProjectId: project.id,
           tags: []
         });
+        
+        await base44.entities.Quest.create(obfuscatedQuest);
       }
 
-      onQuestsCreated(parsedQuests.length);
+      if (onQuestsCreated) {
+        onQuestsCreated(parsedQuests.length);
+      }
+      
       onClose();
     } catch (error) {
       console.error('创建任务失败:', error);
-      alert(language === 'zh' ? '创建任务失败，请重试' : 'Failed to create tasks, please retry');
-      setIsCreating(false); // Ensure state is reset on error
+      alert(t('questboard_alert_create_quest_failed'));
     }
+    setIsCreating(false);
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
       style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
       onClick={onClose}
     >
-      <div 
-        className="relative max-w-3xl w-full my-8 p-6"
+      <div
+        className="relative max-w-2xl w-full my-8 p-6"
         style={{
           backgroundColor: '#9B59B6',
           border: '5px solid #000',
@@ -134,34 +120,27 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
           <X className="w-7 h-7 text-white" strokeWidth={4} />
         </button>
 
-        <h2 className="text-3xl font-black uppercase text-center mb-2 text-white">
+        <h2 className="text-3xl font-black uppercase text-center text-white mb-2">
           {t('longterm_title')}
         </h2>
-        <p className="text-center font-bold text-white mb-6 text-sm">
+        <p className="text-center font-bold text-white text-sm mb-6">
           {t('longterm_subtitle')}
         </p>
 
-        {!showPreview ? (
-          <>
-            <div 
-              className="mb-4 p-4"
+        {parsedQuests.length === 0 ? (
+          <div>
+            <textarea
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              placeholder={t('longterm_placeholder')}
+              rows={12}
+              className="w-full px-4 py-3 font-bold resize-none mb-4"
               style={{
-                backgroundColor: '#FFE66D',
-                border: '4px solid #000'
+                backgroundColor: '#FFF',
+                border: '4px solid #000',
+                boxShadow: '5px 5px 0px #000'
               }}
-            >
-              <textarea
-                value={textInput}
-                onChange={(e) => setTextInput(e.target.value)}
-                placeholder={t('longterm_placeholder')}
-                rows={12}
-                className="w-full px-4 py-3 font-bold resize-none"
-                style={{
-                  backgroundColor: '#FFF',
-                  border: '3px solid #000'
-                }}
-              />
-            </div>
+            />
 
             <button
               onClick={handleParse}
@@ -176,178 +155,179 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
             >
               {isProcessing ? (
                 <>
-                  <Loader2 className="w-6 h-6 animate-spin" />
+                  <Loader2 className="w-6 h-6 animate-spin" strokeWidth={3} />
                   {t('longterm_parsing')}
                 </>
               ) : (
-                <>
-                  <Sparkles className="w-6 h-6" strokeWidth={3} />
-                  {t('longterm_start_parse')}
-                </>
+                t('longterm_start_parse')
               )}
             </button>
-          </>
+          </div>
         ) : (
-          <>
-            <div 
-              className="mb-4 p-4 max-h-[500px] overflow-y-auto"
-              style={{
-                backgroundColor: '#FFE66D',
-                border: '4px solid #000'
-              }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-black uppercase">
-                  {t('longterm_identified')} {parsedQuests.length} {t('longterm_epic_quests')}
-                </h3>
-                <button
-                  onClick={() => {
-                    setShowPreview(false);
-                    setParsedQuests([]);
-                  }}
-                  className="text-sm font-bold underline"
-                >
-                  {t('longterm_reenter')}
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                {parsedQuests.map((quest, i) => (
-                  <div 
-                    key={i}
-                    className="p-3"
-                    style={{
-                      backgroundColor: '#FFF',
-                      border: '3px solid #000'
-                    }}
-                  >
-                    {editingIndex === i ? (
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-xs font-bold uppercase mb-1">
-                            {t('longterm_edit_date')}
-                          </label>
-                          <input
-                            type="date"
-                            value={quest.date}
-                            onChange={(e) => handleEditQuest(i, 'date', e.target.value)}
-                            className="w-full px-3 py-2 font-bold"
-                            style={{ border: '2px solid #000' }}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold uppercase mb-1">
-                            {t('longterm_edit_title')}
-                          </label>
-                          <input
-                            type="text"
-                            value={quest.title}
-                            onChange={(e) => handleEditQuest(i, 'title', e.target.value)}
-                            placeholder={language === 'zh' ? '例如：【征讨】讨伐暗影深渊巨兽' : 'e.g.: [Conquest]: Slay Shadow Abyss Beast'}
-                            className="w-full px-3 py-2 font-bold"
-                            style={{ border: '2px solid #000' }}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold uppercase mb-1">
-                            {t('longterm_edit_content')}
-                          </label>
-                          <input
-                            type="text"
-                            value={quest.actionHint}
-                            onChange={(e) => handleEditQuest(i, 'actionHint', e.target.value)}
-                            className="w-full px-3 py-2 font-bold"
-                            style={{ border: '2px solid #000' }}
-                          />
-                        </div>
-                        <button
-                          onClick={() => setEditingIndex(null)}
-                          className="w-full py-2 font-bold uppercase text-sm"
-                          style={{
-                            backgroundColor: '#4ECDC4',
-                            border: '2px solid #000'
-                          }}
-                        >
-                          {t('longterm_edit_done')}
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Calendar className="w-4 h-4 flex-shrink-0" strokeWidth={3} />
-                              <span className="font-black text-sm">
-                                {format(new Date(quest.date), language === 'zh' ? 'MM月dd日' : 'MMM dd')}
-                              </span>
-                              <div 
-                                className="px-2 py-0.5 text-base font-black"
-                                style={{
-                                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)',
-                                  color: '#FFF',
-                                  border: '2px solid #000',
-                                  textShadow: '1px 1px 0px #000'
-                                }}
-                              >
-                                S
-                              </div>
-                            </div>
-                            <p className="font-black text-base mb-1 text-purple-800">{quest.title}</p>
-                            <p className="text-sm font-bold text-gray-600">
-                              {t('longterm_task_content_label')}{quest.actionHint}
-                            </p>
-                          </div>
-                          <div className="flex gap-1 flex-shrink-0">
-                            <button
-                              onClick={() => setEditingIndex(i)}
-                              className="p-2"
-                              style={{
-                                backgroundColor: '#FFE66D',
-                                border: '2px solid #000'
-                              }}
-                            >
-                              <Edit2 className="w-4 h-4" strokeWidth={3} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteQuest(i)}
-                              className="p-2"
-                              style={{
-                                backgroundColor: '#FF6B35',
-                                border: '2px solid #000'
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4 text-white" strokeWidth={3} />
-                            </button>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <button
-              onClick={handleConfirm}
-              disabled={parsedQuests.length === 0 || isCreating}
-              className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-2"
+          <div>
+            <div
+              className="mb-4 p-4"
               style={{
                 backgroundColor: '#FFE66D',
                 border: '4px solid #000',
-                boxShadow: '6px 6px 0px #000',
-                opacity: (parsedQuests.length === 0 || isCreating) ? 0.5 : 1
+                boxShadow: '5px 5px 0px #000'
               }}
             >
-              {isCreating ? (
-                <>
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                  {t('longterm_creating')}
-                </>
-              ) : (
-                t('longterm_confirm_add')
-              )}
-            </button>
-          </>
+              <p className="font-black text-center text-lg">
+                {t('longterm_identified')} {parsedQuests.length} {t('longterm_epic_quests')}
+              </p>
+            </div>
+
+            <div
+              className="mb-4 max-h-[400px] overflow-y-auto"
+              style={{
+                backgroundColor: '#FFF',
+                border: '4px solid #000'
+              }}
+            >
+              {parsedQuests.map((quest, index) => (
+                <div
+                  key={index}
+                  style={{
+                    borderBottom: index < parsedQuests.length - 1 ? '3px solid #000' : 'none'
+                  }}
+                >
+                  <div
+                    className="p-4 cursor-pointer hover:bg-gray-50"
+                    onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CalendarIcon className="w-4 h-4 flex-shrink-0" strokeWidth={3} />
+                          <span className="font-black text-sm">
+                            {language === 'zh' ? quest.date.slice(5).replace('-', '月') + '日' : quest.date}
+                          </span>
+                          <span
+                            className="px-2 py-0.5 text-xs font-black"
+                            style={{
+                              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)',
+                              color: '#FFF',
+                              border: '2px solid #000',
+                              textShadow: '1px 1px 0px #000'
+                            }}
+                          >
+                            S
+                          </span>
+                        </div>
+                        <p className="font-black text-sm mb-1 text-purple-800 truncate">
+                          {quest.title}
+                        </p>
+                        <p className="text-xs font-bold text-gray-600 truncate">
+                          {quest.actionHint}
+                        </p>
+                      </div>
+                      {expandedIndex === index ? (
+                        <ChevronUp className="w-5 h-5 flex-shrink-0" strokeWidth={3} />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 flex-shrink-0" strokeWidth={3} />
+                      )}
+                    </div>
+                  </div>
+
+                  {expandedIndex === index && (
+                    <div className="px-4 pb-4 bg-gray-50" style={{ borderTop: '2px solid #000' }}>
+                      <div className="mb-3 mt-3">
+                        <label className="block text-xs font-bold uppercase mb-2">
+                          {t('longterm_edit_date')}
+                        </label>
+                        <input
+                          type="text"
+                          value={quest.date}
+                          onChange={(e) => handleUpdateQuest(index, 'date', e.target.value)}
+                          className="w-full px-3 py-2 font-bold text-sm"
+                          style={{ border: '2px solid #000' }}
+                          placeholder="YYYY-MM-DD"
+                        />
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="block text-xs font-bold uppercase mb-2">
+                          {t('longterm_edit_title')}
+                        </label>
+                        <input
+                          type="text"
+                          value={quest.title}
+                          onChange={(e) => handleUpdateQuest(index, 'title', e.target.value)}
+                          className="w-full px-3 py-2 font-bold text-sm"
+                          style={{ border: '2px solid #000' }}
+                        />
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="block text-xs font-bold uppercase mb-2">
+                          {t('longterm_edit_content')}
+                        </label>
+                        <textarea
+                          value={quest.actionHint}
+                          onChange={(e) => handleUpdateQuest(index, 'actionHint', e.target.value)}
+                          rows={2}
+                          className="w-full px-3 py-2 font-bold text-sm resize-none"
+                          style={{ border: '2px solid #000' }}
+                        />
+                      </div>
+
+                      <button
+                        onClick={() => handleDeleteQuest(index)}
+                        className="w-full py-2 font-bold uppercase text-sm"
+                        style={{
+                          backgroundColor: '#FFF',
+                          color: '#FF6B35',
+                          border: '2px solid #FF6B35'
+                        }}
+                      >
+                        {t('planning_delete_task')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setParsedQuests([]);
+                  setExpandedIndex(null);
+                }}
+                disabled={isCreating}
+                className="flex-1 py-3 font-black uppercase"
+                style={{
+                  backgroundColor: '#FFF',
+                  border: '4px solid #000',
+                  boxShadow: '5px 5px 0px #000',
+                  opacity: isCreating ? 0.5 : 1
+                }}
+              >
+                {t('longterm_reenter')}
+              </button>
+              <button
+                onClick={handleConfirm}
+                disabled={isCreating}
+                className="flex-1 py-3 font-black uppercase flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: '#FFE66D',
+                  border: '4px solid #000',
+                  boxShadow: '5px 5px 0px #000',
+                  opacity: isCreating ? 0.7 : 1
+                }}
+              >
+                {isCreating ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" strokeWidth={3} />
+                    {t('longterm_creating')}
+                  </>
+                ) : (
+                  t('longterm_confirm_add')
+                )}
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

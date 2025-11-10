@@ -6,6 +6,7 @@ import { format, parseISO, isSameDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { useLanguage } from '@/components/LanguageContext';
 import { getCalendarAddTaskPrompt } from '@/components/prompts';
+import { deobfuscateQuests, obfuscateQuest, obfuscateText, deobfuscateText } from '@/utils/dataObfuscation';
 
 export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const [longTermQuests, setLongTermQuests] = useState([]);
@@ -29,7 +30,8 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const loadLongTermQuests = async () => {
     try {
       const quests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-      setLongTermQuests(quests);
+      // 反混淆后设置
+      setLongTermQuests(deobfuscateQuests(quests));
     } catch (error) {
       console.error('加载大项目任务失败:', error);
     }
@@ -95,7 +97,8 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
         // 从最新的数据中筛选出该日期的任务
         const allQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-        const updatedQuestsForDate = allQuests.filter(q => q.date === dateStr);
+        const deobfuscatedQuests = deobfuscateQuests(allQuests); // 反混淆
+        const updatedQuestsForDate = deobfuscatedQuests.filter(q => q.date === dateStr);
         
         setSelectedDateQuests(updatedQuestsForDate);
         
@@ -129,20 +132,22 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         response_json_schema: schema
       });
 
+      // 混淆后更新
       await base44.entities.Quest.update(quest.id, {
-        title: result.title,
-        actionHint: newActionHint
+        title: obfuscateText(result.title),
+        actionHint: obfuscateText(newActionHint)
       });
 
       const updatedQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-      setLongTermQuests(updatedQuests);
+      const deobfuscatedQuests = deobfuscateQuests(updatedQuests); // 反混淆
+      setLongTermQuests(deobfuscatedQuests);
 
       if (selectedDate) {
-        const updatedGroupedByDate = updatedQuests.reduce((acc, quest) => {
-          if (!acc[quest.date]) {
-            acc[quest.date] = [];
+        const updatedGroupedByDate = deobfuscatedQuests.reduce((acc, questItem) => {
+          if (!acc[questItem.date]) {
+            acc[questItem.date] = [];
           }
-          acc[quest.date].push(quest);
+          acc[questItem.date].push(questItem);
           return acc;
         }, {});
 
@@ -184,7 +189,8 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         response_json_schema: schema
       });
 
-      await base44.entities.Quest.create({
+      // 混淆后创建
+      const newQuest = obfuscateQuest({
         title: result.title,
         actionHint: newTaskInput.trim(),
         date: addingToDate,
@@ -196,8 +202,10 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         tags: []
       });
 
+      await base44.entities.Quest.create(newQuest);
+
       const updatedQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-      setLongTermQuests(updatedQuests);
+      setLongTermQuests(deobfuscateQuests(updatedQuests)); // 反混淆
 
       // 自动展开刚添加的日期
       if (!expandedDates.includes(addingToDate)) {

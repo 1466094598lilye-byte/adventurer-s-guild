@@ -4,6 +4,7 @@ import { X, Loader2, Sparkles, ChevronDown, ChevronUp, Plus, Repeat } from 'luci
 import { base44 } from '@/api/base44Client';
 import { useLanguage } from '@/components/LanguageContext';
 import { getCelebrationMessagePrompt, getPlanningTaskPrompt } from '@/components/prompts';
+import { deobfuscateQuests } from '@/utils/dataObfuscation';
 
 export default function EndOfDaySummaryAndPlanning({ 
   showCelebration, 
@@ -33,8 +34,11 @@ export default function EndOfDaySummaryAndPlanning({
     try {
       const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
       
+      // 反混淆
+      const deobfuscatedQuests = deobfuscateQuests(allRoutineQuests);
+      
       const uniqueRoutinesMap = new Map();
-      allRoutineQuests.forEach(quest => {
+      deobfuscatedQuests.forEach(quest => {
         const key = quest.originalActionHint;
         if (key && !uniqueRoutinesMap.has(key)) {
           uniqueRoutinesMap.set(key, {
@@ -401,7 +405,7 @@ export default function EndOfDaySummaryAndPlanning({
                           className="px-2 py-0.5 text-xs font-black"
                           style={{
                             backgroundColor: difficultyColors[quest.difficulty],
-                            color: quest.difficulty === 'S' && quest.difficulty === level ? '#FFE66D' : '#000', // Bug fix: level was undefined
+                            color: quest.difficulty === 'S' ? '#FFE66D' : '#000',
                             border: '2px solid #000'
                           }}
                         >

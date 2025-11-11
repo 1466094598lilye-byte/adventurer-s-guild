@@ -6,7 +6,6 @@ import { format, parseISO, isSameDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { useLanguage } from '@/components/LanguageContext';
 import { getCalendarAddTaskPrompt } from '@/components/prompts';
-// Removed: import { deobfuscateQuests, obfuscateQuest, obfuscateText, deobfuscateText } from '@/utils';
 
 export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const [longTermQuests, setLongTermQuests] = useState([]);
@@ -18,37 +17,45 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const [expandedDates, setExpandedDates] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [addingToDate, setAddingToDate] = useState(null);
-  const [newTaskInput, setNewTaskInput] = useState(''); // Corrected: was useState(false) in outline
+  const [newTaskInput, setNewTaskInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { t, language } = useLanguage();
 
-  // 辅助函数：解密任务
+  // 辅助函数：解密任务（兼容明文）
   const decryptQuest = async (quest) => {
     try {
+      // Check if title or actionHint are non-empty strings that resemble base64 (encrypted)
+      // Base64 strings typically have a length that is a multiple of 4, use A-Za-z0-9+/=
+      // A typical encrypted string would be significantly longer than a short plaintext.
+      const titleLooksEncrypted = quest.title && typeof quest.title === 'string' && quest.title.length > 30 && quest.title.length % 4 === 0 && /^[A-Za-z0-9+/=]+$/.test(quest.title);
+      const actionHintLooksEncrypted = quest.actionHint && typeof quest.actionHint === 'string' && quest.actionHint.length > 30 && quest.actionHint.length % 4 === 0 && /^[A-Za-z0-9+/=]+$/.test(quest.actionHint);
+      
+      if (!titleLooksEncrypted && !actionHintLooksEncrypted) {
+        // If neither looks encrypted, return the original quest data as is (assumed plaintext)
+        return quest;
+      }
+
+      // If at least one looks encrypted, attempt decryption
       const { data } = await base44.functions.invoke('decryptQuestData', {
-        encryptedTitle: quest.title,
-        encryptedActionHint: quest.actionHint
+        encryptedTitle: titleLooksEncrypted ? quest.title : '', // Only send if it looks encrypted
+        encryptedActionHint: actionHintLooksEncrypted ? quest.actionHint : '' // Only send if it looks encrypted
       });
+
       return {
         ...quest,
-        title: data.title,
-        actionHint: data.actionHint
+        title: titleLooksEncrypted ? data.title : quest.title, // Use decrypted if sent, else original
+        actionHint: actionHintLooksEncrypted ? data.actionHint : quest.actionHint // Use decrypted if sent, else original
       };
     } catch (error) {
-      console.error('解密任务失败:', error);
-      // If decryption fails, return original quest with placeholders or default values
-      return {
-        ...quest,
-        title: quest.title || t('common_decryption_failed'), // Fallback if decryption fails
-        actionHint: quest.actionHint || t('common_decryption_failed')
-      };
+      // If decryption fails, return original quest data (might be plaintext or malformed encrypted)
+      console.warn('Decryption failed for quest:', quest.id, 'Error:', error.message);
+      return quest;
     }
   };
 
   // 辅助函数：批量解密任务
   const decryptQuests = async (quests) => {
-    // Filter out potential null/undefined quests before mapping
     const validQuests = quests.filter(quest => quest != null);
     return await Promise.all(validQuests.map(quest => decryptQuest(quest)));
   };
@@ -122,30 +129,30 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       // 重新加载任务列表
       await loadLongTermQuests();
       
-      // 如果当前在详情页，也需要更新详情页的数据
+      // If current detail view is open, update its data
       if (selectedDate) {
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
-        // 从最新的数据中筛选出该日期的任务
+        // Filter tasks for the selected date from the latest data
         const allQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-        const decryptedQuests = await decryptQuests(allQuests); // 解密
+        const decryptedQuests = await decryptQuests(allQuests); // Decrypt
         const updatedQuestsForDate = decryptedQuests.filter(q => q.date === dateStr);
         
         setSelectedDateQuests(updatedQuestsForDate);
         
-        // 如果该日期没有任务了，关闭详情并收起
+        // If no tasks remain for this date, close detail and collapse
         if (updatedQuestsForDate.length === 0) {
           setShowDateDetail(false);
           setExpandedDates(prev => prev.filter(d => d !== dateStr));
         }
       }
       
-      // 通知父组件更新
+      // Notify parent component to update
       if (onQuestsUpdated) {
         onQuestsUpdated();
       }
     } catch (error) {
       console.error('删除任务时出错:', error);
-      // 不显示alert，而是尝试刷新数据
+      // Do not show alert, try refreshing data instead
       await loadLongTermQuests();
       if (onQuestsUpdated) {
         onQuestsUpdated();
@@ -162,7 +169,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         response_json_schema: schema
       });
 
-      // 加密后更新
+      // Encrypt and update
       const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
         title: result.title,
         actionHint: newActionHint
@@ -174,7 +181,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       });
 
       const updatedQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-      const decryptedQuests = await decryptQuests(updatedQuests); // 解密
+      const decryptedQuests = await decryptQuests(updatedQuests); // Decrypt
       setLongTermQuests(decryptedQuests);
 
       if (selectedDate) {
@@ -224,7 +231,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         response_json_schema: schema
       });
 
-      // 加密后创建
+      // Encrypt and create
       const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
         title: result.title,
         actionHint: newTaskInput.trim()
@@ -243,9 +250,9 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       });
 
       const updatedQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-      setLongTermQuests(await decryptQuests(updatedQuests)); // 解密
+      setLongTermQuests(await decryptQuests(updatedQuests)); // Decrypt
 
-      // 自动展开刚添加的日期
+      // Auto expand the date that was just added
       if (!expandedDates.includes(addingToDate)) {
         setExpandedDates(prev => [...prev, addingToDate]);
       }

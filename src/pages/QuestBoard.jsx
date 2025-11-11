@@ -44,9 +44,19 @@ export default function QuestBoard() {
   const today = format(new Date(), 'yyyy-MM-dd');
   const currentHour = new Date().getHours();
 
-  // 辅助函数：解密任务数据
+  // 辅助函数：解密任务数据（兼容明文）
   const decryptQuest = async (quest) => {
     try {
+      // 检查是否是加密数据（加密后的数据是 base64，长度通常 > 50）
+      // 如果 title 或 actionHint 是空的、很短的、或明显不是 base64，则认为是明文
+      const titleLooksEncrypted = quest.title && quest.title.length > 50 && /^[A-Za-z0-9+/=]+$/.test(quest.title);
+      const actionHintLooksEncrypted = quest.actionHint && quest.actionHint.length > 50 && /^[A-Za-z0-9+/=]+$/.test(quest.actionHint);
+      
+      if (!titleLooksEncrypted && !actionHintLooksEncrypted) {
+        // 如果看起来都不是加密数据，直接返回原始数据（明文）
+        return quest;
+      }
+
       // If title or actionHint are null/undefined, treat them as empty strings for decryption
       const encryptedTitle = quest.title || '';
       const encryptedActionHint = quest.actionHint || '';
@@ -55,14 +65,15 @@ export default function QuestBoard() {
         encryptedTitle: encryptedTitle,
         encryptedActionHint: encryptedActionHint
       });
+      
       return {
         ...quest,
         title: data.title,
         actionHint: data.actionHint
       };
     } catch (error) {
-      console.error('解密任务失败:', error, quest);
-      // If decryption fails, return the original (likely still encrypted) data
+      // 解密失败，返回原始数据（可能是明文）
+      console.warn('解密失败，使用原始数据:', quest.id, error.message);
       return quest;
     }
   };
@@ -89,7 +100,7 @@ export default function QuestBoard() {
   const { data: hasAnyLongTermQuests = false } = useQuery({
     queryKey: ['hasLongTermQuests'],
     queryFn: async () => {
-      const longTermQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 1);
+      const longTermQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-created_date', 1);
       return longTermQuests.length > 0;
     },
     initialData: false,
@@ -329,7 +340,7 @@ export default function QuestBoard() {
         
         if (data.title !== undefined) updateData.title = encrypted.encryptedTitle;
         if (data.actionHint !== undefined) updateData.actionHint = encrypted.encryptedActionHint;
-        if (data.originalActionHint !== undefined) updateData.originalActionHint = encrypted.originalActionHint; // Assuming originalActionHint is also encrypted/decrypted similarly
+        if (data.originalActionHint !== undefined) updateData.originalActionHint = encrypted.originalActionHint;
       }
       
       return base44.entities.Quest.update(id, updateData);
@@ -1511,8 +1522,8 @@ export default function QuestBoard() {
           className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 animate-fade-in-out"
           style={{
             backgroundColor: '#4ECDC4',
-            border: '4px solid #000',
-            boxShadow: '6px 6px 0px #000',
+            border: '4px solid '#000',
+            boxShadow: '6px 6px 0px '#000',
             maxWidth: '90%'
           }}
         >

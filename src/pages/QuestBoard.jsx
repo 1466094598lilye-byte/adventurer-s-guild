@@ -44,48 +44,11 @@ export default function QuestBoard() {
   const today = format(new Date(), 'yyyy-MM-dd');
   const currentHour = new Date().getHours();
 
-  // 辅助函数：解密任务数据（兼容明文）
-  const decryptQuest = async (quest) => {
-    try {
-      // 检查是否是加密数据（加密后的数据是 base64，长度通常 > 50）
-      // 如果 title 或 actionHint 是空的、很短的、或明显不是 base64，则认为是明文
-      const titleLooksEncrypted = quest.title && quest.title.length > 50 && /^[A-Za-z0-9+/=]+$/.test(quest.title);
-      const actionHintLooksEncrypted = quest.actionHint && quest.actionHint.length > 50 && /^[A-Za-z0-9+/=]+$/.test(quest.actionHint);
-      
-      if (!titleLooksEncrypted && !actionHintLooksEncrypted) {
-        // 如果看起来都不是加密数据，直接返回原始数据（明文）
-        return quest;
-      }
-
-      // 尝试解密
-      const { data } = await base44.functions.invoke('decryptQuestData', {
-        encryptedTitle: quest.title || '',
-        encryptedActionHint: quest.actionHint || ''
-      });
-      
-      return {
-        ...quest,
-        title: data.title,
-        actionHint: data.actionHint
-      };
-    } catch (error) {
-      // 解密失败，返回原始数据（可能是明文）
-      console.warn('解密失败，使用原始数据:', quest.id, error.message);
-      return quest;
-    }
-  };
-
-  // 辅助函数：批量解密任务
-  const decryptQuests = async (quests) => {
-    return await Promise.all(quests.map(quest => decryptQuest(quest)));
-  };
-
   const { data: quests = [], isLoading } = useQuery({
     queryKey: ['quests', today],
     queryFn: async () => {
       const allQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
-      // 解密后返回
-      return await decryptQuests(allQuests);
+      return allQuests;
     }
   });
 
@@ -186,12 +149,9 @@ export default function QuestBoard() {
         console.log(`数据库中找到 ${allRoutineQuests.length} 个标记为每日修炼的任务记录`);
         
         if (allRoutineQuests.length > 0) {
-          // 解密所有每日修炼任务
-          const decryptedRoutineQuests = await decryptQuests(allRoutineQuests);
-          
           // 去重：按 originalActionHint 去重，只保留每个独特任务的最新一条记录
           const uniqueRoutinesMap = new Map();
-          decryptedRoutineQuests.forEach(quest => {
+          allRoutineQuests.forEach(quest => {
             const key = quest.originalActionHint;
             if (key) {
               if (!uniqueRoutinesMap.has(key) || 
@@ -203,13 +163,10 @@ export default function QuestBoard() {
           
           console.log(`去重后识别出 ${uniqueRoutinesMap.size} 个不同的每日修炼任务`);
           
-          // 解密今日任务用于检查
-          const decryptedTodayQuests = await decryptQuests(todayQuests);
-          
           for (const [actionHint, templateQuest] of uniqueRoutinesMap) {
             console.log(`检查每日修炼任务: ${actionHint}`);
             
-            const alreadyExists = decryptedTodayQuests.some(
+            const alreadyExists = todayQuests.some(
               q => q.isRoutine && q.originalActionHint === actionHint
             );
             

@@ -931,6 +931,9 @@ export default function QuestBoard() {
   const handleCalendarUpdate = () => {
     queryClient.invalidateQueries(['quests']);
     queryClient.invalidateQueries(['hasLongTermQuests']);
+    
+    // 强制重新获取，确保立即更新
+    queryClient.refetchQueries(['hasLongTermQuests']);
   };
 
   const filteredQuests = quests.filter(quest => {

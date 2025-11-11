@@ -25,6 +25,10 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
         response_json_schema: schema
       });
 
+      console.log('=== AI 解析结果 ===');
+      console.log('任务数量:', result.tasks?.length || 0);
+      console.log('任务详情:', result.tasks);
+
       setParsedQuests(result.tasks || []);
     } catch (error) {
       console.error('解析失败:', error);
@@ -51,6 +55,9 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
     
     setIsCreating(true);
     try {
+      console.log('=== 开始创建大项目任务 ===');
+      console.log('待创建任务数量:', parsedQuests.length);
+      
       const projectName = language === 'zh' 
         ? `${format(new Date(), 'yyyy年MM月')}大项目计划`
         : `${format(new Date(), 'MMMM yyyy')} Long-term Project`;
@@ -69,22 +76,47 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
         status: 'active'
       });
 
+      console.log('项目创建成功，ID:', project.id);
+
       const currentYear = new Date().getFullYear();
+      const today = new Date();
 
       for (const quest of parsedQuests) {
+        console.log('\n--- 处理任务 ---');
+        console.log('原始 quest.date:', quest.date);
+        console.log('quest.date 类型:', typeof quest.date);
+        console.log('任务标题:', quest.title);
+        
+        // 确保有 date 字段
+        if (!quest.date) {
+          console.error('❌ 任务缺少 date 字段！', quest);
+          alert(`任务 "${quest.title}" 缺少日期字段，跳过创建`);
+          continue;
+        }
+
         // 将 MM-DD 格式转换为完整的 yyyy-MM-dd 格式
         let fullDate = quest.date;
-        if (quest.date && quest.date.length === 5 && quest.date.includes('-')) {
-          // 如果是 MM-DD 格式，添加年份
+        
+        // 检查是否是 MM-DD 格式（正好5个字符，包含一个 -）
+        if (quest.date.length === 5 && quest.date.includes('-')) {
+          console.log('检测到 MM-DD 格式，开始转换...');
           fullDate = `${currentYear}-${quest.date}`;
+          console.log('添加当前年份后:', fullDate);
           
           // 检查日期是否已经过去，如果是，使用明年
           const questDate = new Date(fullDate);
-          const today = new Date();
+          console.log('解析后的日期对象:', questDate);
+          console.log('今天的日期:', today);
+          
           if (questDate < today) {
             fullDate = `${currentYear + 1}-${quest.date}`;
+            console.log('日期已过，使用明年:', fullDate);
           }
+        } else {
+          console.log('非标准 MM-DD 格式，直接使用:', fullDate);
         }
+        
+        console.log('✅ 最终日期:', fullDate);
         
         // Encrypt quest info
         const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
@@ -92,7 +124,9 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
           actionHint: quest.actionHint
         });
         
-        await base44.entities.Quest.create({
+        console.log('加密完成');
+        
+        const createdQuest = await base44.entities.Quest.create({
           title: encrypted.encryptedTitle,
           actionHint: encrypted.encryptedActionHint,
           date: fullDate,
@@ -104,7 +138,11 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
           longTermProjectId: project.id,
           tags: []
         });
+        
+        console.log('✅ 任务创建成功！ID:', createdQuest.id, '| date:', createdQuest.date);
       }
+
+      console.log('=== 所有任务创建完成 ===');
 
       if (onQuestsCreated) {
         onQuestsCreated(parsedQuests.length);
@@ -112,7 +150,7 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
       
       onClose();
     } catch (error) {
-      console.error('创建任务失败:', error);
+      console.error('❌ 创建任务失败:', error);
       alert(t('questboard_alert_create_quest_failed'));
     }
     setIsCreating(false);
@@ -226,7 +264,13 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
                         <div className="flex items-center gap-2 mb-2">
                           <CalendarIcon className="w-4 h-4 flex-shrink-0" strokeWidth={3} />
                           <span className="font-black text-sm">
-                            {language === 'zh' ? quest.date.slice(5).replace('-', '月') + '日' : quest.date}
+                            {quest.date ? (
+                              language === 'zh' 
+                                ? quest.date.slice(5).replace('-', '月') + '日' 
+                                : quest.date
+                            ) : (
+                              <span style={{ color: '#FF6B35' }}>❌ 无日期</span>
+                            )}
                           </span>
                           <span
                             className="px-2 py-0.5 text-xs font-black"
@@ -263,7 +307,7 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
                         </label>
                         <input
                           type="text"
-                          value={quest.date}
+                          value={quest.date || ''}
                           onChange={(e) => handleUpdateQuest(index, 'date', e.target.value)}
                           className="w-full px-3 py-2 font-bold text-sm"
                           style={{ border: '2px solid #000' }}

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { X, Loader2, ChevronDown, ChevronUp, Edit2, Calendar as CalendarIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -70,7 +69,23 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
         status: 'active'
       });
 
+      const currentYear = new Date().getFullYear();
+
       for (const quest of parsedQuests) {
+        // 将 MM-DD 格式转换为完整的 yyyy-MM-dd 格式
+        let fullDate = quest.date;
+        if (quest.date && quest.date.length === 5 && quest.date.includes('-')) {
+          // 如果是 MM-DD 格式，添加年份
+          fullDate = `${currentYear}-${quest.date}`;
+          
+          // 检查日期是否已经过去，如果是，使用明年
+          const questDate = new Date(fullDate);
+          const today = new Date();
+          if (questDate < today) {
+            fullDate = `${currentYear + 1}-${quest.date}`;
+          }
+        }
+        
         // Encrypt quest info
         const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
           title: quest.title,
@@ -80,7 +95,7 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
         await base44.entities.Quest.create({
           title: encrypted.encryptedTitle,
           actionHint: encrypted.encryptedActionHint,
-          date: quest.date,
+          date: fullDate,
           difficulty: quest.difficulty,
           rarity: quest.rarity,
           status: 'todo',
@@ -252,8 +267,11 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
                           onChange={(e) => handleUpdateQuest(index, 'date', e.target.value)}
                           className="w-full px-3 py-2 font-bold text-sm"
                           style={{ border: '2px solid #000' }}
-                          placeholder="YYYY-MM-DD"
+                          placeholder="MM-DD"
                         />
+                        <p className="text-xs font-bold mt-1" style={{ color: '#666' }}>
+                          💡 {language === 'zh' ? '系统会自动补全年份' : 'System will auto-complete the year'}
+                        </p>
                       </div>
 
                       <div className="mb-3">

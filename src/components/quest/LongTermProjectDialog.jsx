@@ -156,6 +156,25 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
     setIsCreating(false);
   };
 
+  // 格式化日期显示
+  const formatDateDisplay = (dateStr) => {
+    if (!dateStr) return language === 'zh' ? '无日期' : 'No date';
+    
+    // 如果是 MM-DD 格式
+    if (dateStr.length === 5 && dateStr.includes('-')) {
+      if (language === 'zh') {
+        return dateStr.replace('-', '月') + '日'; // '11-11' → '11月11日'
+      } else {
+        const [month, day] = dateStr.split('-');
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${monthNames[parseInt(month) - 1]} ${day}`; // '11-11' → 'Nov 11'
+      }
+    }
+    
+    // 其他格式直接返回
+    return dateStr;
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
@@ -264,13 +283,7 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
                         <div className="flex items-center gap-2 mb-2">
                           <CalendarIcon className="w-4 h-4 flex-shrink-0" strokeWidth={3} />
                           <span className="font-black text-sm">
-                            {quest.date ? (
-                              language === 'zh' 
-                                ? quest.date.slice(5).replace('-', '月') + '日' 
-                                : quest.date
-                            ) : (
-                              <span style={{ color: '#FF6B35' }}>❌ 无日期</span>
-                            )}
+                            {formatDateDisplay(quest.date)}
                           </span>
                           <span
                             className="px-2 py-0.5 text-xs font-black"

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { X, Calendar as CalendarIcon, Trash2, Edit2, AlertTriangle, ChevronRight, ChevronDown, Plus, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -78,9 +79,16 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       for (const quest of longTermQuests) {
         await base44.entities.Quest.delete(quest.id);
       }
+      
+      // 强制通知父组件更新
       if (onQuestsUpdated) {
         onQuestsUpdated();
       }
+      
+      // 等待一下确保更新完成
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // 关闭对话框
       onClose();
     } catch (error) {
       console.error('删除失败:', error);

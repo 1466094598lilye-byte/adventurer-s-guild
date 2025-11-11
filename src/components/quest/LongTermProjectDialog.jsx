@@ -58,6 +58,8 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
     try {
       console.log('=== 开始创建大项目任务 ===');
       console.log('待创建任务数量:', parsedQuests.length);
+      console.log('当前日期（完整）:', new Date());
+      console.log('当前日期（格式化）:', format(new Date(), 'yyyy-MM-dd'));
       
       const projectName = language === 'zh' 
         ? `${format(new Date(), 'yyyy年MM月')}大项目计划`
@@ -80,7 +82,7 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
       console.log('项目创建成功，ID:', project.id);
 
       const currentYear = new Date().getFullYear();
-      const today = new Date();
+      const todayStr = format(new Date(), 'yyyy-MM-dd'); // 使用格式化的今天日期字符串
 
       for (const quest of parsedQuests) {
         console.log('\n--- 处理任务 ---');
@@ -100,19 +102,27 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
           fullDate = `${currentYear}-${quest.date}`;
           console.log('添加当前年份后:', fullDate);
           
-          const questDate = new Date(fullDate);
-          console.log('解析后的日期对象:', questDate);
-          console.log('今天的日期:', today);
+          // 将字符串日期转为Date对象，然后再转回字符串，确保格式一致
+          const questDateObj = new Date(fullDate + 'T00:00:00');
+          const todayDateObj = new Date(todayStr + 'T00:00:00');
           
-          if (questDate < today) {
+          console.log('任务日期对象:', questDateObj);
+          console.log('今天日期对象:', todayDateObj);
+          console.log('任务日期 < 今天？', questDateObj < todayDateObj);
+          
+          if (questDateObj < todayDateObj) {
             fullDate = `${currentYear + 1}-${quest.date}`;
-            console.log('日期已过，使用明年:', fullDate);
+            console.log('⚠️ 日期已过，使用明年:', fullDate);
+          } else {
+            console.log('✅ 日期是今天或未来，使用今年:', fullDate);
           }
         } else {
           console.log('非标准 MM-DD 格式，直接使用:', fullDate);
         }
         
         console.log('✅ 最终日期:', fullDate);
+        console.log('今天日期:', todayStr);
+        console.log('是否是今天？', fullDate === todayStr);
         
         // 加密任务标题和内容
         const { data: encryptedQuest } = await base44.functions.invoke('encryptQuestData', {
@@ -133,10 +143,14 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
           tags: []
         });
         
-        console.log('✅ 任务创建成功！ID:', createdQuest.id, '| date:', createdQuest.date);
+        console.log('✅ 任务创建成功！');
+        console.log('  - ID:', createdQuest.id);
+        console.log('  - date:', createdQuest.date);
+        console.log('  - 是否是今天的任务？', createdQuest.date === todayStr);
       }
 
       console.log('=== 所有任务创建完成 ===');
+      console.log('今天的日期是:', todayStr);
 
       if (onQuestsCreated) {
         onQuestsCreated(parsedQuests.length);

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { X, Loader2, Star, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -5,14 +6,28 @@ import { base44 } from '@/api/base44Client';
 export default function JointPraiseDialog({ project, onClose }) {
   const [praises, setPraises] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [decryptedProject, setDecryptedProject] = useState(null);
 
   useEffect(() => {
-    generateJointPraise();
+    decryptAndGeneratePraise();
   }, []);
 
-  const generateJointPraise = async () => {
+  const decryptAndGeneratePraise = async () => {
     setLoading(true);
     try {
+      // 先解密项目信息
+      const { data: decrypted } = await base44.functions.invoke('decryptProjectData', {
+        encryptedProjectName: project.projectName,
+        encryptedDescription: project.description
+      });
+      
+      setDecryptedProject({
+        ...project,
+        projectName: decrypted.projectName,
+        description: decrypted.description
+      });
+
+      // 然后生成表扬信
       const roles = [
         { name: '大长老', icon: '👴', color: '#C44569' },
         { name: '首席史诗书记官', icon: '📜', color: '#9B59B6' },
@@ -26,7 +41,7 @@ export default function JointPraiseDialog({ project, onClose }) {
 
       for (const role of roles) {
         const result = await base44.integrations.Core.InvokeLLM({
-          prompt: `你是【星陨纪元冒险者工会】的${role.name}。一位冒险者刚刚完成了整个大项目："${project.projectName}"的所有任务！这是一项跨越多天的重大成就。
+          prompt: `你是【星陨纪元冒险者工会】的${role.name}。一位冒险者刚刚完成了整个大项目："${decrypted.projectName}"的所有任务！这是一项跨越多天的重大成就。
 
 工会的所有高层正在联名为这位冒险者撰写一封表扬信，你需要以${role.name}的身份，写下你的那一段话。
 
@@ -45,7 +60,7 @@ ${role.name === '大长老' ? '见证者视角，关注长期成长和坚持的�
 4. **肯定过程**：强调坚持、规划、执行等品质
 5. **语气正式但温暖**：这是一封正式的表扬信
 
-请以${role.name}的身份，写下你对这位冒险者完成"${project.projectName}"的评价（严格2句话，40-60字）：`,
+请以${role.name}的身份，写下你对这位冒险者完成"${decrypted.projectName}"的评价（严格2句话，40-60字）：`,
           response_json_schema: {
             type: "object",
             properties: {
@@ -64,7 +79,9 @@ ${role.name === '大长老' ? '见证者视角，关注长期成长和坚持的�
 
       setPraises(generatedPraises);
     } catch (error) {
-      console.error('生成表扬信失败:', error);
+      console.error('解密或生成表扬信失败:', error);
+      // 如果解密失败，使用加密的项目名称
+      setDecryptedProject(project);
       setPraises([{
         role: '工会全体',
         icon: '🏛️',
@@ -119,7 +136,7 @@ ${role.name === '大长老' ? '见证者视角，关注长期成长和坚持的�
             }}
           >
             <p className="text-2xl font-black text-white">
-              {project.projectName}
+              {decryptedProject?.projectName || project.projectName}
             </p>
           </div>
           <p className="font-black text-lg">

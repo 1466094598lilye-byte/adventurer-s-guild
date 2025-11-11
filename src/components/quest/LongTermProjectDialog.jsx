@@ -56,14 +56,22 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
         ? `${format(new Date(), 'yyyy年MM月')}大项目计划`
         : `${format(new Date(), 'MMMM yyyy')} Long-term Project`;
       
-      const project = await base44.entities.LongTermProject.create({
+      const projectDescription = `${parsedQuests.length} ${language === 'zh' ? '项史诗委托' : 'epic quests'}`;
+      
+      // Encrypt project info
+      const { data: encryptedProject } = await base44.functions.invoke('encryptProjectData', {
         projectName: projectName,
-        description: `${parsedQuests.length} ${language === 'zh' ? '项史诗委托' : 'epic quests'}`,
+        description: projectDescription
+      });
+      
+      const project = await base44.entities.LongTermProject.create({
+        projectName: encryptedProject.encryptedProjectName,
+        description: encryptedProject.encryptedDescription,
         status: 'active'
       });
 
       for (const quest of parsedQuests) {
-        // 加密后再创建
+        // Encrypt quest info
         const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
           title: quest.title,
           actionHint: quest.actionHint

@@ -122,7 +122,7 @@ export default function QuestBoard() {
     initialData: false,
   });
 
-  // 日更逻辑：未完成任务顺延 + 明日规划任务创建 + 每日修炼任务生成
+  // 日更逻辑：未完成任务顺延 + 明日规划任务创建 + 每日修炼任务生成 + 清理旧任务
   useEffect(() => {
     const handleDayRollover = async () => {
       if (!user) return;
@@ -137,7 +137,34 @@ export default function QuestBoard() {
       hasProcessedDayRollover.current = rolloverKey;
 
       try {
-        // 1. 处理昨天未完成的任务（顺延到今天）
+        // 1. 清理48小时前的已完成任务
+        console.log('=== 开始清理旧任务 ===');
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
+        
+        console.log('48小时前的时间:', twoDaysAgo.toISOString());
+        
+        // 查询所有已完成的任务
+        const doneQuests = await base44.entities.Quest.filter({ status: 'done' }, '-updated_date', 500);
+        console.log('找到的已完成任务数量:', doneQuests.length);
+        
+        let deletedCount = 0;
+        for (const quest of doneQuests) {
+          // 判断是否超过48小时
+          const questUpdatedDate = new Date(quest.updated_date);
+          if (questUpdatedDate < twoDaysAgo) {
+            await base44.entities.Quest.delete(quest.id);
+            deletedCount++;
+          }
+        }
+        
+        if (deletedCount > 0) {
+          console.log(`✅ 已清理 ${deletedCount} 个48小时前的已完成任务`);
+        } else {
+          console.log('✅ 无需清理旧任务');
+        }
+
+        // 2. 处理昨天未完成的任务（顺延到今天）
         const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
         const oldQuests = await base44.entities.Quest.filter({ date: yesterday, status: 'todo' });
         
@@ -158,7 +185,7 @@ export default function QuestBoard() {
           }
         }
 
-        // 2. 处理明日规划任务（创建为今日任务）
+        // 3. 处理明日规划任务（创建为今日任务）
         const nextDayPlanned = user.nextDayPlannedQuests || [];
         const lastPlanned = user.lastPlannedDate;
 
@@ -195,7 +222,7 @@ export default function QuestBoard() {
           setTimeout(() => setToast(null), 3000);
         }
 
-        // 3. 处理每日修炼任务（自动生成今日任务，保持原有评级）
+        // 4. 处理每日修炼任务（自动生成今日任务，保持原有评级）
         console.log('=== 开始处理每日修炼任务 ===');
         
         const todayQuests = await base44.entities.Quest.filter({ date: today });
@@ -208,7 +235,7 @@ export default function QuestBoard() {
           // 去重：按 originalActionHint 去重，只保留每个独特任务的最新一条记录
           const uniqueRoutinesMap = new Map();
           for (const quest of allRoutineQuests) {
-            let decryptedActionHint = quest.actionHint; // Assume it's encrypted
+            let decryptedActionHint = quest.actionHint;
             try {
               const { data } = await base44.functions.invoke('decryptQuestData', {
                 encryptedActionHint: quest.actionHint
@@ -216,14 +243,10 @@ export default function QuestBoard() {
               decryptedActionHint = data.actionHint;
             } catch (error) {
               console.warn(`Failed to decrypt actionHint for routine quest ${quest.id}, using raw value:`, error);
-              // Fallback to original if decryption fails. This might be raw or incorrectly encrypted.
             }
 
             const key = decryptedActionHint;
             if (key) {
-              // We need to compare based on the 'originalActionHint' which should be plaintext
-              // For new routines created, 'originalActionHint' should be plain.
-              // For old ones, if 'originalActionHint' wasn't set, we fall back to decrypted actionHint.
               const effectiveKey = quest.originalActionHint || key;
               if (!uniqueRoutinesMap.has(effectiveKey) || 
                   new Date(quest.created_date) > new Date(uniqueRoutinesMap.get(effectiveKey).created_date)) {
@@ -238,7 +261,7 @@ export default function QuestBoard() {
             console.log(`检查每日修炼任务: ${actionHintPlain}`);
             
             const alreadyExists = todayQuests.some(
-              q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === templateQuest.actionHint) // Check against decrypted or original encrypted
+              q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === templateQuest.actionHint)
             );
             
             if (alreadyExists) {
@@ -275,7 +298,7 @@ export default function QuestBoard() {
               // 加密后创建今日的每日修炼任务
               const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
                 title: result.title,
-                actionHint: actionHintPlain // Use the plaintext action hint for creation
+                actionHint: actionHintPlain
               });
               
               await base44.entities.Quest.create({
@@ -287,7 +310,7 @@ export default function QuestBoard() {
                 status: 'todo',
                 source: 'routine',
                 isRoutine: true,
-                originalActionHint: actionHintPlain, // Store the plaintext action hint for future routine generation
+                originalActionHint: actionHintPlain,
                 tags: []
               });
               

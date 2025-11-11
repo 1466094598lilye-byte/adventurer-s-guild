@@ -48,7 +48,32 @@ export default function QuestBoard() {
     queryKey: ['quests', today],
     queryFn: async () => {
       const allQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
-      return allQuests;
+      
+      // 批量解密所有任务
+      const decryptedQuests = await Promise.all(
+        allQuests.map(async (quest) => {
+          try {
+            const { data } = await base44.functions.invoke('decryptQuestData', {
+              encryptedTitle: quest.title,
+              encryptedActionHint: quest.actionHint
+            });
+            
+            return {
+              ...quest,
+              title: data.title,
+              actionHint: data.actionHint
+            };
+          } catch (error) {
+            console.error('解密任务失败:', quest.id, error);
+            // 如果解密失败，返回原始数据（可能是明文或加密失败）
+            // 在这种情况下，title和actionHint会保持其原始值（可能是加密文本）
+            // 如果原始数据不是加密的，那么它也会正常显示
+            return quest; 
+          }
+        })
+      );
+      
+      return decryptedQuests;
     }
   });
 
@@ -151,38 +176,53 @@ export default function QuestBoard() {
         if (allRoutineQuests.length > 0) {
           // 去重：按 originalActionHint 去重，只保留每个独特任务的最新一条记录
           const uniqueRoutinesMap = new Map();
-          allRoutineQuests.forEach(quest => {
-            const key = quest.originalActionHint;
+          for (const quest of allRoutineQuests) {
+            let decryptedActionHint = quest.actionHint; // Assume it's encrypted
+            try {
+              const { data } = await base44.functions.invoke('decryptQuestData', {
+                encryptedActionHint: quest.actionHint
+              });
+              decryptedActionHint = data.actionHint;
+            } catch (error) {
+              console.warn(`Failed to decrypt actionHint for routine quest ${quest.id}, using raw value:`, error);
+              // Fallback to original if decryption fails. This might be raw or incorrectly encrypted.
+            }
+
+            const key = decryptedActionHint;
             if (key) {
-              if (!uniqueRoutinesMap.has(key) || 
-                  new Date(quest.created_date) > new Date(uniqueRoutinesMap.get(key).created_date)) {
-                uniqueRoutinesMap.set(key, quest);
+              // We need to compare based on the 'originalActionHint' which should be plaintext
+              // For new routines created, 'originalActionHint' should be plain.
+              // For old ones, if 'originalActionHint' wasn't set, we fall back to decrypted actionHint.
+              const effectiveKey = quest.originalActionHint || key;
+              if (!uniqueRoutinesMap.has(effectiveKey) || 
+                  new Date(quest.created_date) > new Date(uniqueRoutinesMap.get(effectiveKey).created_date)) {
+                uniqueRoutinesMap.set(effectiveKey, { ...quest, decryptedActionHint: key });
               }
             }
-          });
+          }
           
           console.log(`去重后识别出 ${uniqueRoutinesMap.size} 个不同的每日修炼任务`);
           
-          for (const [actionHint, templateQuest] of uniqueRoutinesMap) {
-            console.log(`检查每日修炼任务: ${actionHint}`);
+          for (const [actionHintPlain, templateQuest] of uniqueRoutinesMap) {
+            console.log(`检查每日修炼任务: ${actionHintPlain}`);
             
             const alreadyExists = todayQuests.some(
-              q => q.isRoutine && q.originalActionHint === actionHint
+              q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === templateQuest.actionHint) // Check against decrypted or original encrypted
             );
             
             if (alreadyExists) {
-              console.log(`今天已存在，跳过: ${actionHint}`);
+              console.log(`今天已存在，跳过: ${actionHintPlain}`);
               continue;
             }
             
-            console.log(`今天还没有，开始生成: ${actionHint}`);
+            console.log(`今天还没有，开始生成: ${actionHintPlain}`);
             
             try {
               // 只重新生成 RPG 标题，保持原有的难度和稀有度
               const result = await base44.integrations.Core.InvokeLLM({
                 prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
 
-**当前冒险者每日修炼内容：** ${actionHint}
+**当前冒险者每日修炼内容：** ${actionHintPlain}
 
 请为这个每日修炼任务生成**全新的**RPG风格标题（只需要标题，不需要重新评定难度）。
 
@@ -204,7 +244,7 @@ export default function QuestBoard() {
               // 加密后创建今日的每日修炼任务
               const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
                 title: result.title,
-                actionHint: actionHint
+                actionHint: actionHintPlain // Use the plaintext action hint for creation
               });
               
               await base44.entities.Quest.create({
@@ -216,13 +256,13 @@ export default function QuestBoard() {
                 status: 'todo',
                 source: 'routine',
                 isRoutine: true,
-                originalActionHint: actionHint,
+                originalActionHint: actionHintPlain, // Store the plaintext action hint for future routine generation
                 tags: []
               });
               
-              console.log(`成功创建今日每日修炼任务: ${actionHint}，保持评级 ${templateQuest.difficulty}`);
+              console.log(`成功创建今日每日修炼任务: ${actionHintPlain}，保持评级 ${templateQuest.difficulty}`);
             } catch (error) {
-              console.error(`生成每日修炼任务失败: ${actionHint}`, error);
+              console.error(`生成每日修炼任务失败: ${actionHintPlain}`, error);
             }
           }
           
@@ -283,11 +323,11 @@ export default function QuestBoard() {
       // 如果更新的数据包含 title 或 actionHint，需要先加密
       const updateData = { ...data };
       
-      if (data.title || data.actionHint || data.originalActionHint) {
+      if (data.title !== undefined || data.actionHint !== undefined || data.originalActionHint !== undefined) {
         const toEncrypt = {
-          title: data.title || '',
-          actionHint: data.actionHint || '',
-          originalActionHint: data.originalActionHint || ''
+          title: data.title,
+          actionHint: data.actionHint,
+          originalActionHint: data.originalActionHint
         };
         
         const { data: encrypted } = await base44.functions.invoke('encryptQuestData', toEncrypt);
@@ -519,7 +559,28 @@ export default function QuestBoard() {
       
       try {
         // 直接从服务器获取最新数据，不依赖缓存
-        const updatedQuests = await base44.entities.Quest.filter({ date: today });
+        // Note: The `queryFn` for 'quests' decrypts data. So `updatedQuests` will have plaintext.
+        const updatedQuests = await queryClient.fetchQuery({
+          queryKey: ['quests', today],
+          queryFn: async () => {
+            const allQuests = await base44.entities.Quest.filter({ date: today });
+            const decryptedQuests = await Promise.all(
+              allQuests.map(async (q) => {
+                try {
+                  const { data } = await base44.functions.invoke('decryptQuestData', {
+                    encryptedTitle: q.title,
+                    encryptedActionHint: q.actionHint
+                  });
+                  return { ...q, title: data.title, actionHint: data.actionHint };
+                } catch (error) {
+                  console.warn('Failed to decrypt quest during all-done check:', q.id, error);
+                  return q; // Return original if decryption fails
+                }
+              })
+            );
+            return decryptedQuests;
+          }
+        });
         console.log('找到的任务数量:', updatedQuests.length);
         console.log('任务列表:', updatedQuests.map(q => ({ 
           title: q.title, 

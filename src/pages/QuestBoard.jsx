@@ -85,13 +85,39 @@ export default function QuestBoard() {
   const { data: hasAnyLongTermQuests = false } = useQuery({
     queryKey: ['hasLongTermQuests'],
     queryFn: async () => {
-      const today = format(new Date(), 'yyyy-MM-dd');
-      // 查询未完成的大项目任务（今天及以后的，且状态不是 done）
-      const longTermQuests = await base44.entities.Quest.filter({ 
+      console.log('=== 检查是否有未完成的大项目任务 ===');
+      
+      // 查询所有大项目任务（不管状态）
+      const allLongTermQuests = await base44.entities.Quest.filter({ 
+        isLongTermProject: true 
+      }, '-date', 100);
+      
+      console.log('所有大项目任务数量:', allLongTermQuests.length);
+      console.log('所有大项目任务:', allLongTermQuests.map(q => ({
+        id: q.id,
+        date: q.date,
+        status: q.status,
+        title: q.title?.substring(0, 50) // 只显示前50个字符
+      })));
+      
+      // 查询未完成的大项目任务
+      const todoLongTermQuests = await base44.entities.Quest.filter({ 
         isLongTermProject: true, 
         status: 'todo' 
-      }, '-date', 1);
-      return longTermQuests.length > 0;
+      }, '-date', 100);
+      
+      console.log('未完成的大项目任务数量:', todoLongTermQuests.length);
+      console.log('未完成的大项目任务:', todoLongTermQuests.map(q => ({
+        id: q.id,
+        date: q.date,
+        status: q.status,
+        title: q.title?.substring(0, 50)
+      })));
+      
+      const hasUnfinished = todoLongTermQuests.length > 0;
+      console.log('是否显示按钮:', hasUnfinished);
+      
+      return hasUnfinished;
     },
     initialData: false,
   });

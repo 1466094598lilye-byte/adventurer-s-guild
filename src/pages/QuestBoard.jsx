@@ -137,7 +137,7 @@ export default function QuestBoard() {
       hasProcessedDayRollover.current = rolloverKey;
 
       try {
-        // 1. 清理48小时前的已完成任务
+        // 1. 清理48小时前的已完成任务（排除大项目任务）
         console.log('=== 开始清理旧任务 ===');
         const twoDaysAgo = new Date();
         twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
@@ -149,8 +149,15 @@ export default function QuestBoard() {
         console.log('找到的已完成任务数量:', doneQuests.length);
         
         let deletedCount = 0;
+        let skippedLongTermCount = 0;
         for (const quest of doneQuests) {
-          // 判断是否超过48小时
+          // 跳过大项目任务
+          if (quest.isLongTermProject) {
+            skippedLongTermCount++;
+            continue;
+          }
+          
+          // 判断普通任务是否超过48小时
           const questUpdatedDate = new Date(quest.updated_date);
           if (questUpdatedDate < twoDaysAgo) {
             await base44.entities.Quest.delete(quest.id);
@@ -162,6 +169,10 @@ export default function QuestBoard() {
           console.log(`✅ 已清理 ${deletedCount} 个48小时前的已完成任务`);
         } else {
           console.log('✅ 无需清理旧任务');
+        }
+        
+        if (skippedLongTermCount > 0) {
+          console.log(`ℹ️ 跳过 ${skippedLongTermCount} 个大项目任务（不自动清理）`);
         }
 
         // 2. 处理昨天未完成的任务（顺延到今天）

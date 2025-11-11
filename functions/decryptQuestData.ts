@@ -9,25 +9,26 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { encryptedTitle, encryptedActionHint } = await req.json();
-    
+    const body = await req.json();
+    const { encryptedTitle, encryptedActionHint } = body;
+
     if (!encryptedTitle || !encryptedActionHint) {
-      return Response.json({ error: 'Missing encrypted data' }, { status: 400 });
+      return Response.json({ 
+        error: 'Missing required fields: encryptedTitle and encryptedActionHint' 
+      }, { status: 400 });
     }
 
+    // 获取加密密钥
     const encryptionKey = Deno.env.get('ENCRYPTION_KEY');
     if (!encryptionKey) {
       return Response.json({ error: 'Encryption key not configured' }, { status: 500 });
     }
 
-    // 使用 Web Crypto API 进行 AES-GCM 解密
-    const decoder = new TextDecoder();
-    
-    // 从密钥字符串生成解密密钥
-    const encoder = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey(
+    // 导入密钥
+    const keyData = new TextEncoder().encode(encryptionKey);
+    const key = await crypto.subtle.importKey(
       'raw',
-      encoder.encode(encryptionKey.padEnd(32, '0').slice(0, 32)),
+      keyData,
       { name: 'AES-GCM' },
       false,
       ['decrypt']
@@ -35,39 +36,41 @@ Deno.serve(async (req) => {
 
     // 解密 title
     const titleData = atob(encryptedTitle);
-    const titleBytes = new Uint8Array(titleData.length);
-    for (let i = 0; i < titleData.length; i++) {
-      titleBytes[i] = titleData.charCodeAt(i);
+    const titleIv = new Uint8Array(12);
+    for (let i = 0; i < 12; i++) {
+      titleIv[i] = titleData.charCodeAt(i);
     }
-    const titleIv = titleBytes.slice(0, 12);
-    const titleCiphertext = titleBytes.slice(12);
+    const titleCiphertext = new Uint8Array(titleData.length - 12);
+    for (let i = 0; i < titleData.length - 12; i++) {
+      titleCiphertext[i] = titleData.charCodeAt(i + 12);
+    }
     
-    const decryptedTitleBuffer = await crypto.subtle.decrypt(
+    const titleDecrypted = await crypto.subtle.decrypt(
       { name: 'AES-GCM', iv: titleIv },
-      keyMaterial,
+      key,
       titleCiphertext
     );
-    const title = decoder.decode(decryptedTitleBuffer);
 
     // 解密 actionHint
-    const hintData = atob(encryptedActionHint);
-    const hintBytes = new Uint8Array(hintData.length);
-    for (let i = 0; i < hintData.length; i++) {
-      hintBytes[i] = hintData.charCodeAt(i);
+    const actionHintData = atob(encryptedActionHint);
+    const actionHintIv = new Uint8Array(12);
+    for (let i = 0; i < 12; i++) {
+      actionHintIv[i] = actionHintData.charCodeAt(i);
     }
-    const hintIv = hintBytes.slice(0, 12);
-    const hintCiphertext = hintBytes.slice(12);
+    const actionHintCiphertext = new Uint8Array(actionHintData.length - 12);
+    for (let i = 0; i < actionHintData.length - 12; i++) {
+      actionHintCiphertext[i] = actionHintData.charCodeAt(i + 12);
+    }
     
-    const decryptedHintBuffer = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: hintIv },
-      keyMaterial,
-      hintCiphertext
+    const actionHintDecrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: actionHintIv },
+      key,
+      actionHintCiphertext
     );
-    const actionHint = decoder.decode(decryptedHintBuffer);
 
     return Response.json({
-      title,
-      actionHint
+      title: new TextDecoder().decode(titleDecrypted),
+      actionHint: new TextDecoder().decode(actionHintDecrypted)
     });
 
   } catch (error) {

@@ -9,24 +9,26 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { title, actionHint } = await req.json();
-    
+    const body = await req.json();
+    const { title, actionHint } = body;
+
     if (!title || !actionHint) {
-      return Response.json({ error: 'Missing title or actionHint' }, { status: 400 });
+      return Response.json({ 
+        error: 'Missing required fields: title and actionHint' 
+      }, { status: 400 });
     }
 
+    // 获取加密密钥
     const encryptionKey = Deno.env.get('ENCRYPTION_KEY');
     if (!encryptionKey) {
       return Response.json({ error: 'Encryption key not configured' }, { status: 500 });
     }
 
-    // 使用 Web Crypto API 进行 AES-GCM 加密
-    const encoder = new TextEncoder();
-    
-    // 从密钥字符串生成加密密钥
-    const keyMaterial = await crypto.subtle.importKey(
+    // 导入密钥
+    const keyData = new TextEncoder().encode(encryptionKey);
+    const key = await crypto.subtle.importKey(
       'raw',
-      encoder.encode(encryptionKey.padEnd(32, '0').slice(0, 32)),
+      keyData,
       { name: 'AES-GCM' },
       false,
       ['encrypt']
@@ -34,26 +36,29 @@ Deno.serve(async (req) => {
 
     // 加密 title
     const titleIv = crypto.getRandomValues(new Uint8Array(12));
-    const encryptedTitleBuffer = await crypto.subtle.encrypt(
+    const titleEncrypted = await crypto.subtle.encrypt(
       { name: 'AES-GCM', iv: titleIv },
-      keyMaterial,
-      encoder.encode(title)
-    );
-    const encryptedTitle = btoa(
-      String.fromCharCode(...titleIv) + 
-      String.fromCharCode(...new Uint8Array(encryptedTitleBuffer))
+      key,
+      new TextEncoder().encode(title)
     );
 
     // 加密 actionHint
-    const hintIv = crypto.getRandomValues(new Uint8Array(12));
-    const encryptedHintBuffer = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv: hintIv },
-      keyMaterial,
-      encoder.encode(actionHint)
+    const actionHintIv = crypto.getRandomValues(new Uint8Array(12));
+    const actionHintEncrypted = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: actionHintIv },
+      key,
+      new TextEncoder().encode(actionHint)
     );
+
+    // 转换为 Base64
+    const encryptedTitle = btoa(
+      String.fromCharCode(...titleIv) + 
+      String.fromCharCode(...new Uint8Array(titleEncrypted))
+    );
+
     const encryptedActionHint = btoa(
-      String.fromCharCode(...hintIv) + 
-      String.fromCharCode(...new Uint8Array(encryptedHintBuffer))
+      String.fromCharCode(...actionHintIv) + 
+      String.fromCharCode(...new Uint8Array(actionHintEncrypted))
     );
 
     return Response.json({

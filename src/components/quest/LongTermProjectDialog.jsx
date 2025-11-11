@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { X, Loader2, ChevronDown, ChevronUp, Edit2, Calendar as CalendarIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -64,9 +65,15 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
       
       const projectDescription = `${parsedQuests.length} ${language === 'zh' ? '项史诗委托' : 'epic quests'}`;
       
-      const project = await base44.entities.LongTermProject.create({
+      // 加密项目名称和描述
+      const { data: encryptedProject } = await base44.functions.invoke('encryptProjectData', {
         projectName: projectName,
-        description: projectDescription,
+        description: projectDescription
+      });
+      
+      const project = await base44.entities.LongTermProject.create({
+        projectName: encryptedProject.encryptedProjectName,
+        description: encryptedProject.encryptedDescription,
         status: 'active'
       });
 
@@ -107,9 +114,15 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
         
         console.log('✅ 最终日期:', fullDate);
         
-        const createdQuest = await base44.entities.Quest.create({
+        // 加密任务标题和内容
+        const { data: encryptedQuest } = await base44.functions.invoke('encryptQuestData', {
           title: quest.title,
-          actionHint: quest.actionHint,
+          actionHint: quest.actionHint
+        });
+        
+        const createdQuest = await base44.entities.Quest.create({
+          title: encryptedQuest.encryptedTitle,
+          actionHint: encryptedQuest.encryptedActionHint,
           date: fullDate,
           difficulty: quest.difficulty,
           rarity: quest.rarity,

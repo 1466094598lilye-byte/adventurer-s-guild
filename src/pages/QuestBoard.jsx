@@ -1,7 +1,6 @@
-
-import { useState, useEffect, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect, useRef } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Filter, Loader2, Sparkles, Coffee, Briefcase, ChevronDown, ChevronUp, Check, Plus, Calendar as CalendarIcon } from 'lucide-react';
 import QuestCard from '../components/quest/QuestCard';
 import PraiseDialog from '../components/quest/PraiseDialog';
@@ -57,13 +56,10 @@ export default function QuestBoard() {
         return quest;
       }
 
-      // If title or actionHint are null/undefined, treat them as empty strings for decryption
-      const encryptedTitle = quest.title || '';
-      const encryptedActionHint = quest.actionHint || '';
-
+      // 尝试解密
       const { data } = await base44.functions.invoke('decryptQuestData', {
-        encryptedTitle: encryptedTitle,
-        encryptedActionHint: encryptedActionHint
+        encryptedTitle: quest.title || '',
+        encryptedActionHint: quest.actionHint || ''
       });
       
       return {
@@ -100,7 +96,7 @@ export default function QuestBoard() {
   const { data: hasAnyLongTermQuests = false } = useQuery({
     queryKey: ['hasLongTermQuests'],
     queryFn: async () => {
-      const longTermQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-created_date', 1);
+      const longTermQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 1);
       return longTermQuests.length > 0;
     },
     initialData: false,
@@ -1522,8 +1518,8 @@ export default function QuestBoard() {
           className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 animate-fade-in-out"
           style={{
             backgroundColor: '#4ECDC4',
-            border: '4px solid '#000',
-            boxShadow: '6px 6px 0px '#000',
+            border: '4px solid #000',
+            boxShadow: '6px 6px 0px #000',
             maxWidth: '90%'
           }}
         >

@@ -1040,7 +1040,7 @@ export default function QuestBoard() {
                           className="px-2 py-1 text-sm font-black flex-shrink-0"
                           style={{
                             backgroundColor: difficultyColors[quest.difficulty],
-                            color: quest.difficulty === 'S' && quest.difficulty === 'S' ? '#FFE66D' : '#000',
+                            color: quest.difficulty === 'S' ? '#FFE66D' : '#000',
                             border: '2px solid #000'
                           }}
                         >

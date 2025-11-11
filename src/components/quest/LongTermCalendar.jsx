@@ -22,44 +22,6 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const { t, language } = useLanguage();
 
-  // 辅助函数：解密任务（兼容明文）
-  const decryptQuest = async (quest) => {
-    try {
-      // Check if title or actionHint are non-empty strings that resemble base64 (encrypted)
-      // Base64 strings typically have a length that is a multiple of 4, use A-Za-z0-9+/=
-      // A typical encrypted string would be significantly longer than a short plaintext.
-      const titleLooksEncrypted = quest.title && typeof quest.title === 'string' && quest.title.length > 30 && quest.title.length % 4 === 0 && /^[A-Za-z0-9+/=]+$/.test(quest.title);
-      const actionHintLooksEncrypted = quest.actionHint && typeof quest.actionHint === 'string' && quest.actionHint.length > 30 && quest.actionHint.length % 4 === 0 && /^[A-Za-z0-9+/=]+$/.test(quest.actionHint);
-      
-      if (!titleLooksEncrypted && !actionHintLooksEncrypted) {
-        // If neither looks encrypted, return the original quest data as is (assumed plaintext)
-        return quest;
-      }
-
-      // If at least one looks encrypted, attempt decryption
-      const { data } = await base44.functions.invoke('decryptQuestData', {
-        encryptedTitle: titleLooksEncrypted ? quest.title : '', // Only send if it looks encrypted
-        encryptedActionHint: actionHintLooksEncrypted ? quest.actionHint : '' // Only send if it looks encrypted
-      });
-
-      return {
-        ...quest,
-        title: titleLooksEncrypted ? data.title : quest.title, // Use decrypted if sent, else original
-        actionHint: actionHintLooksEncrypted ? data.actionHint : quest.actionHint // Use decrypted if sent, else original
-      };
-    } catch (error) {
-      // If decryption fails, return original quest data (might be plaintext or malformed encrypted)
-      console.warn('Decryption failed for quest:', quest.id, 'Error:', error.message);
-      return quest;
-    }
-  };
-
-  // 辅助函数：批量解密任务
-  const decryptQuests = async (quests) => {
-    const validQuests = quests.filter(quest => quest != null);
-    return await Promise.all(validQuests.map(quest => decryptQuest(quest)));
-  };
-
   useEffect(() => {
     loadLongTermQuests();
   }, []);
@@ -67,8 +29,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const loadLongTermQuests = async () => {
     try {
       const quests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-      // 解密后设置
-      setLongTermQuests(await decryptQuests(quests));
+      setLongTermQuests(quests);
     } catch (error) {
       console.error('加载大项目任务失败:', error);
     }
@@ -134,8 +95,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
         // Filter tasks for the selected date from the latest data
         const allQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-        const decryptedQuests = await decryptQuests(allQuests); // Decrypt
-        const updatedQuestsForDate = decryptedQuests.filter(q => q.date === dateStr);
+        const updatedQuestsForDate = allQuests.filter(q => q.date === dateStr);
         
         setSelectedDateQuests(updatedQuestsForDate);
         
@@ -168,24 +128,17 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         prompt: prompt,
         response_json_schema: schema
       });
-
-      // Encrypt and update
-      const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
+      
+      await base44.entities.Quest.update(quest.id, {
         title: result.title,
         actionHint: newActionHint
       });
-      
-      await base44.entities.Quest.update(quest.id, {
-        title: encrypted.encryptedTitle,
-        actionHint: encrypted.encryptedActionHint
-      });
 
       const updatedQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-      const decryptedQuests = await decryptQuests(updatedQuests); // Decrypt
-      setLongTermQuests(decryptedQuests);
+      setLongTermQuests(updatedQuests);
 
       if (selectedDate) {
-        const updatedGroupedByDate = decryptedQuests.reduce((acc, questItem) => {
+        const updatedGroupedByDate = updatedQuests.reduce((acc, questItem) => {
           if (!acc[questItem.date]) {
             acc[questItem.date] = [];
           }
@@ -231,15 +184,9 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         response_json_schema: schema
       });
 
-      // Encrypt and create
-      const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
-        title: result.title,
-        actionHint: newTaskInput.trim()
-      });
-
       await base44.entities.Quest.create({
-        title: encrypted.encryptedTitle,
-        actionHint: encrypted.encryptedActionHint,
+        title: result.title,
+        actionHint: newTaskInput.trim(),
         date: addingToDate,
         difficulty: 'S',
         rarity: 'Epic',
@@ -250,7 +197,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       });
 
       const updatedQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-      setLongTermQuests(await decryptQuests(updatedQuests)); // Decrypt
+      setLongTermQuests(updatedQuests);
 
       // Auto expand the date that was just added
       if (!expandedDates.includes(addingToDate)) {

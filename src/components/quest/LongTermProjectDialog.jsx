@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { X, Loader2, ChevronDown, ChevronUp, Edit2, Calendar as CalendarIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -64,15 +65,9 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
       
       const projectDescription = `${parsedQuests.length} ${language === 'zh' ? '项史诗委托' : 'epic quests'}`;
       
-      // Encrypt project info
-      const { data: encryptedProject } = await base44.functions.invoke('encryptProjectData', {
-        projectName: projectName,
-        description: projectDescription
-      });
-      
       const project = await base44.entities.LongTermProject.create({
-        projectName: encryptedProject.encryptedProjectName,
-        description: encryptedProject.encryptedDescription,
+        projectName: projectName,
+        description: projectDescription,
         status: 'active'
       });
 
@@ -87,23 +82,19 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
         console.log('quest.date 类型:', typeof quest.date);
         console.log('任务标题:', quest.title);
         
-        // 确保有 date 字段
         if (!quest.date) {
           console.error('❌ 任务缺少 date 字段！', quest);
           alert(`任务 "${quest.title}" 缺少日期字段，跳过创建`);
           continue;
         }
 
-        // 将 MM-DD 格式转换为完整的 yyyy-MM-dd 格式
         let fullDate = quest.date;
         
-        // 检查是否是 MM-DD 格式（正好5个字符，包含一个 -）
         if (quest.date.length === 5 && quest.date.includes('-')) {
           console.log('检测到 MM-DD 格式，开始转换...');
           fullDate = `${currentYear}-${quest.date}`;
           console.log('添加当前年份后:', fullDate);
           
-          // 检查日期是否已经过去，如果是，使用明年
           const questDate = new Date(fullDate);
           console.log('解析后的日期对象:', questDate);
           console.log('今天的日期:', today);
@@ -118,17 +109,9 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
         
         console.log('✅ 最终日期:', fullDate);
         
-        // Encrypt quest info
-        const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
-          title: quest.title,
-          actionHint: quest.actionHint
-        });
-        
-        console.log('加密完成');
-        
         const createdQuest = await base44.entities.Quest.create({
-          title: encrypted.encryptedTitle,
-          actionHint: encrypted.encryptedActionHint,
+          title: quest.title,
+          actionHint: quest.actionHint,
           date: fullDate,
           difficulty: quest.difficulty,
           rarity: quest.rarity,
@@ -156,22 +139,19 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
     setIsCreating(false);
   };
 
-  // 格式化日期显示
   const formatDateDisplay = (dateStr) => {
     if (!dateStr) return language === 'zh' ? '无日期' : 'No date';
     
-    // 如果是 MM-DD 格式
     if (dateStr.length === 5 && dateStr.includes('-')) {
       if (language === 'zh') {
-        return dateStr.replace('-', '月') + '日'; // '11-11' → '11月11日'
+        return dateStr.replace('-', '月') + '日';
       } else {
         const [month, day] = dateStr.split('-');
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        return `${monthNames[parseInt(month) - 1]} ${day}`; // '11-11' → 'Nov 11'
+        return `${monthNames[parseInt(month) - 1]} ${day}`;
       }
     }
     
-    // 其他格式直接返回
     return dateStr;
   };
 

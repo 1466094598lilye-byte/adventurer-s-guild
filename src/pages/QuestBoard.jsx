@@ -137,7 +137,7 @@ export default function QuestBoard() {
       hasProcessedDayRollover.current = rolloverKey;
 
       try {
-        // 1. 清理48小时前的已完成任务（排除大项目任务）
+        // 1. 清理48小时前的已完成任务（排除大项目任务 + 保护每日修炼模板）
         console.log('=== 开始清理旧任务 ===');
         const twoDaysAgo = new Date();
         twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
@@ -148,16 +148,43 @@ export default function QuestBoard() {
         const doneQuests = await base44.entities.Quest.filter({ status: 'done' }, '-updated_date', 500);
         console.log('找到的已完成任务数量:', doneQuests.length);
         
+        // 识别所有每日修炼任务，按 originalActionHint 分组，每组保留最新的一条作为模板
+        const routineQuestsMap = new Map();
+        for (const quest of doneQuests) {
+          if (quest.isRoutine && quest.originalActionHint) {
+            const existing = routineQuestsMap.get(quest.originalActionHint);
+            if (!existing || new Date(quest.created_date) > new Date(existing.created_date)) {
+              routineQuestsMap.set(quest.originalActionHint, quest);
+            }
+          }
+        }
+        
+        console.log(`识别出 ${routineQuestsMap.size} 个不同的每日修炼任务，每个将保留最新的模板`);
+        
+        // 创建受保护的任务ID集合
+        const protectedQuestIds = new Set(
+          Array.from(routineQuestsMap.values()).map(q => q.id)
+        );
+        
         let deletedCount = 0;
         let skippedLongTermCount = 0;
+        let skippedRoutineTemplateCount = 0;
+        
         for (const quest of doneQuests) {
-          // 跳过大项目任务
+          // 🛡️ 跳过大项目任务
           if (quest.isLongTermProject) {
             skippedLongTermCount++;
             continue;
           }
           
-          // 判断普通任务是否超过48小时
+          // 🛡️ 跳过每日修炼模板（每个修炼任务保留最新的一条）
+          if (protectedQuestIds.has(quest.id)) {
+            skippedRoutineTemplateCount++;
+            console.log(`🛡️ 保护每日修炼模板: ${quest.originalActionHint}`);
+            continue;
+          }
+          
+          // ⏰ 判断普通任务是否超过48小时
           const questUpdatedDate = new Date(quest.updated_date);
           if (questUpdatedDate < twoDaysAgo) {
             await base44.entities.Quest.delete(quest.id);
@@ -173,6 +200,10 @@ export default function QuestBoard() {
         
         if (skippedLongTermCount > 0) {
           console.log(`ℹ️ 跳过 ${skippedLongTermCount} 个大项目任务（不自动清理）`);
+        }
+        
+        if (skippedRoutineTemplateCount > 0) {
+          console.log(`ℹ️ 保护 ${skippedRoutineTemplateCount} 个每日修炼模板（确保能继续生成）`);
         }
 
         // 2. 处理昨天未完成的任务（顺延到今天）
@@ -429,7 +460,7 @@ export default function QuestBoard() {
             title: { 
               type: "string",
               description: language === 'zh'
-                ? "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！例如：【征讨】踏破晨曦五里征途。描述必须正好7个字，不能多也不能少！绝对不能包含'任务'二字！"
+                ? "必须严格是【2字类型】+正好7个汉字的描述！例如：【征讨】踏破晨曦五里征途。描述必须正好7个字，不能多也不能少！绝对不能包含'任务'二字！"
                 : "Must strictly follow [Category]: <5-8 Word Epic Phrase> format! Category is action type, Phrase is 5-8 words. Example: [Conquest]: Dawn March Through Five Miles. Phrase must be 5-8 words exactly! Absolutely cannot include the word 'task' or 'quest'!"
             },
             actionHint: { 
@@ -837,7 +868,7 @@ export default function QuestBoard() {
               title: { 
                 type: "string",
                 description: language === 'zh'
-                  ? "必须严格是【XX】+YYYYYYY格式！XX是2字动作类型，YYYYYYY是正好7个汉字的描述！"
+                  ? "必须严格是【2字类型】+正好7个汉字的描述！"
                   : "Must strictly follow [Category]: <5-8 Word Epic Phrase> format! Phrase must be 5-8 words exactly!"
               }
             },

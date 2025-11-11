@@ -85,7 +85,12 @@ export default function QuestBoard() {
   const { data: hasAnyLongTermQuests = false } = useQuery({
     queryKey: ['hasLongTermQuests'],
     queryFn: async () => {
-      const longTermQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 1);
+      const today = format(new Date(), 'yyyy-MM-dd');
+      // 查询未完成的大项目任务（今天及以后的，且状态不是 done）
+      const longTermQuests = await base44.entities.Quest.filter({ 
+        isLongTermProject: true, 
+        status: 'todo' 
+      }, '-date', 1);
       return longTermQuests.length > 0;
     },
     initialData: false,

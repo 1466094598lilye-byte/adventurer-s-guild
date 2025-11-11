@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { X, Loader2, ChevronDown, ChevronUp, Edit2, Calendar as CalendarIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -79,7 +78,6 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
       for (const quest of parsedQuests) {
         console.log('\n--- 处理任务 ---');
         console.log('原始 quest.date:', quest.date);
-        console.log('quest.date 类型:', typeof quest.date);
         console.log('任务标题:', quest.title);
         
         if (!quest.date) {

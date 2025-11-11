@@ -106,19 +106,47 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const handleDeleteAllProjects = async () => {
     setIsDeleting(true);
     try {
+      console.log('=== 开始删除所有大项目 ===');
+      
+      // 1. 收集所有唯一的 longTermProjectId
+      const projectIds = new Set();
+      longTermQuests.forEach(quest => {
+        if (quest.longTermProjectId) {
+          projectIds.add(quest.longTermProjectId);
+        }
+      });
+      
+      console.log('找到的大项目ID:', Array.from(projectIds));
+      console.log('需要删除的Quest数量:', longTermQuests.length);
+      
+      // 2. 删除所有 Quest 任务
       for (const quest of longTermQuests) {
         await base44.entities.Quest.delete(quest.id);
       }
+      console.log('✅ 所有Quest任务已删除');
       
-      // 强制通知父组件更新
+      // 3. 删除所有关联的 LongTermProject
+      for (const projectId of projectIds) {
+        try {
+          await base44.entities.LongTermProject.delete(projectId);
+          console.log('✅ 删除大项目:', projectId);
+        } catch (error) {
+          console.warn('删除大项目失败:', projectId, error);
+        }
+      }
+      console.log('✅ 所有LongTermProject记录已删除');
+      
+      // 4. 强制通知父组件更新
       if (onQuestsUpdated) {
         onQuestsUpdated();
       }
       
-      // 等待一下确保更新完成
+      // 5. 等待一下确保更新完成
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // 关闭对话框
+      console.log('=== 删除完成 ===');
+      
+      // 6. 关闭对话框
       onClose();
     } catch (error) {
       console.error('删除失败:', error);

@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { X, Calendar as CalendarIcon, Trash2, Edit2, AlertTriangle, ChevronRight, ChevronDown, Plus, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { format, parseISO, isSameDay } from 'date-fns';
+import { format, parseISO, isSameDay, isValid } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { useLanguage } from '@/components/LanguageContext';
 import { getCalendarAddTaskPrompt } from '@/components/prompts';
@@ -29,14 +28,20 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const loadLongTermQuests = async () => {
     try {
       const quests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-      setLongTermQuests(quests);
+      // Filter out quests with invalid dates
+      const validQuests = quests.filter(q => {
+        if (!q.date) return false;
+        const parsed = parseISO(q.date);
+        return isValid(parsed);
+      });
+      setLongTermQuests(validQuests);
     } catch (error) {
       console.error('加载大项目任务失败:', error);
     }
   };
 
-  // 按日期分组任务
   const groupedByDate = longTermQuests.reduce((acc, quest) => {
+    if (!quest.date) return acc;
     if (!acc[quest.date]) {
       acc[quest.date] = [];
     }
@@ -44,13 +49,19 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
     return acc;
   }, {});
 
-  // 获取排序后的日期列表
   const sortedDates = Object.keys(groupedByDate).sort();
 
   const handleDateClick = (date, quests) => {
-    setSelectedDate(parseISO(date));
-    setSelectedDateQuests(quests);
-    setShowDateDetail(true);
+    try {
+      const parsedDate = parseISO(date);
+      if (isValid(parsedDate)) {
+        setSelectedDate(parsedDate);
+        setSelectedDateQuests(quests);
+        setShowDateDetail(true);
+      }
+    } catch (error) {
+      console.error('解析日期失败:', date, error);
+    }
   };
 
   const toggleDateExpansion = (date) => {
@@ -81,38 +92,28 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
 
   const handleDeleteQuest = async (questId) => {
     try {
-      // 先删除任务
       await base44.entities.Quest.delete(questId);
-      
-      // 稍微延迟一下再重新加载，确保删除操作完成
       await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // 重新加载任务列表
       await loadLongTermQuests();
       
-      // If current detail view is open, update its data
       if (selectedDate) {
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
-        // Filter tasks for the selected date from the latest data
         const allQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
         const updatedQuestsForDate = allQuests.filter(q => q.date === dateStr);
         
         setSelectedDateQuests(updatedQuestsForDate);
         
-        // If no tasks remain for this date, close detail and collapse
         if (updatedQuestsForDate.length === 0) {
           setShowDateDetail(false);
           setExpandedDates(prev => prev.filter(d => d !== dateStr));
         }
       }
       
-      // Notify parent component to update
       if (onQuestsUpdated) {
         onQuestsUpdated();
       }
     } catch (error) {
       console.error('删除任务时出错:', error);
-      // Do not show alert, try refreshing data instead
       await loadLongTermQuests();
       if (onQuestsUpdated) {
         onQuestsUpdated();
@@ -135,10 +136,15 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       });
 
       const updatedQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-      setLongTermQuests(updatedQuests);
+      const validQuests = updatedQuests.filter(q => {
+        if (!q.date) return false;
+        const parsed = parseISO(q.date);
+        return isValid(parsed);
+      });
+      setLongTermQuests(validQuests);
 
-      if (selectedDate) {
-        const updatedGroupedByDate = updatedQuests.reduce((acc, questItem) => {
+      if (selectedDate && isValid(selectedDate)) {
+        const updatedGroupedByDate = validQuests.reduce((acc, questItem) => {
           if (!acc[questItem.date]) {
             acc[questItem.date] = [];
           }
@@ -197,9 +203,13 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       });
 
       const updatedQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-      setLongTermQuests(updatedQuests);
+      const validQuests = updatedQuests.filter(q => {
+        if (!q.date) return false;
+        const parsed = parseISO(q.date);
+        return isValid(parsed);
+      });
+      setLongTermQuests(validQuests);
 
-      // Auto expand the date that was just added
       if (!expandedDates.includes(addingToDate)) {
         setExpandedDates(prev => [...prev, addingToDate]);
       }
@@ -218,6 +228,19 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
     setIsProcessing(false);
   };
 
+  // Helper function to safely format date
+  const safeFormatDate = (dateStr, formatStr) => {
+    try {
+      if (!dateStr) return '';
+      const parsed = parseISO(dateStr);
+      if (!isValid(parsed)) return dateStr;
+      return format(parsed, formatStr);
+    } catch (error) {
+      console.error('格式化日期失败:', dateStr, error);
+      return dateStr;
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
@@ -233,7 +256,6 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute -top-4 -right-4 w-12 h-12 flex items-center justify-center"
@@ -246,7 +268,6 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
           <X className="w-7 h-7 text-white" strokeWidth={4} />
         </button>
 
-        {/* Header */}
         <div className="text-center mb-6">
           <h2 className="text-3xl font-black uppercase text-white mb-2">
             📅 {t('calendar_title')} 📅
@@ -257,7 +278,6 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         </div>
 
         {longTermQuests.length === 0 ? (
-          /* Empty State */
           <div
             className="p-8 text-center"
             style={{
@@ -273,7 +293,6 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
           </div>
         ) : (
           <>
-            {/* Timeline List */}
             <div
               className="mb-4 max-h-[500px] overflow-y-auto"
               style={{
@@ -284,7 +303,8 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
               {sortedDates.map((date, index) => {
                 const quests = groupedByDate[date];
                 const status = getDateStatus(quests);
-                const isToday = isSameDay(parseISO(date), new Date());
+                const parsedDate = parseISO(date);
+                const isToday = isValid(parsedDate) && isSameDay(parsedDate, new Date());
                 const isExpanded = expandedDates.includes(date);
 
                 return (
@@ -294,7 +314,6 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                       borderBottom: index < sortedDates.length - 1 ? '3px solid #000' : 'none'
                     }}
                   >
-                    {/* Date Header - Clickable to expand/collapse */}
                     <button
                       onClick={() => toggleDateExpansion(date)}
                       className="w-full p-4 text-left transition-all hover:bg-gray-50"
@@ -305,8 +324,8 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                             <CalendarIcon className="w-5 h-5 flex-shrink-0" strokeWidth={3} />
                             <span className="font-black text-lg">
                               {language === 'zh' 
-                                ? format(parseISO(date), 'MM月dd日')
-                                : format(parseISO(date), 'MMM dd')}
+                                ? safeFormatDate(date, 'MM月dd日')
+                                : safeFormatDate(date, 'MMM dd')}
                             </span>
                             {isToday && (
                               <span
@@ -350,12 +369,11 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                       </div>
                     </button>
 
-                    {/* Expanded Quest List */}
                     {isExpanded && (
                       <div className="px-4 pb-4 space-y-2" style={{ backgroundColor: '#F9FAFB' }}>
                         {quests.map((quest, i) => (
                           <div
-                            key={quest.id || i} // Using quest.id for a more stable key
+                            key={quest.id || i}
                             className="p-3"
                             style={{
                               backgroundColor: '#FFF',
@@ -401,9 +419,9 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                               <div className="flex gap-1 flex-shrink-0">
                                 <button
                                   onClick={(e) => {
-                                    e.stopPropagation(); // Prevent toggling the date expansion
+                                    e.stopPropagation();
                                     setEditingQuest(quest.id);
-                                    handleDateClick(date, quests); // Open the detail modal
+                                    handleDateClick(date, quests);
                                   }}
                                   className="p-1.5"
                                   style={{
@@ -415,7 +433,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                                 </button>
                                 <button
                                   onClick={(e) => {
-                                    e.stopPropagation(); // Prevent toggling the date expansion
+                                    e.stopPropagation();
                                     handleDeleteQuest(quest.id);
                                   }}
                                   className="p-1.5"
@@ -431,7 +449,6 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                           </div>
                         ))}
 
-                        {/* Add Task Button for this date */}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -454,7 +471,6 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
               })}
             </div>
 
-            {/* Delete All Button */}
             <button
               onClick={() => setShowDeleteConfirm(true)}
               disabled={isDeleting}
@@ -482,8 +498,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
           </>
         )}
 
-        {/* Date Detail Modal */}
-        {showDateDetail && selectedDate && (
+        {showDateDetail && selectedDate && isValid(selectedDate) && (
           <div
             className="fixed inset-0 z-60 flex items-center justify-center p-4"
             style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
@@ -619,8 +634,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
           </div>
         )}
 
-        {/* Add Task Form Modal */}
-        {showAddForm && (
+        {showAddForm && addingToDate && (
           <div
             className="fixed inset-0 z-60 flex items-center justify-center p-4"
             style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
@@ -668,8 +682,8 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
               >
                 <p className="font-bold text-sm">
                   📅 {t('common_date')}：{language === 'zh' 
-                    ? format(parseISO(addingToDate), 'yyyy年MM月dd日')
-                    : format(parseISO(addingToDate), 'MMMM dd, yyyy')}
+                    ? safeFormatDate(addingToDate, 'yyyy年MM月dd日')
+                    : safeFormatDate(addingToDate, 'MMMM dd, yyyy')}
                 </p>
               </div>
 
@@ -726,8 +740,6 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
           </div>
         )}
 
-
-        {/* Delete Confirmation Modal */}
         {showDeleteConfirm && (
           <div
             className="fixed inset-0 z-60 flex items-center justify-center p-4"

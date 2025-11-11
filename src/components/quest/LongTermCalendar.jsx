@@ -29,15 +29,45 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const loadLongTermQuests = async () => {
     try {
       const quests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-      // Filter out quests with invalid dates
-      const validQuests = quests.filter(q => {
-        if (!q.date) return false;
+      
+      const decryptedAndValidQuests = await Promise.all(quests.map(async q => {
+        if (!q.date) return null; // Filter out quests with no date
         const parsed = parseISO(q.date);
-        return isValid(parsed);
-      });
-      setLongTermQuests(validQuests);
+        if (!isValid(parsed)) return null; // Filter out quests with invalid dates
+
+        let decryptedTitle = q.title;
+        let decryptedActionHint = q.actionHint;
+
+        // Attempt to decrypt if title or actionHint fields are present (assuming they might be encrypted)
+        if (q.title || q.actionHint) {
+          try {
+            const { data: decrypted } = await base44.functions.invoke('decryptQuestData', {
+              encryptedTitle: q.title,
+              encryptedActionHint: q.actionHint
+            });
+            decryptedTitle = decrypted.title;
+            decryptedActionHint = decrypted.actionHint;
+          } catch (decryptError) {
+            console.warn('Failed to decrypt quest data for ID:', q.id, decryptError);
+            // If decryption fails, use the original (likely encrypted) values.
+            // This might mean encrypted text is displayed, but prevents crash.
+            // A more robust solution might involve differentiating encrypted vs unencrypted at storage.
+          }
+        }
+
+        return {
+          ...q,
+          title: decryptedTitle,
+          actionHint: decryptedActionHint
+        };
+      }));
+
+      const finalQuests = decryptedAndValidQuests.filter(Boolean); // Filter out any nulls from invalid dates
+      setLongTermQuests(finalQuests);
+      return finalQuests; // Return the processed list for immediate use
     } catch (error) {
       console.error('加载大项目任务失败:', error);
+      return []; // Return an empty array on error
     }
   };
 
@@ -102,12 +132,12 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
     try {
       await base44.entities.Quest.delete(questId);
       await new Promise(resolve => setTimeout(resolve, 300));
-      await loadLongTermQuests();
+      const updatedLongTermQuests = await loadLongTermQuests(); // Get the latest decrypted quests
       
       if (selectedDate) {
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
-        const allQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-        const updatedQuestsForDate = allQuests.filter(q => q.date === dateStr);
+        // Recalculate selectedDateQuests from the updatedLongTermQuests
+        const updatedQuestsForDate = updatedLongTermQuests.filter(q => q.date === dateStr);
         
         setSelectedDateQuests(updatedQuestsForDate);
         
@@ -122,7 +152,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       }
     } catch (error) {
       console.error('删除任务时出错:', error);
-      await loadLongTermQuests();
+      await loadLongTermQuests(); // Reload even on error to sync state
       if (onQuestsUpdated) {
         onQuestsUpdated();
       }
@@ -138,29 +168,31 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         response_json_schema: schema
       });
       
-      await base44.entities.Quest.update(quest.id, {
+      // 加密后再更新
+      const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
         title: result.title,
         actionHint: newActionHint
       });
-
-      const updatedQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-      const validQuests = updatedQuests.filter(q => {
-        if (!q.date) return false;
-        const parsed = parseISO(q.date);
-        return isValid(parsed);
+      
+      await base44.entities.Quest.update(quest.id, {
+        title: encrypted.encryptedTitle,
+        actionHint: encrypted.encryptedActionHint
       });
-      setLongTermQuests(validQuests);
 
+      // 重新加载并解密任务
+      const updatedLongTermQuests = await loadLongTermQuests(); // Get the latest decrypted quests
+      
       if (selectedDate && isValid(selectedDate)) {
-        const updatedGroupedByDate = validQuests.reduce((acc, questItem) => {
+        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+        // Re-group using the immediately available `updatedLongTermQuests`
+        const updatedGroupedByDate = updatedLongTermQuests.reduce((acc, questItem) => {
+          if (!questItem.date) return acc;
           if (!acc[questItem.date]) {
             acc[questItem.date] = [];
           }
           acc[questItem.date].push(questItem);
           return acc;
         }, {});
-
-        const dateStr = format(selectedDate, 'yyyy-MM-dd');
         const questsForSelectedDate = updatedGroupedByDate[dateStr] || [];
         setSelectedDateQuests(questsForSelectedDate);
       }
@@ -198,9 +230,15 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         response_json_schema: schema
       });
 
-      await base44.entities.Quest.create({
+      // 加密后再创建
+      const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
         title: result.title,
-        actionHint: newTaskInput.trim(),
+        actionHint: newTaskInput.trim()
+      });
+
+      await base44.entities.Quest.create({
+        title: encrypted.encryptedTitle,
+        actionHint: encrypted.encryptedActionHint,
         date: addingToDate,
         difficulty: 'S',
         rarity: 'Epic',
@@ -210,16 +248,26 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         tags: []
       });
 
-      const updatedQuests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
-      const validQuests = updatedQuests.filter(q => {
-        if (!q.date) return false;
-        const parsed = parseISO(q.date);
-        return isValid(parsed);
-      });
-      setLongTermQuests(validQuests);
+      // 重新加载并解密任务
+      const updatedLongTermQuests = await loadLongTermQuests(); // Get the latest decrypted quests
 
       if (!expandedDates.includes(addingToDate)) {
         setExpandedDates(prev => [...prev, addingToDate]);
+      }
+
+      // If adding a task to the currently selected date, update selectedDateQuests as well
+      if (selectedDate && isValid(selectedDate) && isSameDay(parseISO(addingToDate), selectedDate)) {
+        const dateStr = format(selectedDate, 'yyyy-MM-dd');
+        const updatedGroupedByDate = updatedLongTermQuests.reduce((acc, questItem) => {
+          if (!questItem.date) return acc;
+          if (!acc[questItem.date]) {
+            acc[questItem.date] = [];
+          }
+          acc[questItem.date].push(questItem);
+          return acc;
+        }, {});
+        const questsForSelectedDate = updatedGroupedByDate[dateStr] || [];
+        setSelectedDateQuests(questsForSelectedDate);
       }
 
       setShowAddForm(false);
@@ -242,7 +290,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       if (!dateStr) return '';
       const parsed = parseISO(dateStr);
       if (!isValid(parsed)) return dateStr;
-      return format(parsed, formatStr);
+      return format(parsed, formatStr, { locale: language === 'zh' ? zhCN : undefined });
     } catch (error) {
       console.error('格式化日期失败:', dateStr, error);
       return dateStr;

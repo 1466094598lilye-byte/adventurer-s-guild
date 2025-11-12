@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const LanguageContext = createContext();
@@ -61,6 +62,10 @@ export function LanguageProvider({ children }) {
       questboard_planned_quests: '工会已登记明日',
       questboard_plan_tomorrow: '规划明日委托',
       questboard_cannot_set_rest_day_hint: '今日有任务时无法设为休息日',
+      questboard_toast_freeze_token_used: '✅ 已使用冻结券保护连胜',
+      questboard_toast_streak_broken: '连胜已重置，继续加油！',
+      questboard_alert_use_token_failed: '使用冻结券失败，请重试',
+      questboard_alert_break_streak_failed: '重置连胜失败，请重试',
       questboard_toast_yesterday_quests_delayed: '昨日 {count} 项未完成任务已顺延至今日',
       questboard_toast_planned_quests_loaded: '明日规划的 {count} 项任务已加载',
       questboard_toast_quest_added_rest_canceled: '已添加任务，休息日已自动取消',
@@ -317,6 +322,10 @@ export function LanguageProvider({ children }) {
       questboard_planned_quests: 'Guild has registered',
       questboard_plan_tomorrow: 'Plan Tomorrow\'s Quests',
       questboard_cannot_set_rest_day_hint: 'Cannot set as rest day when there are quests today',
+      questboard_toast_freeze_token_used: '✅ Freeze token used to protect streak',
+      questboard_toast_streak_broken: 'Streak reset. Keep going!',
+      questboard_alert_use_token_failed: 'Failed to use freeze token, please retry',
+      questboard_alert_break_streak_failed: 'Failed to reset streak, please retry',
       questboard_toast_yesterday_quests_delayed: '{count} unfinished quests from yesterday have been delayed to today',
       questboard_toast_planned_quests_loaded: '{count} planned quests have been loaded',
       questboard_toast_quest_added_rest_canceled: 'Quest added, rest day automatically cancelled',

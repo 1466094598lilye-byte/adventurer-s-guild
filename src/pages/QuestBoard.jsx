@@ -11,7 +11,7 @@ import EndOfDaySummaryAndPlanning from '../components/quest/EndOfDaySummaryAndPl
 import LongTermProjectDialog from '../components/quest/LongTermProjectDialog';
 import LongTermCalendar from '../components/quest/LongTermCalendar';
 import JointPraiseDialog from '../components/quest/JointPraiseDialog';
-import StreakBreakDialog from '../components/streak/StreakBreakDialog'; // NEW IMPORT
+import StreakBreakDialog from '../components/streak/StreakBreakDialog';
 import { format, subDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,13 +38,27 @@ export default function QuestBoard() {
   const [showJointPraise, setShowJointPraise] = useState(false);
   const [completedProject, setCompletedProject] = useState(null);
   const [currentHour, setCurrentHour] = useState(new Date().getHours());
-  const [streakBreakInfo, setStreakBreakInfo] = useState(null); // NEW STATE
+  const [streakBreakInfo, setStreakBreakInfo] = useState(null);
   const queryClient = useQueryClient();
   const { language, t } = useLanguage();
 
   const hasProcessedDayRollover = useRef(false);
+  const invalidationTimeoutRef = useRef(null); // Added this
 
   const today = format(new Date(), 'yyyy-MM-dd');
+
+  // 🔥 优化：批量刷新查询，避免频繁触发
+  const batchInvalidateQueries = (keys) => {
+    if (invalidationTimeoutRef.current) {
+      clearTimeout(invalidationTimeoutRef.current);
+    }
+
+    invalidationTimeoutRef.current = setTimeout(() => {
+      keys.forEach(key => {
+        queryClient.invalidateQueries({ queryKey: [key] });
+      });
+    }, 100);
+  };
 
   // 实时更新当前小时，用于判断是否显示"规划明日"板块
   useEffect(() => {
@@ -61,53 +75,72 @@ export default function QuestBoard() {
   const { data: quests = [], isLoading } = useQuery({
     queryKey: ['quests', today],
     queryFn: async () => {
-      const allQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
-      
-      const decryptedQuests = await Promise.all(
-        allQuests.map(async (quest) => {
-          try {
-            const { data } = await base44.functions.invoke('decryptQuestData', {
-              encryptedTitle: quest.title,
-              encryptedActionHint: quest.actionHint
-            });
-            
-            return {
-              ...quest,
-              title: data.title,
-              actionHint: data.actionHint
-            };
-          } catch (error) {
-            console.error('解密任务失败:', quest.id, error);
-            return quest; 
-          }
-        })
-      );
-      
-      return decryptedQuests;
-    }
+      try {
+        const allQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
+        
+        const decryptedQuests = await Promise.all(
+          allQuests.map(async (quest) => {
+            try {
+              const { data } = await base44.functions.invoke('decryptQuestData', {
+                encryptedTitle: quest.title,
+                encryptedActionHint: quest.actionHint
+              });
+              
+              return {
+                ...quest,
+                title: data.title,
+                actionHint: data.actionHint
+              };
+            } catch (error) {
+              console.error('解密任务失败:', quest.id, error);
+              return quest; 
+            }
+          })
+        );
+        
+        return decryptedQuests;
+      } catch (error) {
+        console.error('获取任务失败:', error);
+        return [];
+      }
+    },
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 5000, // 5秒内不重新获取
+    refetchOnWindowFocus: false, // 防止切换窗口时频繁刷新
   });
 
   const { data: user } = useQuery({
     queryKey: ['user'],
-    queryFn: () => base44.auth.me()
+    queryFn: () => base44.auth.me(),
+    retry: 2,
+    staleTime: 10000, // 10秒内不重新获取
+    refetchOnWindowFocus: false,
   });
 
   const { data: hasAnyLongTermQuests = false } = useQuery({
     queryKey: ['hasLongTermQuests'],
     queryFn: async () => {
-      // console.log('=== 检查是否有未完成的大项目任务 ==='); // Commented out verbose logging
-      
-      // Query for any active long-term projects with 'todo' status quests
-      const todoLongTermQuests = await base44.entities.Quest.filter({ 
-        isLongTermProject: true, 
-        status: 'todo' 
-      }, '-date', 100);
-      
-      // console.log('未完成的大项目任务数量:', todoLongTermQuests.length); // Commented out verbose logging
-      
-      return todoLongTermQuests.length > 0;
+      try {
+        // console.log('=== 检查是否有未完成的大项目任务 ==='); // Commented out verbose logging
+        
+        // Query for any active long-term projects with 'todo' status quests
+        const todoLongTermQuests = await base44.entities.Quest.filter({ 
+          isLongTermProject: true, 
+          status: 'todo' 
+        }, '-date', 100);
+        
+        // console.log('未完成的大项目任务数量:', todoLongTermQuests.length); // Commented out verbose logging
+        
+        return todoLongTermQuests.length > 0;
+      } catch (error) {
+        console.error('检查长期任务失败:', error);
+        return false;
+      }
     },
     initialData: false,
+    staleTime: 30000, // 30秒内不重新获取
+    refetchOnWindowFocus: false,
   });
 
   // 日更逻辑：检查连胜中断 + 未完成任务顺延 + 明日规划任务创建 + 每日修炼任务生成 + 清理旧任务 + 清理旧宝箱记录
@@ -194,7 +227,7 @@ export default function QuestBoard() {
             }
           }
           
-          queryClient.invalidateQueries(['quests']);
+          batchInvalidateQueries(['quests']); // Use batch invalidate
           const nonRoutineCount = oldQuests.filter(q => !q.isRoutine).length;
           if (nonRoutineCount > 0) {
             setToast(t('questboard_toast_yesterday_quests_delayed', { count: nonRoutineCount }));
@@ -232,8 +265,7 @@ export default function QuestBoard() {
             });
           }
 
-          queryClient.invalidateQueries(['quests']);
-          queryClient.invalidateQueries(['user']);
+          batchInvalidateQueries(['quests', 'user']); // Use batch invalidate
           setToast(t('questboard_toast_planned_quests_loaded', { count: nextDayPlanned.length }));
           setTimeout(() => setToast(null), 3000);
         }
@@ -319,7 +351,7 @@ export default function QuestBoard() {
             }
           }
           
-          queryClient.invalidateQueries(['quests']);
+          batchInvalidateQueries(['quests']); // Use batch invalidate
         }
         
         console.log('=== 日更逻辑执行完成 ===');
@@ -413,7 +445,7 @@ export default function QuestBoard() {
         freezeTokenCount: (currentUser?.freezeTokenCount || 0) - 1
       });
       
-      queryClient.invalidateQueries(['user']);
+      batchInvalidateQueries(['user']); // Use batch invalidate
       setStreakBreakInfo(null);
       
       // 🔥 【关键修复】标记日更已处理，防止重复触发
@@ -442,7 +474,7 @@ export default function QuestBoard() {
         streakCount: 0
       });
       
-      queryClient.invalidateQueries(['user']);
+      batchInvalidateQueries(['user']); // Use batch invalidate
       setStreakBreakInfo(null);
       
       // 🔥 【关键修复】标记日更已处理，防止重复触发
@@ -485,7 +517,7 @@ export default function QuestBoard() {
       return result;
     },
     onSuccess: async () => {
-      queryClient.invalidateQueries(['quests']);
+      batchInvalidateQueries(['quests', 'user']); // Use batch invalidate
       
       const currentUser = await base44.auth.me();
       const restDays = currentUser?.restDays || [];
@@ -493,7 +525,7 @@ export default function QuestBoard() {
         await base44.auth.updateMe({
           restDays: restDays.filter(d => d !== today)
         });
-        queryClient.invalidateQueries(['user']);
+        // user query will be invalidated by batchInvalidateQueries
         setToast(t('questboard_toast_quest_added_rest_canceled'));
         setTimeout(() => setToast(null), 2000);
       }
@@ -522,14 +554,14 @@ export default function QuestBoard() {
       return base44.entities.Quest.update(id, updateData);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['quests']);
+      batchInvalidateQueries(['quests']); // Use batch invalidate
     }
   });
 
   const deleteQuestMutation = useMutation({
     mutationFn: (id) => base44.entities.Quest.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['quests']);
+      batchInvalidateQueries(['quests']); // Use batch invalidate
     }
   });
 
@@ -672,8 +704,7 @@ export default function QuestBoard() {
           loot: lootResult
         });
 
-        queryClient.invalidateQueries(['user']);
-        queryClient.invalidateQueries(['loot']);
+        batchInvalidateQueries(['user', 'loot']); // Use batch invalidate
         
         break;
       }
@@ -695,7 +726,7 @@ export default function QuestBoard() {
       setSelectedQuest(quest);
 
       // 2. 等待缓存刷新完成
-      await queryClient.invalidateQueries(['quests']);
+      batchInvalidateQueries(['quests']); // Use batch invalidate
       console.log('查询缓存已刷新');
 
       // 3. 处理大项目完成检查
@@ -871,7 +902,7 @@ export default function QuestBoard() {
           });
           console.log('用户连胜数据已更新');
           
-          await queryClient.invalidateQueries(['user']);
+          batchInvalidateQueries(['user']); // Use batch invalidate
           
           // 检查里程碑奖励
           await checkAndAwardMilestone(newStreak);
@@ -987,8 +1018,7 @@ export default function QuestBoard() {
 
       setEditingQuest(null);
 
-      queryClient.invalidateQueries(['quests']);
-      queryClient.invalidateQueries(['user']);
+      batchInvalidateQueries(['quests', 'user']); // Use batch invalidate
     } catch (error) {
       console.error("更新失败", error);
       alert(t('questboard_alert_update_failed'));
@@ -1016,7 +1046,7 @@ export default function QuestBoard() {
       setToast(t('questboard_toast_rest_set_success'));
     }
     
-    queryClient.invalidateQueries(['user']);
+    batchInvalidateQueries(['user']); // Use batch invalidate
     setShowRestDayDialog(false);
     setTimeout(() => setToast(null), 2000);
   };
@@ -1058,7 +1088,7 @@ export default function QuestBoard() {
         lastPlannedDate: today
       });
       
-      queryClient.invalidateQueries(['user']);
+      batchInvalidateQueries(['user']); // Use batch invalidate
       setToast(t('questboard_toast_plan_saved_success', { count: plannedQuests.length }));
       setTimeout(() => setToast(null), 3000);
     } catch (error) {
@@ -1073,18 +1103,16 @@ export default function QuestBoard() {
   };
 
   const handleLongTermQuestsCreated = (count) => {
-    queryClient.invalidateQueries(['quests']);
-    queryClient.invalidateQueries(['hasLongTermQuests']);
+    batchInvalidateQueries(['quests', 'hasLongTermQuests']); // Use batch invalidate
     setToast(t('questboard_toast_longterm_quests_added_success', { count: count }));
     setTimeout(() => setToast(null), 3000);
   };
 
   const handleCalendarUpdate = () => {
-    queryClient.invalidateQueries(['quests']);
-    queryClient.invalidateQueries(['hasLongTermQuests']);
+    batchInvalidateQueries(['quests', 'hasLongTermQuests']); // Use batch invalidate
     
     // 强制重新获取，确保立即更新
-    queryClient.refetchQueries(['hasLongTermQuests']);
+    queryClient.refetchQueries({ queryKey: ['hasLongTermQuests'] });
   };
 
   const filteredQuests = quests.filter(quest => {
@@ -1498,7 +1526,7 @@ export default function QuestBoard() {
             date={today}
             onClose={handleChestClose}
             onLootGenerated={() => {
-              queryClient.invalidateQueries(['loot']);
+              batchInvalidateQueries(['loot']);
             }}
           />
         )}

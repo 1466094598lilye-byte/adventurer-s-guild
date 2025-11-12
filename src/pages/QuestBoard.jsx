@@ -11,6 +11,7 @@ import EndOfDaySummaryAndPlanning from '../components/quest/EndOfDaySummaryAndPl
 import LongTermProjectDialog from '../components/quest/LongTermProjectDialog';
 import LongTermCalendar from '../components/quest/LongTermCalendar';
 import JointPraiseDialog from '../components/quest/JointPraiseDialog';
+import StreakBreakDialog from '../components/streak/StreakBreakDialog'; // NEW IMPORT
 import { format, subDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +38,7 @@ export default function QuestBoard() {
   const [showJointPraise, setShowJointPraise] = useState(false);
   const [completedProject, setCompletedProject] = useState(null);
   const [currentHour, setCurrentHour] = useState(new Date().getHours());
+  const [streakBreakInfo, setStreakBreakInfo] = useState(null); // NEW STATE
   const queryClient = useQueryClient();
   const { language, t } = useLanguage();
 
@@ -51,12 +53,8 @@ export default function QuestBoard() {
       setCurrentHour(newHour);
     };
 
-    // Immediately execute once
     updateHour();
-
-    // Check every minute (more accurate)
-    const interval = setInterval(updateHour, 60000); // 60 seconds
-
+    const interval = setInterval(updateHour, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -65,7 +63,6 @@ export default function QuestBoard() {
     queryFn: async () => {
       const allQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
       
-      // 批量解密所有任务
       const decryptedQuests = await Promise.all(
         allQuests.map(async (quest) => {
           try {
@@ -81,9 +78,6 @@ export default function QuestBoard() {
             };
           } catch (error) {
             console.error('解密任务失败:', quest.id, error);
-            // 如果解密失败，返回原始数据（可能是明文或加密失败）
-            // 在这种情况下，title和actionHint会保持其原始值（可能是加密文本）
-            // 如果原始数据不是加密的，那么它也会正常显示
             return quest; 
           }
         })
@@ -101,74 +95,39 @@ export default function QuestBoard() {
   const { data: hasAnyLongTermQuests = false } = useQuery({
     queryKey: ['hasLongTermQuests'],
     queryFn: async () => {
-      console.log('=== 检查是否有未完成的大项目任务 ===');
+      // console.log('=== 检查是否有未完成的大项目任务 ==='); // Commented out verbose logging
       
-      // 查询所有大项目任务（不管状态）
-      const allLongTermQuests = await base44.entities.Quest.filter({ 
-        isLongTermProject: true 
-      }, '-date', 100);
-      
-      console.log('所有大项目任务数量:', allLongTermQuests.length);
-      console.log('所有大项目任务:', allLongTermQuests.map(q => ({
-        id: q.id,
-        date: q.date,
-        status: q.status,
-        title: q.title?.substring(0, 50) // 只显示前50个字符
-      })));
-      
-      // 查询未完成的大项目任务
+      // Query for any active long-term projects with 'todo' status quests
       const todoLongTermQuests = await base44.entities.Quest.filter({ 
         isLongTermProject: true, 
         status: 'todo' 
       }, '-date', 100);
       
-      console.log('未完成的大项目任务数量:', todoLongTermQuests.length);
-      console.log('未完成的大项目任务:', todoLongTermQuests.map(q => ({
-        id: q.id,
-        date: q.date,
-        status: q.status,
-        title: q.title?.substring(0, 50)
-      })));
+      // console.log('未完成的大项目任务数量:', todoLongTermQuests.length); // Commented out verbose logging
       
-      const hasUnfinished = todoLongTermQuests.length > 0;
-      console.log('是否显示按钮:', hasUnfinished);
-      
-      return hasUnfinished;
+      return todoLongTermQuests.length > 0;
     },
     initialData: false,
   });
 
-  // 日更逻辑：未完成任务顺延 + 明日规划任务创建 + 每日修炼任务生成 + 清理旧任务 + 清理旧宝箱记录
+  // 日更逻辑：检查连胜中断 + 未完成任务顺延 + 明日规划任务创建 + 每日修炼任务生成 + 清理旧任务 + 清理旧宝箱记录
   useEffect(() => {
-    const handleDayRollover = async () => {
-      if (!user) return;
-      
-      const rolloverKey = `${today}-${user.id}`;
-      if (hasProcessedDayRollover.current === rolloverKey) {
-        console.log('日更逻辑已执行过，跳过');
-        return;
-      }
-      
-      console.log('=== 开始执行日更逻辑 ===');
-      hasProcessedDayRollover.current = rolloverKey;
+    // This function contains the actual rollover steps 1-5, independent of the streak break decision
+    const executeDayRolloverLogic = async () => {
+      if (!user) return; // Ensure user is available for this internal logic
 
+      console.log('=== 执行其他日更逻辑 (步骤 1-5) ===');
+      
       try {
         // 1. 清理7天前的已完成任务（排除大项目任务 + 保护每日修炼模板）
         console.log('=== 开始清理旧任务 ===');
         
-        // 🔥 关键修复：计算7天前的日期字符串（而不是时间戳）
         const sevenDaysAgoDate = new Date();
         sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 7);
         const sevenDaysAgoStr = format(sevenDaysAgoDate, 'yyyy-MM-dd');
         
-        console.log('7天前的日期:', sevenDaysAgoStr);
-        console.log('今天的日期:', today);
-        
-        // 查询所有已完成的任务
         const doneQuests = await base44.entities.Quest.filter({ status: 'done' }, '-date', 500);
-        console.log('找到的已完成任务数量:', doneQuests.length);
         
-        // 识别所有每日修炼任务，按 originalActionHint 分组，每组保留最新的一条作为模板
         const routineQuestsMap = new Map();
         for (const quest of doneQuests) {
           if (quest.isRoutine && quest.originalActionHint) {
@@ -179,65 +138,25 @@ export default function QuestBoard() {
           }
         }
         
-        console.log(`识别出 ${routineQuestsMap.size} 个不同的每日修炼任务，每个将保留最新的模板`);
-        
-        // 创建受保护的任务ID集合
         const protectedQuestIds = new Set(
           Array.from(routineQuestsMap.values()).map(q => q.id)
         );
         
         let deletedCount = 0;
-        let skippedLongTermCount = 0;
-        let skippedRoutineTemplateCount = 0;
-        let skippedRecentCount = 0;
         
         for (const quest of doneQuests) {
-          // 🛡️ 跳过大项目任务
-          if (quest.isLongTermProject) {
-            skippedLongTermCount++;
-            continue;
-          }
+          if (quest.isLongTermProject) continue;
+          if (protectedQuestIds.has(quest.id)) continue;
+          if (!quest.date) continue;
           
-          // 🛡️ 跳过每日修炼模板（每个修炼任务保留最新的一条）
-          if (protectedQuestIds.has(quest.id)) {
-            skippedRoutineTemplateCount++;
-            console.log(`🛡️ 保护每日修炼模板: ${quest.originalActionHint}`);
-            continue;
-          }
-          
-          // ⏰ 关键修复：使用 quest.date（任务所属日期）而不是 updated_date（更新时间）
-          // 这样可以正确判断任务是否超过7天
-          if (!quest.date) {
-            console.warn(`任务 ${quest.id} 没有 date 字段，跳过`);
-            continue;
-          }
-          
-          // 比较日期字符串：如果任务日期 < 7天前的日期，则删除
           if (quest.date < sevenDaysAgoStr) {
-            console.log(`删除旧任务: ${quest.date} (${quest.id})`);
             await base44.entities.Quest.delete(quest.id);
             deletedCount++;
-          } else {
-            skippedRecentCount++;
           }
         }
         
         if (deletedCount > 0) {
           console.log(`✅ 已清理 ${deletedCount} 个7天前的已完成任务`);
-        } else {
-          console.log('✅ 无需清理旧任务');
-        }
-        
-        if (skippedLongTermCount > 0) {
-          console.log(`ℹ️ 跳过 ${skippedLongTermCount} 个大项目任务（不自动清理）`);
-        }
-        
-        if (skippedRoutineTemplateCount > 0) {
-          console.log(`ℹ️ 保护 ${skippedRoutineTemplateCount} 个每日修炼模板（确保能继续生成）`);
-        }
-        
-        if (skippedRecentCount > 0) {
-          console.log(`ℹ️ 保留 ${skippedRecentCount} 个7天内的已完成任务`);
         }
 
         // 2. 清理7天前的已开启宝箱记录
@@ -245,19 +164,11 @@ export default function QuestBoard() {
         
         try {
           const allChests = await base44.entities.DailyChest.filter({ opened: true }, '-date', 200);
-          console.log(`找到 ${allChests.length} 个已开启的宝箱记录`);
-          
           let deletedChestCount = 0;
           
           for (const chest of allChests) {
-            if (!chest.date) {
-              console.warn(`宝箱 ${chest.id} 没有 date 字段，跳过`);
-              continue;
-            }
-            
-            // 比较日期：如果宝箱日期 < 7天前，则删除
+            if (!chest.date) continue;
             if (chest.date < sevenDaysAgoStr) {
-              console.log(`删除旧宝箱记录: ${chest.date} (${chest.id})`);
               await base44.entities.DailyChest.delete(chest.id);
               deletedChestCount++;
             }
@@ -265,12 +176,9 @@ export default function QuestBoard() {
           
           if (deletedChestCount > 0) {
             console.log(`✅ 已清理 ${deletedChestCount} 个7天前的宝箱记录`);
-          } else {
-            console.log('✅ 无需清理旧宝箱记录');
           }
         } catch (error) {
           console.error('清理宝箱记录时出错:', error);
-          // 不中断整个日更流程
         }
 
         // 3. 处理昨天未完成的任务（顺延到今天）
@@ -307,7 +215,6 @@ export default function QuestBoard() {
           });
           
           for (const plannedQuest of nextDayPlanned) {
-            // 加密后再创建
             const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
               title: plannedQuest.title,
               actionHint: plannedQuest.actionHint
@@ -335,13 +242,9 @@ export default function QuestBoard() {
         console.log('=== 开始处理每日修炼任务 ===');
         
         const todayQuests = await base44.entities.Quest.filter({ date: today });
-        console.log(`今天已有 ${todayQuests.length} 个任务`);
-        
         const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
-        console.log(`数据库中找到 ${allRoutineQuests.length} 个标记为每日修炼的任务记录`);
         
         if (allRoutineQuests.length > 0) {
-          // 去重：按 originalActionHint 去重，只保留每个独特任务的最新一条记录
           const uniqueRoutinesMap = new Map();
           for (const quest of allRoutineQuests) {
             let decryptedActionHint = quest.actionHint;
@@ -351,7 +254,7 @@ export default function QuestBoard() {
               });
               decryptedActionHint = data.actionHint;
             } catch (error) {
-              console.warn(`Failed to decrypt actionHint for routine quest ${quest.id}, using raw value:`, error);
+              console.warn(`Failed to decrypt actionHint for routine quest ${quest.id}:`, error);
             }
 
             const key = decryptedActionHint;
@@ -364,24 +267,14 @@ export default function QuestBoard() {
             }
           }
           
-          console.log(`去重后识别出 ${uniqueRoutinesMap.size} 个不同的每日修炼任务`);
-          
           for (const [actionHintPlain, templateQuest] of uniqueRoutinesMap) {
-            console.log(`检查每日修炼任务: ${actionHintPlain}`);
-            
             const alreadyExists = todayQuests.some(
               q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === templateQuest.actionHint)
             );
             
-            if (alreadyExists) {
-              console.log(`今天已存在，跳过: ${actionHintPlain}`);
-              continue;
-            }
-            
-            console.log(`今天还没有，开始生成: ${actionHintPlain}`);
+            if (alreadyExists) continue;
             
             try {
-              // 只重新生成 RPG 标题，保持原有的难度和稀有度
               const result = await base44.integrations.Core.InvokeLLM({
                 prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
 
@@ -404,7 +297,6 @@ export default function QuestBoard() {
                 }
               });
 
-              // 加密后创建今日的每日修炼任务
               const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
                 title: result.title,
                 actionHint: actionHintPlain
@@ -422,8 +314,6 @@ export default function QuestBoard() {
                 originalActionHint: actionHintPlain,
                 tags: []
               });
-              
-              console.log(`成功创建今日每日修炼任务: ${actionHintPlain}，保持评级 ${templateQuest.difficulty}`);
             } catch (error) {
               console.error(`生成每日修炼任务失败: ${actionHintPlain}`, error);
             }
@@ -434,14 +324,131 @@ export default function QuestBoard() {
         
         console.log('=== 日更逻辑执行完成 ===');
       } catch (error) {
-        console.error('日更处理失败:', error);
+        console.error('日更逻辑执行失败:', error);
       }
     };
 
+
+    const handleDayRollover = async () => {
+      if (!user) return;
+      
+      const rolloverKey = `${today}-${user.id}`;
+      // Prevent re-running the initial check if already processed or if streak break dialog is open
+      if (hasProcessedDayRollover.current === rolloverKey || streakBreakInfo) {
+        console.log('日更逻辑已执行过或正在处理连胜中断，跳过 initial check');
+        return;
+      }
+      
+      console.log('=== 开始执行日更逻辑 (Initial Check) ===');
+
+      // 🔥 【新增】步骤 0：检查昨天是否有未完成任务，处理连胜中断
+      console.log('=== 步骤 0: 检查连胜中断 ===');
+      const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+      const restDays = user?.restDays || [];
+      const lastClearDate = user?.lastClearDate;
+      
+      console.log('昨天日期:', yesterday);
+      console.log('上次完成日期:', lastClearDate);
+      console.log('昨天是否为休息日:', restDays.includes(yesterday));
+      
+      // Only check for streak break if yesterday was NOT a rest day AND user did NOT clear all tasks yesterday
+      const shouldCheckForStreakBreak = !restDays.includes(yesterday) && lastClearDate !== yesterday;
+      
+      if (shouldCheckForStreakBreak) {
+        console.log('昨天不是休息日，且没有完成所有任务');
+        
+        // Query yesterday's tasks to see if there were any and if they were all completed
+        const yesterdayQuests = await base44.entities.Quest.filter({ date: yesterday });
+        console.log('昨天的任务数量:', yesterdayQuests.length);
+        
+        if (yesterdayQuests.length > 0) {
+          const allDoneYesterday = yesterdayQuests.every(q => q.status === 'done');
+          console.log('昨天任务是否全部完成:', allDoneYesterday);
+          
+          if (!allDoneYesterday) {
+            console.log('昨天有未完成任务，需要处理连胜中断');
+            const currentStreak = user?.streakCount || 0;
+            const freezeTokenCount = user?.freezeTokenCount || 0;
+            
+            if (currentStreak > 0) {
+              setStreakBreakInfo({
+                incompleteDays: 1, // Only checking for yesterday
+                currentStreak: currentStreak,
+                freezeTokenCount: freezeTokenCount
+              });
+              
+              console.log('弹出连胜中断对话框，暂停其他日更逻辑');
+              // IMPORTANT: Return here to pause the rollover until user choice from dialog
+              return;
+            } else {
+              console.log('当前没有连胜（为0），无需触发连胜中断对话框');
+            }
+          } else {
+            console.log('昨天所有任务都完成了'); // But lastClearDate wasn't yesterday, implying they didn't get a chest.
+          }
+        } else {
+          console.log('昨天没有任务'); // No tasks, no streak break.
+        }
+      } else {
+        console.log('昨天是休息日或已完成所有任务，无需检查连胜中断');
+      }
+
+      // If no streak break scenario was triggered, mark as processed and execute the rest of the logic.
+      hasProcessedDayRollover.current = rolloverKey;
+      await executeDayRolloverLogic(); // Call the wrapped function
+    };
+
+    // Only run handleDayRollover if user is available.
+    // The `streakBreakInfo` in dependency array ensures this effect re-runs if dialog closes.
     if (user) {
       handleDayRollover();
     }
-  }, [user, today, queryClient, t]);
+  }, [user, today, queryClient, t, streakBreakInfo]); // `streakBreakInfo` is a dependency to re-evaluate when it closes.
+
+  // Handle use token (called from StreakBreakDialog)
+  const handleUseToken = async () => {
+    try {
+      const currentUser = await base44.auth.me(); // Get fresh user data
+      await base44.auth.updateMe({
+        freezeTokenCount: (currentUser?.freezeTokenCount || 0) - 1
+      });
+      
+      queryClient.invalidateQueries(['user']);
+      setStreakBreakInfo(null); // Close the dialog
+      
+      setToast(t('questboard_toast_freeze_token_used')); // Needs translation
+      setTimeout(() => setToast(null), 3000);
+      
+      // The `useEffect` will re-evaluate because `streakBreakInfo` changed to null,
+      // and since `hasProcessedDayRollover.current` was not set, `handleDayRollover` will run again
+      // and proceed to `executeDayRolloverLogic`.
+    } catch (error) {
+      console.error('使用冻结券失败:', error);
+      alert(t('questboard_alert_use_token_failed')); // Needs translation
+    }
+  };
+
+  // Handle break streak (called from StreakBreakDialog)
+  const handleBreakStreak = async () => {
+    try {
+      await base44.auth.updateMe({
+        streakCount: 0
+      });
+      
+      queryClient.invalidateQueries(['user']);
+      setStreakBreakInfo(null); // Close the dialog
+      
+      setToast(t('questboard_toast_streak_broken')); // Needs translation
+      setTimeout(() => setToast(null), 3000);
+      
+      // The `useEffect` will re-evaluate because `streakBreakInfo` changed to null,
+      // and since `hasProcessedDayRollover.current` was not set, `handleDayRollover` will run again
+      // and proceed to `executeDayRolloverLogic`.
+    } catch (error) {
+      console.error('重置连胜失败:', error);
+      alert(t('questboard_alert_break_streak_failed')); // Needs translation
+    }
+  };
 
   const createQuestMutation = useMutation({
     mutationFn: async (questData) => {
@@ -1697,6 +1704,18 @@ export default function QuestBoard() {
           </div>
         )}
       </div>
+
+      {/* 🔥 连胜中断对话框 */}
+      {streakBreakInfo && (
+        <StreakBreakDialog
+          incompleteDays={streakBreakInfo.incompleteDays}
+          currentStreak={streakBreakInfo.currentStreak}
+          freezeTokenCount={streakBreakInfo.freezeTokenCount}
+          onUseToken={handleUseToken}
+          onBreakStreak={handleBreakStreak}
+          onClose={() => setStreakBreakInfo(null)} // Allows closing, but usually an action is chosen
+        />
+      )}
 
       {toast && (
         <div 

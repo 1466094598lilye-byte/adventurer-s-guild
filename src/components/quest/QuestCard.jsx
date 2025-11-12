@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Check, MoreVertical, Edit, Trash2, RotateCcw } from 'lucide-react';
 import DifficultyBadge from './DifficultyBadge';
@@ -61,16 +60,19 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
             <div className="flex items-start justify-between gap-2 mb-1">
               <div className="flex-1 min-w-0">
                 <h3 
-                  className="font-black text-base uppercase leading-tight mb-1 line-clamp-2"
+                  className="font-black text-base uppercase leading-tight mb-1 break-words"
                   style={{ 
                     textDecoration: isDone ? 'line-through' : 'none',
-                    color: isDone ? '#999' : '#000'
+                    color: isDone ? '#999' : '#000',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    hyphens: 'auto'
                   }}
                 >
                   {quest.title}
                 </h3>
                 <p 
-                  className="text-xs font-bold line-clamp-1"
+                  className="text-xs font-bold line-clamp-2"
                   style={{ color: isDone ? '#999' : '#666' }}
                 >
                   ({quest.actionHint})

@@ -373,21 +373,35 @@ export default function QuestBoard() {
       
       console.log('=== 开始执行日更逻辑 (Initial Check) ===');
 
-      // 🔥 【新增】步骤 0：检查昨天是否有未完成任务，处理连胜中断
+      // 🔥 【修复】步骤 0：检查昨天是否有未完成任务，处理连胜中断
       console.log('=== 步骤 0: 检查连胜中断 ===');
       const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
       const restDays = user?.restDays || [];
       const lastClearDate = user?.lastClearDate;
       
+      console.log('今天日期:', today);
       console.log('昨天日期:', yesterday);
       console.log('上次完成日期:', lastClearDate);
       console.log('昨天是否为休息日:', restDays.includes(yesterday));
       
-      // Only check for streak break if yesterday was NOT a rest day AND user did NOT clear all tasks yesterday
+      // 🔥 【关键修复】正确的逻辑：
+      // 1. 如果 lastClearDate === today，说明今天已经完成了，不检查
+      // 2. 如果 lastClearDate === yesterday，说明昨天完成了，今天还没完成（正常情况）
+      // 3. 如果 lastClearDate < yesterday，说明有间隔，需要检查是否中断
+      
+      // 先检查今天是否已经完成所有任务
+      if (lastClearDate === today) {
+        console.log('✅ 今天已经完成所有任务，无需检查连胜中断');
+        hasProcessedDayRollover.current = rolloverKey;
+        await executeDayRolloverLogic();
+        return;
+      }
+      
+      // 只有在昨天不是休息日 AND 上次完成日期不是昨天（说明昨天没完成）时才检查
       const shouldCheckForStreakBreak = !restDays.includes(yesterday) && lastClearDate !== yesterday;
       
       if (shouldCheckForStreakBreak) {
-        console.log('昨天不是休息日，且没有完成所有任务');
+        console.log('昨天不是休息日，且上次完成日期不是昨天');
         
         // Query yesterday's tasks to see if there were any and if they were all completed
         const yesterdayQuests = await base44.entities.Quest.filter({ date: yesterday });

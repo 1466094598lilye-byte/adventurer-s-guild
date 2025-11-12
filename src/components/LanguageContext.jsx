@@ -258,7 +258,22 @@ export function LanguageProvider({ children }) {
       longterm_edit_done: '完成编辑',
       longterm_task_content_label: '任务内容：',
       longterm_creating: '正在添加到委托板...',
-      longterm_confirm_add: '确认并添加到委托板'
+      longterm_confirm_add: '确认并添加到委托板',
+
+      // Crafting System
+      crafting_title: '宝物合成工坊',
+      crafting_subtitle: '将低级战利品熔炼升华，铸造更强大的宝物',
+      crafting_target_rarity: '选择目标稀有度',
+      crafting_recipe: '合成配方',
+      crafting_recipe_hint: '需要 {count} 个{from}物品才能合成 1 个{to}物品',
+      crafting_selected: '已选择',
+      crafting_available_loot: '可用材料',
+      crafting_no_materials: '暂无可用材料，先去冒险获得更多战利品吧！',
+      crafting_button: '开始合成',
+      crafting_in_progress: '正在铸造中...',
+      crafting_success_title: '合成成功！',
+      crafting_collect: '收入囊中',
+      crafting_error: '合成失败',
     },
     en: {
       // Navigation
@@ -499,7 +514,22 @@ export function LanguageProvider({ children }) {
       longterm_edit_done: 'Done Editing',
       longterm_task_content_label: 'Quest Content:',
       longterm_creating: 'Adding to quest board...',
-      longterm_confirm_add: 'Confirm and Add to Quest Board'
+      longterm_confirm_add: 'Confirm and Add to Quest Board',
+
+      // Crafting System
+      crafting_title: 'Treasure Forge',
+      crafting_subtitle: 'Smelt and ascend lower-tier loot to forge more powerful treasures',
+      crafting_target_rarity: 'Select Target Rarity',
+      crafting_recipe: 'Crafting Recipe',
+      crafting_recipe_hint: 'Requires {count} {from} items to craft 1 {to} item',
+      crafting_selected: 'Selected',
+      crafting_available_loot: 'Available Materials',
+      crafting_no_materials: 'No materials available. Go on adventures to collect more loot!',
+      crafting_button: 'Start Crafting',
+      crafting_in_progress: 'Forging...',
+      crafting_success_title: 'Crafting Success!',
+      crafting_collect: 'Collect',
+      crafting_error: 'Crafting Failed',
     }
   };
 

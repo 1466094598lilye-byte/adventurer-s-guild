@@ -36,13 +36,29 @@ export default function QuestBoard() {
   const [isConfirmingPending, setIsConfirmingPending] = useState(false);
   const [showJointPraise, setShowJointPraise] = useState(false);
   const [completedProject, setCompletedProject] = useState(null);
+  const [currentHour, setCurrentHour] = useState(new Date().getHours());
   const queryClient = useQueryClient();
   const { language, t } = useLanguage();
 
   const hasProcessedDayRollover = useRef(false);
 
   const today = format(new Date(), 'yyyy-MM-dd');
-  const currentHour = new Date().getHours();
+
+  // 实时更新当前小时，用于判断是否显示"规划明日"板块
+  useEffect(() => {
+    const updateHour = () => {
+      const newHour = new Date().getHours();
+      setCurrentHour(newHour);
+    };
+
+    // Immediately execute once
+    updateHour();
+
+    // Check every minute (more accurate)
+    const interval = setInterval(updateHour, 60000); // 60 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   const { data: quests = [], isLoading } = useQuery({
     queryKey: ['quests', today],

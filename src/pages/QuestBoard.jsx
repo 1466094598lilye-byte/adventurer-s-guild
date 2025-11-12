@@ -138,7 +138,7 @@ export default function QuestBoard() {
     initialData: false,
   });
 
-  // 日更逻辑：未完成任务顺延 + 明日规划任务创建 + 每日修炼任务生成 + 清理旧任务
+  // 日更逻辑：未完成任务顺延 + 明日规划任务创建 + 每日修炼任务生成 + 清理旧任务 + 清理旧宝箱记录
   useEffect(() => {
     const handleDayRollover = async () => {
       if (!user) return;
@@ -238,6 +238,41 @@ export default function QuestBoard() {
         
         if (skippedRecentCount > 0) {
           console.log(`ℹ️ 保留 ${skippedRecentCount} 个7天内的已完成任务`);
+        }
+
+        // 🆕 1.5. 清理7天前的已开启宝箱记录
+        console.log('=== 开始清理旧宝箱记录 ===');
+        
+        const allChests = await base44.entities.DailyChest.filter({ opened: true }, '-date', 500);
+        console.log(`找到 ${allChests.length} 个已开启的宝箱记录`);
+        
+        let deletedChestCount = 0;
+        let skippedRecentChestCount = 0;
+        
+        for (const chest of allChests) {
+          if (!chest.date) {
+            console.warn(`宝箱记录 ${chest.id} 没有 date 字段，跳过`);
+            continue;
+          }
+          
+          // 清理7天前的宝箱记录
+          if (chest.date < sevenDaysAgoStr) {
+            console.log(`删除旧宝箱记录: ${chest.date} (${chest.id})`);
+            await base44.entities.DailyChest.delete(chest.id);
+            deletedChestCount++;
+          } else {
+            skippedRecentChestCount++;
+          }
+        }
+        
+        if (deletedChestCount > 0) {
+          console.log(`✅ 已清理 ${deletedChestCount} 个7天前的宝箱记录`);
+        } else {
+          console.log('✅ 无需清理旧宝箱记录');
+        }
+        
+        if (skippedRecentChestCount > 0) {
+          console.log(`ℹ️ 保留 ${skippedRecentChestCount} 个7天内的宝箱记录`);
         }
 
         // 2. 处理昨天未完成的任务（顺延到今天）

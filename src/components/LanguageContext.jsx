@@ -1,17 +1,25 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
-  const [language, setLanguage] = useState('zh');
-
-  useEffect(() => {
+  // 智能初始化：localStorage > 浏览器语言 > 默认中文
+  const [language, setLanguage] = useState(() => {
+    // 1. 优先使用用户手动选择的语言
     const savedLang = localStorage.getItem('adventurerLanguage');
     if (savedLang) {
-      setLanguage(savedLang);
+      return savedLang;
     }
-  }, []);
+    
+    // 2. 否则根据浏览器语言自动判断
+    try {
+      const browserLang = navigator.language || navigator.userLanguage || '';
+      return browserLang.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    } catch (error) {
+      // 3. 兜底：如果检测失败，默认中文
+      return 'zh';
+    }
+  });
 
   const switchLanguage = (lang) => {
     setLanguage(lang);

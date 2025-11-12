@@ -119,7 +119,11 @@ export default function JournalPage() {
 
         {user && (
           <div className="mb-6">
-            <StreakDisplay user={user} />
+            <StreakDisplay 
+              currentStreak={user.streakCount || 0}
+              longestStreak={user.longestStreak || 0}
+              freezeTokens={user.freezeTokenCount || 0}
+            />
           </div>
         )}
 

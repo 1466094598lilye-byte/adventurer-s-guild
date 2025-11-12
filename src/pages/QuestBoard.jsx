@@ -153,12 +153,12 @@ export default function QuestBoard() {
       hasProcessedDayRollover.current = rolloverKey;
 
       try {
-        // 1. 清理48小时前的已完成任务（排除大项目任务 + 保护每日修炼模板）
+        // 1. 清理7天前的已完成任务（排除大项目任务 + 保护每日修炼模板）
         console.log('=== 开始清理旧任务 ===');
-        const twoDaysAgo = new Date();
-        twoDaysAgo.setHours(twoDaysAgo.getHours() - 48);
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         
-        console.log('48小时前的时间:', twoDaysAgo.toISOString());
+        console.log('7天前的时间:', sevenDaysAgo.toISOString());
         
         // 查询所有已完成的任务
         const doneQuests = await base44.entities.Quest.filter({ status: 'done' }, '-updated_date', 500);
@@ -200,16 +200,16 @@ export default function QuestBoard() {
             continue;
           }
           
-          // ⏰ 判断普通任务是否超过48小时
+          // ⏰ 判断普通任务是否超过7天
           const questUpdatedDate = new Date(quest.updated_date);
-          if (questUpdatedDate < twoDaysAgo) {
+          if (questUpdatedDate < sevenDaysAgo) {
             await base44.entities.Quest.delete(quest.id);
             deletedCount++;
           }
         }
         
         if (deletedCount > 0) {
-          console.log(`✅ 已清理 ${deletedCount} 个48小时前的已完成任务`);
+          console.log(`✅ 已清理 ${deletedCount} 个7天前的已完成任务`);
         } else {
           console.log('✅ 无需清理旧任务');
         }

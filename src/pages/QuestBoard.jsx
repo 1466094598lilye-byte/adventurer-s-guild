@@ -155,13 +155,17 @@ export default function QuestBoard() {
       try {
         // 1. 清理7天前的已完成任务（排除大项目任务 + 保护每日修炼模板）
         console.log('=== 开始清理旧任务 ===');
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         
-        console.log('7天前的时间:', sevenDaysAgo.toISOString());
+        // 🔥 关键修复：计算7天前的日期字符串（而不是时间戳）
+        const sevenDaysAgoDate = new Date();
+        sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 7);
+        const sevenDaysAgoStr = format(sevenDaysAgoDate, 'yyyy-MM-dd');
+        
+        console.log('7天前的日期:', sevenDaysAgoStr);
+        console.log('今天的日期:', today);
         
         // 查询所有已完成的任务
-        const doneQuests = await base44.entities.Quest.filter({ status: 'done' }, '-updated_date', 500);
+        const doneQuests = await base44.entities.Quest.filter({ status: 'done' }, '-date', 500);
         console.log('找到的已完成任务数量:', doneQuests.length);
         
         // 识别所有每日修炼任务，按 originalActionHint 分组，每组保留最新的一条作为模板
@@ -185,6 +189,7 @@ export default function QuestBoard() {
         let deletedCount = 0;
         let skippedLongTermCount = 0;
         let skippedRoutineTemplateCount = 0;
+        let skippedRecentCount = 0;
         
         for (const quest of doneQuests) {
           // 🛡️ 跳过大项目任务
@@ -200,11 +205,20 @@ export default function QuestBoard() {
             continue;
           }
           
-          // ⏰ 判断普通任务是否超过7天
-          const questUpdatedDate = new Date(quest.updated_date);
-          if (questUpdatedDate < sevenDaysAgo) {
+          // ⏰ 关键修复：使用 quest.date（任务所属日期）而不是 updated_date（更新时间）
+          // 这样可以正确判断任务是否超过7天
+          if (!quest.date) {
+            console.warn(`任务 ${quest.id} 没有 date 字段，跳过`);
+            continue;
+          }
+          
+          // 比较日期字符串：如果任务日期 < 7天前的日期，则删除
+          if (quest.date < sevenDaysAgoStr) {
+            console.log(`删除旧任务: ${quest.date} (${quest.id})`);
             await base44.entities.Quest.delete(quest.id);
             deletedCount++;
+          } else {
+            skippedRecentCount++;
           }
         }
         
@@ -220,6 +234,10 @@ export default function QuestBoard() {
         
         if (skippedRoutineTemplateCount > 0) {
           console.log(`ℹ️ 保护 ${skippedRoutineTemplateCount} 个每日修炼模板（确保能继续生成）`);
+        }
+        
+        if (skippedRecentCount > 0) {
+          console.log(`ℹ️ 保留 ${skippedRecentCount} 个7天内的已完成任务`);
         }
 
         // 2. 处理昨天未完成的任务（顺延到今天）

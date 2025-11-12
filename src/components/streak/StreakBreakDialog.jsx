@@ -146,7 +146,8 @@ export default function StreakBreakDialog({
                 onClick={onBreakStreak}
                 className="w-full py-3 font-bold uppercase flex items-center justify-center gap-2"
                 style={{
-                  backgroundColor: '#FFF',
+                  backgroundColor: '#C44569',
+                  color: '#FFF',
                   border: '4px solid #000',
                   boxShadow: '4px 4px 0px #000'
                 }}

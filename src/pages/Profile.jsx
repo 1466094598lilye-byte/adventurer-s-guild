@@ -1,4 +1,5 @@
 
+import React from 'react'; // Added React import
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { LogOut, Award, Flame, Shield, Settings } from 'lucide-react';
@@ -7,8 +8,9 @@ import { useLanguage } from '@/components/LanguageContext';
 
 export default function Profile() {
   const { t, language, switchLanguage } = useLanguage();
-  
-  const { data: user } = useQuery({
+  const [showRestoreButton, setShowRestoreButton] = React.useState(false);
+
+  const { data: user, isLoading } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me()
   });
@@ -16,6 +18,34 @@ export default function Profile() {
   const handleLogout = () => {
     base44.auth.logout();
   };
+
+  // 🔥 临时修复：帮助用户恢复丢失的连胜数据
+  const handleRestoreStreak = async () => {
+    if (!confirm(language === 'zh' 
+      ? '确认恢复您的13天连胜和3个freeze tokens吗？' 
+      : 'Confirm to restore your 13-day streak and 3 freeze tokens?')) {
+      return;
+    }
+    
+    try {
+      await base44.functions.invoke('restoreUserStreak');
+      alert(language === 'zh' 
+        ? '✅ 已成功恢复您的连胜！非常抱歉给您带来的困扰。' 
+        : '✅ Successfully restored your streak! Sorry for the inconvenience.');
+      window.location.reload();
+    } catch (error) {
+      alert(language === 'zh' 
+        ? '❌ 恢复失败，请联系支持' 
+        : '❌ Restore failed, please contact support');
+    }
+  };
+
+  // 检测是否需要显示恢复按钮（连胜为0且最长连胜大于0）
+  React.useEffect(() => {
+    if (user && user.streakCount === 0 && user.longestStreak > 0) {
+      setShowRestoreButton(true);
+    }
+  }, [user]);
 
   const milestones = [
     { days: 7, title: language === 'zh' ? '新秀冒险家' : 'Rising Adventurer', tokens: 1, icon: '🌟' },
@@ -25,6 +55,8 @@ export default function Profile() {
   ];
 
   const unlockedMilestones = user?.unlockedMilestones || [];
+
+  if (isLoading) return <div className="flex justify-center p-12"><div className="w-12 h-12 border-4 border-black border-t-yellow-400 rounded-full animate-spin"></div></div>;
 
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
@@ -43,6 +75,39 @@ export default function Profile() {
             {t('profile_title')}
           </h1>
         </div>
+
+        {/* 🔥 临时恢复按钮 - 只在连胜为0且最长连胜>0时显示 */}
+        {showRestoreButton && (
+          <div 
+            className="mb-6 p-4"
+            style={{
+              backgroundColor: '#FF6B35',
+              border: '5px solid #000',
+              boxShadow: '8px 8px 0px #000',
+              animation: 'pulse 2s infinite'
+            }}
+          >
+            <h3 className="text-xl font-black uppercase text-white text-center mb-3">
+              {language === 'zh' ? '⚠️ 检测到数据异常 ⚠️' : '⚠️ Data Anomaly Detected ⚠️'}
+            </h3>
+            <p className="font-bold text-white text-center mb-4 text-sm">
+              {language === 'zh' 
+                ? '系统检测到您的连胜数据可能因bug丢失。我们深感抱歉！点击下方按钮可立即恢复您的13天连胜，并获得3个freeze tokens作为补偿。' 
+                : 'System detected your streak data may have been lost due to a bug. We sincerely apologize! Click below to restore your 13-day streak and receive 3 freeze tokens as compensation.'}
+            </p>
+            <button
+              onClick={handleRestoreStreak}
+              className="w-full py-4 font-black uppercase text-lg"
+              style={{
+                backgroundColor: '#FFE66D',
+                border: '4px solid #000',
+                boxShadow: '5px 5px 0px #000'
+              }}
+            >
+              {language === 'zh' ? '🔧 立即恢复我的连胜' : '🔧 Restore My Streak Now'}
+            </button>
+          </div>
+        )}
 
         {/* User Info Card */}
         <div 
@@ -306,6 +371,13 @@ export default function Profile() {
           <LogOut className="w-6 h-6" strokeWidth={3} />
           {language === 'zh' ? '退出登录' : 'Logout'}
         </button>
+
+        <style>{`
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+          }
+        `}</style>
       </div>
     </div>
   );

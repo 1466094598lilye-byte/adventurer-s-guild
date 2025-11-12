@@ -32,7 +32,8 @@ export default function JournalPage() {
     for (let i = 6; i >= 0; i--) {
       const date = subDays(today, i);
       const dateStr = format(date, 'yyyy-MM-dd');
-      const dayQuests = recentQuests.filter(q => q.date === dateStr && !q.isRoutine);
+      // 🔥 修复：包含每日修炼任务！它们是最重要的习惯追踪
+      const dayQuests = recentQuests.filter(q => q.date === dateStr);
       
       const isRestDay = restDays.includes(dateStr);
       

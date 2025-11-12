@@ -1223,10 +1223,10 @@ export default function QuestBoard() {
                     }}
                   >
                     <div 
-                      className="p-3 flex items-center justify-between cursor-pointer"
+                      className="p-3 flex items-start justify-between cursor-pointer gap-3"
                       onClick={() => setExpandedPending(expandedPending === quest.tempId ? null : quest.tempId)}
                     >
-                      <div className="flex-1 min-w-0 flex items-center gap-3">
+                      <div className="flex-1 min-w-0 flex items-start gap-3">
                         <span 
                           className="px-2 py-1 text-sm font-black flex-shrink-0"
                           style={{
@@ -1238,16 +1238,16 @@ export default function QuestBoard() {
                           {quest.difficulty}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="font-black text-sm mb-1 truncate">{quest.title}</p>
-                          <p className="text-xs font-bold text-gray-600 truncate">
+                          <p className="font-black text-sm mb-1 break-words leading-tight">{quest.title}</p>
+                          <p className="text-xs font-bold text-gray-600 break-words">
                             ({quest.actionHint})
                           </p>
                         </div>
                       </div>
                       {expandedPending === quest.tempId ? (
-                        <ChevronUp className="w-5 h-5 flex-shrink-0" strokeWidth={3} />
+                        <ChevronUp className="w-5 h-5 flex-shrink-0 mt-1" strokeWidth={3} />
                       ) : (
-                        <ChevronDown className="w-5 h-5 flex-shrink-0" strokeWidth={3} />
+                        <ChevronDown className="w-5 h-5 flex-shrink-0 mt-1" strokeWidth={3} />
                       )}
                     </div>
 

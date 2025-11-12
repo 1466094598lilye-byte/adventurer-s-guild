@@ -1,106 +1,115 @@
-
-import { useState } from 'react';
-import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
-import { TrendingUp } from 'lucide-react';
+import React from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, subDays } from 'date-fns';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import StreakDisplay from '../components/profile/StreakDisplay';
 import { useLanguage } from '@/components/LanguageContext';
 
-export default function Journal() {
-  const [period, setPeriod] = useState(7);
-  const { t, language } = useLanguage();
+export default function JournalPage() {
+  const { language, t } = useLanguage();
 
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me()
   });
 
+  // 固定获取最近7天的任务数据
   const { data: recentQuests = [] } = useQuery({
-    queryKey: ['recentQuests', period],
+    queryKey: ['recentQuests'],
     queryFn: async () => {
-      const startDate = format(subDays(new Date(), period), 'yyyy-MM-dd');
-      const allQuests = await base44.entities.Quest.list('-created_date', 500); // Changed from '-date' to '-created_date'
-      return allQuests.filter(q => q.date >= startDate);
+      const quests = await base44.entities.Quest.list('-date', 200);
+      return quests;
     }
   });
 
-  // Group quests by date
-  const questsByDate = recentQuests.reduce((acc, quest) => {
-    if (!acc[quest.date]) acc[quest.date] = [];
-    acc[quest.date].push(quest);
-    return acc;
-  }, {});
+  // 生成最近7天的完成率数据
+  const getLast7DaysData = () => {
+    const data = [];
+    const today = new Date();
+    const restDays = user?.restDays || [];
 
-  // 生成真正的过去N天的日期数组
-  const generateDateRange = (days) => {
-    const dates = [];
-    for (let i = days - 1; i >= 0; i--) {
-      const date = subDays(new Date(), i);
-      dates.push(format(date, 'yyyy-MM-dd'));
+    for (let i = 6; i >= 0; i--) {
+      const date = subDays(today, i);
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const dayQuests = recentQuests.filter(q => q.date === dateStr && !q.isRoutine);
+      
+      const isRestDay = restDays.includes(dateStr);
+      
+      let completionRate = 0;
+      if (!isRestDay && dayQuests.length > 0) {
+        const doneCount = dayQuests.filter(q => q.status === 'done').length;
+        completionRate = Math.round((doneCount / dayQuests.length) * 100);
+      }
+
+      data.push({
+        date: format(date, language === 'zh' ? 'MM/dd' : 'MM/dd'),
+        completionRate: isRestDay ? null : completionRate,
+        isRestDay: isRestDay,
+        totalQuests: dayQuests.length
+      });
     }
-    return dates;
+
+    return data;
   };
 
-  const dateRange = generateDateRange(period);
+  const chartData = getLast7DaysData();
 
-  // Bar color based on completion rate
-  const getBarColor = (rate) => {
-    if (rate === 100) return '#4ECDC4';
-    if (rate >= 50) return '#FFE66D';
-    return '#FF6B35';
-  };
-
-  // Calculate streak data for chart - 使用完整的日期范围
-  const chartData = dateRange.map(date => {
-    const dayQuests = questsByDate[date] || []; // Handle cases where a date might not have any quests
-    const total = dayQuests.length;
-    const completed = dayQuests.filter(q => q.status === 'done').length;
-    const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
-    
-    return {
-      date: format(new Date(date), 'MM/dd'),
-      rate: rate,
-      label: `${rate}%`,
-      hasData: total > 0,  // 标记这一天是否有数据
-      color: getBarColor(rate)  // 添加颜色属性
-    };
-  });
-
-  // Custom tooltip for the chart
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      
+      if (data.isRestDay) {
+        return (
+          <div 
+            className="p-3"
+            style={{
+              backgroundColor: '#4ECDC4',
+              border: '3px solid #000',
+              boxShadow: '4px 4px 0px #000'
+            }}
+          >
+            <p className="font-black">{data.date}</p>
+            <p className="font-bold text-sm">{language === 'zh' ? '🏖️ 休息日' : '🏖️ Rest Day'}</p>
+          </div>
+        );
+      }
+
       return (
         <div 
-          className="p-2"
+          className="p-3"
           style={{
             backgroundColor: '#FFE66D',
             border: '3px solid #000',
             boxShadow: '4px 4px 0px #000'
           }}
         >
-          <p className="font-black text-sm">{payload[0].payload.date}</p>
-          <p className="font-bold text-sm">
-            {language === 'zh' ? '完成率' : 'Completion'}: {payload[0].value}%
-          </p>
+          <p className="font-black">{data.date}</p>
+          <p className="font-bold">{language === 'zh' ? '完成率' : 'Completion'}: {data.completionRate}%</p>
+          <p className="text-sm font-bold">{language === 'zh' ? '任务数' : 'Quests'}: {data.totalQuests}</p>
         </div>
       );
     }
     return null;
   };
 
+  const getBarColor = (value) => {
+    if (value === null) return '#4ECDC4';
+    if (value === 100) return '#4ECDC4';
+    if (value >= 50) return '#FFE66D';
+    return '#FF6B35';
+  };
+
   return (
     <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
+      <div className="max-w-4xl mx-auto">
         <div 
-          className="mb-6 p-4 transform rotate-1"
+          className="mb-6 p-4 transform -rotate-1"
           style={{
-            backgroundColor: '#C44569',
-            color: '#FFF',
-            border: '5px solid #000',
-            boxShadow: '8px 8px 0px #000'
+            backgroundColor: '#000',
+            color: '#FFE66D',
+            border: '5px solid #FFE66D',
+            boxShadow: '8px 8px 0px #FFE66D'
           }}
         >
           <h1 className="text-3xl font-black uppercase text-center">
@@ -108,175 +117,120 @@ export default function Journal() {
           </h1>
         </div>
 
-        {/* Streak Display */}
-        <div className="mb-6">
-          <StreakDisplay
-            currentStreak={user?.streakCount || 0}
-            longestStreak={user?.longestStreak || 0}
-            freezeTokens={user?.freezeTokenCount || 0}
-          />
-        </div>
+        {user && (
+          <div className="mb-6">
+            <StreakDisplay user={user} />
+          </div>
+        )}
 
-        {/* Period Selector */}
-        <div className="flex gap-3 mb-6">
-          {[7, 30].map(p => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className="flex-1 py-2 font-black uppercase text-sm"
-              style={{
-                backgroundColor: period === p ? '#FF6B35' : '#FFF',
-                color: period === p ? '#FFF' : '#000',
-                border: '3px solid #000',
-                boxShadow: period === p ? '4px 4px 0px #000' : '2px 2px 0px #000'
-              }}
-            >
-              {p}{language === 'zh' ? '天' : ' Days'}
-            </button>
-          ))}
-        </div>
-
-        {/* Completion Rate Chart */}
         <div 
-          className="p-4 mb-4"
+          className="p-6"
           style={{
-            backgroundColor: '#FFE66D',
-            border: '4px solid #000',
-            boxShadow: '6px 6px 0px #000'
+            backgroundColor: '#FFF',
+            border: '5px solid #000',
+            boxShadow: '8px 8px 0px #000'
           }}
         >
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="w-5 h-5" strokeWidth={3} />
-            <h3 className="font-black uppercase">{t('journal_completion_trend')}</h3>
-          </div>
+          <h2 className="text-2xl font-black uppercase mb-4">
+            {t('journal_completion_trend')} (7{t('journal_days')})
+          </h2>
 
-          {chartData.length > 0 ? (
+          {chartData.every(d => d.totalQuests === 0 && !d.isRestDay) ? (
+            <div className="text-center py-12">
+              <p className="font-bold text-gray-600">
+                {language === 'zh' ? '暂无数据' : 'No data available'}
+              </p>
+            </div>
+          ) : (
             <>
-              <div className="bg-white p-3" style={{ border: '3px solid #000', height: '200px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  {period === 7 ? (
-                    // 7天用柱状图
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#000" />
-                      <XAxis 
-                        dataKey="date" 
-                        stroke="#000"
-                        style={{ fontSize: '12px', fontWeight: 'bold' }}
-                      />
-                      <YAxis 
-                        stroke="#000"
-                        domain={[0, 100]}
-                        ticks={[0, 25, 50, 75, 100]}
-                        style={{ fontSize: '12px', fontWeight: 'bold' }}
-                      />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Bar 
-                        dataKey="rate" 
-                        stroke="#000"
-                        strokeWidth={2}
-                      >
-                        {chartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  ) : (
-                    // 30天用折线图
-                    <LineChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#000" />
-                      <XAxis 
-                        dataKey="date" 
-                        stroke="#000"
-                        style={{ fontSize: '12px', fontWeight: 'bold' }}
-                      />
-                      <YAxis 
-                        stroke="#000"
-                        domain={[0, 100]}
-                        ticks={[0, 25, 50, 75, 100]}
-                        style={{ fontSize: '12px', fontWeight: 'bold' }}
-                      />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Line 
-                        type="monotone" 
-                        dataKey="rate" 
-                        stroke="#C44569" 
-                        strokeWidth={3}
-                        dot={{ fill: '#C44569', strokeWidth: 2, r: 4, stroke: '#000' }}
-                        activeDot={{ r: 6, strokeWidth: 3, stroke: '#000' }}
-                      />
-                    </LineChart>
-                  )}
-                </ResponsiveContainer>
-              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#999" />
+                  <XAxis 
+                    dataKey="date" 
+                    style={{ 
+                      fontWeight: 'bold',
+                      fontSize: '12px'
+                    }}
+                  />
+                  <YAxis 
+                    domain={[0, 100]}
+                    style={{ 
+                      fontWeight: 'bold',
+                      fontSize: '12px'
+                    }}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar 
+                    dataKey="completionRate" 
+                    fill="#4ECDC4"
+                    stroke="#000"
+                    strokeWidth={2}
+                    radius={[8, 8, 0, 0]}
+                    shape={(props) => {
+                      const { x, y, width, height, payload } = props;
+                      const color = getBarColor(payload.completionRate);
+                      return (
+                        <rect
+                          x={x}
+                          y={y}
+                          width={width}
+                          height={height}
+                          fill={color}
+                          stroke="#000"
+                          strokeWidth={2}
+                          rx={8}
+                          ry={8}
+                        />
+                      );
+                    }}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
 
-              {/* Legend */}
               <div 
-                className="mt-3 p-3"
+                className="mt-6 p-4"
                 style={{
-                  backgroundColor: '#FFF',
+                  backgroundColor: '#F9FAFB',
                   border: '3px solid #000'
                 }}
               >
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div className="flex items-center gap-2">
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div>
                     <div 
-                      className="w-4 h-4 flex-shrink-0"
+                      className="w-6 h-6 mx-auto mb-2"
                       style={{
                         backgroundColor: '#4ECDC4',
                         border: '2px solid #000'
                       }}
                     />
-                    <span className="font-bold">{t('journal_legend_complete')}</span>
+                    <p className="text-xs font-bold">{t('journal_legend_complete')}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div>
                     <div 
-                      className="w-4 h-4 flex-shrink-0"
+                      className="w-6 h-6 mx-auto mb-2"
                       style={{
                         backgroundColor: '#FFE66D',
                         border: '2px solid #000'
                       }}
                     />
-                    <span className="font-bold">{t('journal_legend_partial')}</span>
+                    <p className="text-xs font-bold">{t('journal_legend_partial')}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div>
                     <div 
-                      className="w-4 h-4 flex-shrink-0"
+                      className="w-6 h-6 mx-auto mb-2"
                       style={{
                         backgroundColor: '#FF6B35',
                         border: '2px solid #000'
                       }}
                     />
-                    <span className="font-bold">{t('journal_legend_incomplete')}</span>
+                    <p className="text-xs font-bold">{t('journal_legend_incomplete')}</p>
                   </div>
                 </div>
               </div>
             </>
-          ) : (
-            <div className="text-center py-8">
-              <p className="font-bold text-gray-600">
-                {language === 'zh' ? '暂无数据' : 'No data'}
-              </p>
-            </div>
           )}
         </div>
-
-        {chartData.every(d => !d.hasData) && ( // Updated condition to check hasData property
-          <div 
-            className="p-8 text-center"
-            style={{
-              backgroundColor: '#FFF',
-              border: '4px solid #000',
-              boxShadow: '6px 6px 0px #000'
-            }}
-          >
-            <p className="text-2xl font-black uppercase mb-2">
-              {language === 'zh' ? '暂无记录' : 'No Records'}
-            </p>
-            <p className="font-bold text-gray-600">
-              {language === 'zh' ? '完成任务后会在此显示' : 'Complete quests to see them here'}
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

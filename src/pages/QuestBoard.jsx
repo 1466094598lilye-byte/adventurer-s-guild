@@ -408,45 +408,57 @@ export default function QuestBoard() {
   // Handle use token (called from StreakBreakDialog)
   const handleUseToken = async () => {
     try {
-      const currentUser = await base44.auth.me(); // Get fresh user data
+      const currentUser = await base44.auth.me();
       await base44.auth.updateMe({
         freezeTokenCount: (currentUser?.freezeTokenCount || 0) - 1
       });
       
       queryClient.invalidateQueries(['user']);
-      setStreakBreakInfo(null); // Close the dialog
+      setStreakBreakInfo(null);
       
-      setToast(t('questboard_toast_freeze_token_used')); // Needs translation
+      // 🔥 【关键修复】标记日更已处理，防止重复触发
+      const rolloverKey = `${today}-${currentUser.id}`;
+      hasProcessedDayRollover.current = rolloverKey;
+      
+      setToast(t('questboard_toast_freeze_token_used'));
       setTimeout(() => setToast(null), 3000);
       
-      // The `useEffect` will re-evaluate because `streakBreakInfo` changed to null,
-      // and since `hasProcessedDayRollover.current` was not set, `handleDayRollover` will run again
-      // and proceed to `executeDayRolloverLogic`.
+      // 延迟执行日更逻辑（不再重新检查连胜中断）
+      setTimeout(async () => {
+        // 直接执行日更逻辑，因为已经处理了连胜问题
+        await executeDayRolloverLogic();
+      }, 500);
     } catch (error) {
       console.error('使用冻结券失败:', error);
-      alert(t('questboard_alert_use_token_failed')); // Needs translation
+      alert(t('questboard_alert_use_token_failed'));
     }
   };
 
   // Handle break streak (called from StreakBreakDialog)
   const handleBreakStreak = async () => {
     try {
+      const currentUser = await base44.auth.me(); // Fetch current user to get ID for rolloverKey
       await base44.auth.updateMe({
         streakCount: 0
       });
       
       queryClient.invalidateQueries(['user']);
-      setStreakBreakInfo(null); // Close the dialog
+      setStreakBreakInfo(null);
       
-      setToast(t('questboard_toast_streak_broken')); // Needs translation
+      // 🔥 【关键修复】标记日更已处理，防止重复触发
+      const rolloverKey = `${today}-${currentUser.id}`;
+      hasProcessedDayRollover.current = rolloverKey;
+      
+      setToast(t('questboard_toast_streak_broken'));
       setTimeout(() => setToast(null), 3000);
       
-      // The `useEffect` will re-evaluate because `streakBreakInfo` changed to null,
-      // and since `hasProcessedDayRollover.current` was not set, `handleDayRollover` will run again
-      // and proceed to `executeDayRolloverLogic`.
+      // 延迟执行日更逻辑（不再重新检查连胜中断）
+      setTimeout(async () => {
+        await executeDayRolloverLogic();
+      }, 500);
     } catch (error) {
       console.error('重置连胜失败:', error);
-      alert(t('questboard_alert_break_streak_failed')); // Needs translation
+      alert(t('questboard_alert_break_streak_failed'));
     }
   };
 

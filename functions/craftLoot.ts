@@ -1,8 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 const RECIPES = {
-  Rare: { from: 'Common', count: 3 },
-  Epic: { from: 'Rare', count: 3 },
+  Rare: { from: 'Common', count: 5 },
+  Epic: { from: 'Rare', count: 7 },
   Legendary: { from: 'Epic', count: 3 }
 };
 
@@ -214,7 +214,7 @@ Example:
 
 Generate (MUST include crafting/forging process in description):`,
       nameRange: config.nameLength,
-      descRange: config.descRange
+      descRange: config.descLength
     };
   }
 }

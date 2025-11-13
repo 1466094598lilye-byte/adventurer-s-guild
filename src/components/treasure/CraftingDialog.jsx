@@ -15,8 +15,8 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
   const [error, setError] = useState('');
 
   const recipes = {
-    Rare: { from: 'Common', count: 3 },
-    Epic: { from: 'Rare', count: 3 },
+    Rare: { from: 'Common', count: 5 },
+    Epic: { from: 'Rare', count: 7 },
     Legendary: { from: 'Epic', count: 3 }
   };
 
@@ -281,7 +281,7 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
             <h3 className="font-black uppercase mb-3">
               {t('crafting_selected')} ({selectedLoot.length}/{currentRecipe.count})
             </h3>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               {selectedLoot.map(item => (
                 <div
                   key={item.id}
@@ -315,7 +315,7 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
               <p className="font-bold">{t('crafting_no_materials')}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-3 max-h-64 overflow-y-auto p-2"
+            <div className="grid grid-cols-4 gap-3 max-h-64 overflow-y-auto p-2"
               style={{
                 backgroundColor: '#FFF',
                 border: '4px solid #000'

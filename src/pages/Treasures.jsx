@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Gem, Filter, ChevronLeft, ChevronRight, Hammer } from 'lucide-react';
+import { Gem, Filter, ChevronLeft, ChevronRight, Hammer, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { useLanguage } from '@/components/LanguageContext';
 import CraftingDialog from '@/components/treasure/CraftingDialog';
@@ -11,6 +11,7 @@ export default function TreasuresPage() {
   const [rarityFilter, setRarityFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [showCraftingDialog, setShowCraftingDialog] = useState(false);
+  const [expandedLoot, setExpandedLoot] = useState(new Set());
   const itemsPerPage = 7;
   const queryClient = useQueryClient();
 
@@ -46,6 +47,7 @@ export default function TreasuresPage() {
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
+      setExpandedLoot(new Set()); // 切换页面时收起所有展开的卡片
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -53,10 +55,21 @@ export default function TreasuresPage() {
   const handleFilterChange = (rarity) => {
     setRarityFilter(rarity);
     setCurrentPage(1);
+    setExpandedLoot(new Set()); // 切换筛选时收起所有展开的卡片
   };
 
   const handleCraftSuccess = () => {
     queryClient.invalidateQueries(['loot']);
+  };
+
+  const toggleExpand = (lootId) => {
+    const newExpanded = new Set(expandedLoot);
+    if (newExpanded.has(lootId)) {
+      newExpanded.delete(lootId);
+    } else {
+      newExpanded.add(lootId);
+    }
+    setExpandedLoot(newExpanded);
   };
 
   return (
@@ -171,57 +184,79 @@ export default function TreasuresPage() {
 
             {/* 紧凑型卡片布局 */}
             <div className="space-y-3 mb-6">
-              {paginatedLoot.map((loot) => (
-                <div
-                  key={loot.id}
-                  className="p-3 flex items-start gap-3"
-                  style={{
-                    backgroundColor: rarityColors[loot.rarity].bg,
-                    color: rarityColors[loot.rarity].text,
-                    border: '4px solid #000',
-                    boxShadow: '4px 4px 0px #000'
-                  }}
-                >
-                  {/* 左侧：图标和稀有度 */}
-                  <div className="flex-shrink-0 text-center">
-                    <div className="text-4xl mb-2">{loot.icon}</div>
-                    <div 
-                      className="px-2 py-1 font-black uppercase text-xs"
-                      style={{
-                        backgroundColor: '#000',
-                        color: '#FFE66D',
-                        border: '2px solid #FFE66D'
-                      }}
-                    >
-                      {t(`rarity_${loot.rarity.toLowerCase()}`)}
+              {paginatedLoot.map((loot) => {
+                const isExpanded = expandedLoot.has(loot.id);
+                
+                return (
+                  <div
+                    key={loot.id}
+                    className="p-3 flex items-start gap-3"
+                    style={{
+                      backgroundColor: rarityColors[loot.rarity].bg,
+                      color: rarityColors[loot.rarity].text,
+                      border: '4px solid #000',
+                      boxShadow: '4px 4px 0px #000'
+                    }}
+                  >
+                    {/* 左侧：图标和稀有度 */}
+                    <div className="flex-shrink-0 text-center">
+                      <div className="text-4xl mb-2">{loot.icon}</div>
+                      <div 
+                        className="px-2 py-1 font-black uppercase text-xs"
+                        style={{
+                          backgroundColor: '#000',
+                          color: '#FFE66D',
+                          border: '2px solid #FFE66D'
+                        }}
+                      >
+                        {t(`rarity_${loot.rarity.toLowerCase()}`)}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* 右侧：名称和描述 */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-black uppercase mb-2 leading-tight">
-                      {loot.name}
-                    </h3>
+                    {/* 右侧：名称和描述 */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-black uppercase mb-2 leading-tight">
+                        {loot.name}
+                      </h3>
 
-                    <div 
-                      className="p-2 mb-2"
-                      style={{
-                        backgroundColor: 'rgba(255,255,255,0.9)',
-                        color: '#000',
-                        border: '2px solid #000'
-                      }}
-                    >
-                      <p className="font-bold text-xs leading-relaxed line-clamp-3">
-                        {loot.flavorText}
+                      <div 
+                        onClick={() => toggleExpand(loot.id)}
+                        className="p-2 mb-2 cursor-pointer hover:opacity-90 transition-opacity"
+                        style={{
+                          backgroundColor: 'rgba(255,255,255,0.9)',
+                          color: '#000',
+                          border: '2px solid #000'
+                        }}
+                      >
+                        <p 
+                          className={`font-bold text-xs leading-relaxed ${isExpanded ? '' : 'line-clamp-3'}`}
+                        >
+                          {loot.flavorText}
+                        </p>
+                        
+                        {/* 展开/收起指示器 */}
+                        <div className="flex items-center justify-center mt-2 gap-1">
+                          {isExpanded ? (
+                            <>
+                              <ChevronUp className="w-3 h-3" strokeWidth={3} />
+                              <span className="text-xs font-black">收起</span>
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="w-3 h-3" strokeWidth={3} />
+                              <span className="text-xs font-black">展开</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <p className="text-xs font-bold opacity-70">
+                        {format(new Date(loot.obtainedAt || loot.created_date), 'yyyy-MM-dd HH:mm')}
                       </p>
                     </div>
-
-                    <p className="text-xs font-bold opacity-70">
-                      {format(new Date(loot.obtainedAt || loot.created_date), 'yyyy-MM-dd HH:mm')}
-                    </p>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {totalPages > 1 && (

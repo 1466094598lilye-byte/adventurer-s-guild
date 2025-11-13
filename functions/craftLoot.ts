@@ -1,102 +1,87 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
-// 合成配方定义
-const CRAFTING_RECIPES = {
-  'Rare': { 
-    fromRarity: 'Common', 
-    requiredCount: 5 
-  },
-  'Epic': { 
-    fromRarity: 'Rare', 
-    requiredCount: 7 
-  }
+const RECIPES = {
+  Rare: { from: 'Common', count: 3 },
+  Epic: { from: 'Rare', count: 3 },
+  Legendary: { from: 'Epic', count: 3 }
 };
 
 Deno.serve(async (req) => {
   try {
-    // 1. 认证用户
     const base44 = createClientFromRequest(req);
+    
     const user = await base44.auth.me();
-
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 2. 解析请求参数
-    const { lootIds, targetRarity, language } = await req.json();
+    const { lootIds, targetRarity } = await req.json();
 
-    // 3. 校验参数
-    if (!lootIds || !Array.isArray(lootIds) || lootIds.length === 0) {
+    // Validate input
+    if (!lootIds || !Array.isArray(lootIds) || !targetRarity) {
       return Response.json({ 
-        error: language === 'zh' ? '无效的战利品ID列表' : 'Invalid lootIds' 
+        success: false, 
+        error: 'Invalid input parameters' 
       }, { status: 400 });
     }
 
-    if (!targetRarity || !CRAFTING_RECIPES[targetRarity]) {
+    // Check recipe exists
+    const recipe = RECIPES[targetRarity];
+    if (!recipe) {
       return Response.json({ 
-        error: language === 'zh' 
-          ? '无效的目标稀有度，只能合成稀有或史诗' 
-          : 'Invalid target rarity. Can only craft Rare or Epic.' 
+        success: false, 
+        error: 'Invalid target rarity' 
       }, { status: 400 });
     }
 
-    const recipe = CRAFTING_RECIPES[targetRarity];
-
-    // 4. 检查数量是否符合配方
-    if (lootIds.length !== recipe.requiredCount) {
+    // Verify correct number of items
+    if (lootIds.length !== recipe.count) {
       return Response.json({ 
-        error: language === 'zh'
-          ? `合成${targetRarity}需要正好${recipe.requiredCount}个${recipe.fromRarity}物品`
-          : `Crafting ${targetRarity} requires exactly ${recipe.requiredCount} ${recipe.fromRarity} items.` 
+        success: false, 
+        error: `Recipe requires exactly ${recipe.count} items` 
       }, { status: 400 });
     }
 
-    // 5. 读取所有待消耗的 Loot（无需解密，Loot 数据未加密）
-    const loots = [];
-    for (const lootId of lootIds) {
-      try {
-        const lootList = await base44.entities.Loot.filter({ id: lootId });
-        if (lootList.length > 0) {
-          loots.push(lootList[0]);
-        }
-      } catch (error) {
-        console.error(`Failed to fetch loot ${lootId}:`, error);
+    // Fetch all provided loot items
+    const lootItems = await Promise.all(
+      lootIds.map(id => base44.asServiceRole.entities.Loot.filter({ id }))
+    );
+
+    // Verify all items exist and belong to the user
+    for (let i = 0; i < lootItems.length; i++) {
+      const items = lootItems[i];
+      if (!items || items.length === 0) {
+        return Response.json({ 
+          success: false, 
+          error: 'One or more loot items not found' 
+        }, { status: 404 });
+      }
+      
+      const item = items[0];
+      if (item.created_by !== user.email) {
+        return Response.json({ 
+          success: false, 
+          error: 'Cannot craft items you do not own' 
+        }, { status: 403 });
+      }
+
+      // Verify rarity matches recipe
+      if (item.rarity !== recipe.from) {
+        return Response.json({ 
+          success: false, 
+          error: `All items must be ${recipe.from} rarity` 
+        }, { status: 400 });
       }
     }
 
-    // 6. 验证所有 Loot 都存在
-    if (loots.length !== lootIds.length) {
-      return Response.json({ 
-        error: language === 'zh' 
-          ? '部分战利品未找到' 
-          : 'Some loot items not found' 
-      }, { status: 404 });
-    }
+    // Get user's language preference
+    const browserLang = req.headers.get('accept-language') || '';
+    const language = browserLang.toLowerCase().includes('zh') ? 'zh' : 'en';
 
-    // 7. 验证所有 Loot 都属于当前用户
-    const allOwnedByUser = loots.every(loot => loot.created_by === user.email);
-    if (!allOwnedByUser) {
-      return Response.json({ 
-        error: language === 'zh' 
-          ? '你不拥有所有这些物品' 
-          : 'You do not own all these items' 
-      }, { status: 403 });
-    }
+    // Generate new loot with LLM
+    const { prompt, nameRange, descRange } = generatePrompt(targetRarity, language);
 
-    // 8. 验证所有 Loot 都是正确的稀有度
-    const allCorrectRarity = loots.every(loot => loot.rarity === recipe.fromRarity);
-    if (!allCorrectRarity) {
-      return Response.json({ 
-        error: language === 'zh'
-          ? `所有物品必须是${recipe.fromRarity}稀有度才能合成${targetRarity}`
-          : `All items must be ${recipe.fromRarity} rarity to craft ${targetRarity}` 
-      }, { status: 400 });
-    }
-
-    // 9. 使用 LLM 生成新的 Loot
-    const prompt = generateCraftingPrompt(targetRarity, language);
-    
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: prompt,
       response_json_schema: {
         type: "object",
@@ -109,116 +94,127 @@ Deno.serve(async (req) => {
       }
     });
 
-    // 10. 先创建新的 Loot（确保生成成功）
-    const newLoot = await base44.entities.Loot.create({
+    // Create new loot item
+    const newLoot = await base44.asServiceRole.entities.Loot.create({
       name: result.name,
       flavorText: result.flavorText,
       icon: result.icon,
       rarity: targetRarity,
-      obtainedAt: new Date().toISOString()
+      obtainedAt: new Date().toISOString(),
+      created_by: user.email
     });
 
-    console.log(`✅ New ${targetRarity} loot created:`, newLoot.id);
+    // Delete consumed items
+    await Promise.all(
+      lootIds.map(id => base44.asServiceRole.entities.Loot.delete(id))
+    );
 
-    // 11. 删除所有被消耗的 Loot（创建成功后再删除，降低风险）
-    let deletedCount = 0;
-    for (const loot of loots) {
-      try {
-        await base44.entities.Loot.delete(loot.id);
-        deletedCount++;
-      } catch (error) {
-        console.error(`Failed to delete loot ${loot.id}:`, error);
-        // 继续删除其他的，不中断流程
-      }
-    }
-
-    console.log(`✅ Deleted ${deletedCount}/${loots.length} consumed loots`);
-
-    // 12. 返回新 Loot 信息
     return Response.json({ 
       success: true, 
-      newLoot: newLoot,
-      consumedCount: deletedCount
+      newLoot: newLoot 
     });
 
   } catch (error) {
-    console.error('❌ Crafting error:', error);
+    console.error('Crafting error:', error);
     return Response.json({ 
-      error: error.message || 'Failed to craft loot' 
+      success: false, 
+      error: error.message || 'Internal server error' 
     }, { status: 500 });
   }
 });
 
-// 生成合成 Loot 的 Prompt
-function generateCraftingPrompt(targetRarity, language) {
+function generatePrompt(rarity, language) {
   if (language === 'zh') {
     const rarityConfig = {
       'Rare': {
+        context: '稀有 - 有些特别',
         nameLength: '5-10个汉字',
         descLength: '25-35个汉字',
-        context: '稀有 - 有些特别',
-        style: '描述其特殊之处、合成来历、实用价值',
-        example: '「熔炼银月石」- 五块晨曦碎片在烈焰中融为一体，凝聚成这块散发微光的银月石，蕴含着黎明的祝福之力。'
+        nameExample: '月光水晶',
+        descExample: '在月圆之夜才会发光的神秘水晶，据说能指引迷失者找到归途，是夜行冒险者的珍贵护符。'
       },
       'Epic': {
+        context: '史诗 - 强大华丽',
         nameLength: '6-12个汉字',
         descLength: '40-60个汉字',
-        context: '史诗 - 强大华丽',
-        style: '详细描述其史诗来历、强大能力、象征意义，强调合成升华的过程',
-        example: '「永恒誓约之剑」- 七件稀有圣器在铸造大师的引导下，经历三天三夜的淬炼，最终升华为这柄传世之剑。剑身铭刻着古老誓言，每一次挥舞都能感受到前辈英雄的意志共鸣。'
+        nameExample: '不灭之炎核心',
+        descExample: '传说中永不熄灭的圣火碎片，象征着永恒的意志与不屈的精神。能赋予持有者在绝境中燃起希望的勇气，是英雄们代代相传的信念图腾，见证了无数史诗般的战役与传奇。'
+      },
+      'Legendary': {
+        context: '传说 - 传奇神话',
+        nameLength: '8-15个汉字',
+        descLength: '60-90个汉字',
+        nameExample: '时空枢纽钥匙',
+        descExample: '据说能开启任意时空之门的终极神器，只有真正的英雄才配拥有。它承载着改变命运、扭转乾坤的至高力量，在历史长河中仅出现过三次，每一次都改写了整个纪元的走向。持有者将获得穿梭维度、掌控时间之流的神秘能力，成为星陨纪元最伟大的传说。'
       }
     };
 
-    const config = rarityConfig[targetRarity];
+    const config = rarityConfig[rarity];
 
-    return `你是【星陨纪元冒险者工会】的宝物铸造大师。一位冒险者刚刚通过合成系统，将多个低级战利品熔炼升华，铸造出了一件全新的${targetRarity}级战利品！
+    return {
+      prompt: `生成一个RPG风格的【合成】战利品道具。
 
-稀有度：${targetRarity}（${config.context}）
+稀有度：${rarity}（${config.context}）
+
+**重要提示**：这是通过合成低级材料铸造而成的宝物，请在描述中体现"熔炼"、"升华"、"铸造"、"淬炼"等合成相关的概念。
 
 要求：
-1. 名称：${config.nameLength}，要体现"合成"、"熔炼"、"升华"、"融合"的概念
-2. 简介：${config.descLength}，RPG风味，${config.style}
-3. **必须暗示这是通过合成获得的**，可以提到"熔炼"、"铸造"、"升华"、"融合"、"淬炼"等过程
-4. 选择合适的emoji作为图标（可以是🔥⚔️💎🛡️✨🌟等）
+1. 名称：${config.nameLength}，要体现合成铸造的特点
+2. 简介：${config.descLength}，必须包含合成相关的背景故事（如：由XXX材料熔炼而成、经过淬炼升华、在铸造工坊锻造等）
+3. 选择合适的emoji作为图标
 
 示例：
-${config.example}
+"${config.nameExample}" / "${config.descExample}"
 
-请生成：`;
-
+请生成（必须在描述中体现合成/铸造过程）：`,
+      nameRange: config.nameLength,
+      descRange: config.descLength
+    };
   } else {
     const rarityConfig = {
       'Rare': {
-        nameLength: '3-5 words',
-        descLength: '20-30 words',
         context: 'Rare - Somewhat special',
-        style: 'Describe its special features, crafting origin, and practical value',
-        example: '"Forged Moonsilver Stone" - Five dawn fragments melted together in fierce flames, coalescing into this glowing moonsilver stone, imbued with the blessing power of daybreak.'
+        nameLength: '3-5 words',
+        descLength: '25-35 words',
+        nameExample: 'Moonlight Crystal Shard',
+        descExample: 'A mysterious crystal that glows only during full moons, said to guide lost souls back to their path. A precious talisman for night travelers.'
       },
       'Epic': {
+        context: 'Epic - Powerful and magnificent',
         nameLength: '4-6 words',
         descLength: '40-60 words',
-        context: 'Epic - Powerful and magnificent',
-        style: 'Detail its epic origin, powerful abilities, symbolic meaning, emphasizing the synthesis ascension process',
-        example: '"Eternal Covenant Greatsword" - Seven rare relics, guided by the master smith, endured three days and nights of tempering, finally ascending into this legendary blade. Ancient oaths are inscribed upon its edge, and every swing resonates with the will of heroes past.'
+        nameExample: 'Eternal Flame Core Fragment',
+        descExample: 'A sacred fire shard that never extinguishes, symbolizing eternal will and unwavering spirit. Grants its bearer the courage to ignite hope in the darkest hours. A totem of belief passed down through generations of heroes, witnessing countless epic battles and legendary tales.'
+      },
+      'Legendary': {
+        context: 'Legendary - Mythic and legendary',
+        nameLength: '5-8 words',
+        descLength: '60-90 words',
+        nameExample: 'Chrono Nexus Key Artifact',
+        descExample: 'The ultimate mythical artifact said to unlock any temporal gateway, destined only for true heroes. It bears the supreme power to alter fate and reshape reality itself. Throughout history, it has appeared only three times, each rewriting the course of entire eras. Its wielder gains mystical abilities to traverse dimensions and command the flow of time, becoming the greatest legend of the Starfall Era.'
       }
     };
 
-    const config = rarityConfig[targetRarity];
+    const config = rarityConfig[rarity];
 
-    return `You are the Master Artificer of the [Starfall Era Adventurer's Guild]. An adventurer just used the crafting system to smelt and ascend multiple lower-tier treasures, forging a brand new ${targetRarity}-tier item!
+    return {
+      prompt: `Generate an RPG-style **crafted** treasure item.
 
-Rarity: ${targetRarity} (${config.context})
+Rarity: ${rarity} (${config.context})
+
+**Important**: This treasure was forged through crafting/smelting lower-tier materials. The description MUST reflect crafting concepts like "forged from", "smelted", "tempered", "ascended through crafting", etc.
 
 Requirements:
-1. Name: ${config.nameLength}, must convey concepts like "forged", "smelted", "ascended", "fused"
-2. Description: ${config.descLength}, RPG flavor, ${config.style}
-3. **Must hint that this was obtained through crafting**, mention processes like "smelting", "forging", "ascending", "fusing", "tempering"
-4. Choose appropriate emoji as icon (can be 🔥⚔️💎🛡️✨🌟 etc.)
+1. Name: ${config.nameLength}, reflecting its crafted nature
+2. Description: ${config.descLength}, MUST include crafting backstory (e.g., forged from XXX materials, tempered in the forge, ascended through smelting, etc.)
+3. Choose appropriate emoji as icon
 
 Example:
-${config.example}
+"${config.nameExample}" / "${config.descExample}"
 
-Generate:`;
+Generate (MUST include crafting/forging process in description):`,
+      nameRange: config.nameLength,
+      descRange: config.descRange
+    };
   }
 }

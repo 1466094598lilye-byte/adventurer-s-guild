@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { X, BookMarked, Star } from 'lucide-react';
+import { X, Star } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useLanguage } from '@/components/LanguageContext';
 import { getPraisePrompt, getPraiseRoles } from '@/components/prompts';
 
-export default function PraiseDialog({ quest, onClose, onAddNote }) {
+export default function PraiseDialog({ quest, onClose }) {
   const { language, t } = useLanguage();
   const [praise, setPraise] = useState('');
   const [loading, setLoading] = useState(true);
@@ -137,27 +137,11 @@ export default function PraiseDialog({ quest, onClose, onAddNote }) {
           </div>
         </div>
 
-        {/* Fixed Buttons at Bottom */}
-        <div className="flex gap-3 pt-4 flex-shrink-0">
-          <button
-            onClick={() => {
-              onAddNote();
-              onClose();
-            }}
-            className="flex-1 py-3 px-4 font-black uppercase text-sm flex items-center justify-center gap-2"
-            style={{
-              backgroundColor: '#C44569',
-              color: '#FFF',
-              border: '4px solid #000',
-              boxShadow: '4px 4px 0px #000'
-            }}
-          >
-            <BookMarked className="w-5 h-5" strokeWidth={3} />
-            {t('praise_add_review')}
-          </button>
+        {/* Fixed Button at Bottom */}
+        <div className="pt-4 flex-shrink-0">
           <button
             onClick={onClose}
-            className="flex-1 py-3 px-4 font-black uppercase text-sm"
+            className="w-full py-3 px-4 font-black uppercase text-sm"
             style={{
               backgroundColor: '#4ECDC4',
               border: '4px solid #000',

@@ -169,51 +169,57 @@ export default function TreasuresPage() {
               ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            {/* 紧凑型卡片布局 */}
+            <div className="space-y-3 mb-6">
               {paginatedLoot.map((loot) => (
                 <div
                   key={loot.id}
-                  className="p-4"
+                  className="p-3 flex items-start gap-3"
                   style={{
                     backgroundColor: rarityColors[loot.rarity].bg,
                     color: rarityColors[loot.rarity].text,
                     border: '4px solid #000',
-                    boxShadow: '6px 6px 0px #000'
+                    boxShadow: '4px 4px 0px #000'
                   }}
                 >
-                  <div 
-                    className="px-3 py-1 mb-3 inline-block font-black uppercase text-xs"
-                    style={{
-                      backgroundColor: '#000',
-                      color: '#FFE66D',
-                      border: '2px solid #FFE66D'
-                    }}
-                  >
-                    {t(`rarity_${loot.rarity.toLowerCase()}`)}
+                  {/* 左侧：图标和稀有度 */}
+                  <div className="flex-shrink-0 text-center">
+                    <div className="text-4xl mb-2">{loot.icon}</div>
+                    <div 
+                      className="px-2 py-1 font-black uppercase text-xs"
+                      style={{
+                        backgroundColor: '#000',
+                        color: '#FFE66D',
+                        border: '2px solid #FFE66D'
+                      }}
+                    >
+                      {t(`rarity_${loot.rarity.toLowerCase()}`)}
+                    </div>
                   </div>
 
-                  <div className="text-5xl mb-3 text-center">{loot.icon}</div>
+                  {/* 右侧：名称和描述 */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-black uppercase mb-2 leading-tight">
+                      {loot.name}
+                    </h3>
 
-                  <h3 className="text-xl font-black uppercase mb-2 text-center">
-                    {loot.name}
-                  </h3>
+                    <div 
+                      className="p-2 mb-2"
+                      style={{
+                        backgroundColor: 'rgba(255,255,255,0.9)',
+                        color: '#000',
+                        border: '2px solid #000'
+                      }}
+                    >
+                      <p className="font-bold text-xs leading-relaxed line-clamp-3">
+                        {loot.flavorText}
+                      </p>
+                    </div>
 
-                  <div 
-                    className="p-3 mb-3"
-                    style={{
-                      backgroundColor: 'rgba(255,255,255,0.9)',
-                      color: '#000',
-                      border: '2px solid #000'
-                    }}
-                  >
-                    <p className="font-bold text-sm leading-relaxed">
-                      {loot.flavorText}
+                    <p className="text-xs font-bold opacity-70">
+                      {format(new Date(loot.obtainedAt || loot.created_date), 'yyyy-MM-dd HH:mm')}
                     </p>
                   </div>
-
-                  <p className="text-xs font-bold text-center opacity-80">
-                    {format(new Date(loot.obtainedAt || loot.created_date), 'yyyy-MM-dd HH:mm')}
-                  </p>
                 </div>
               ))}
             </div>
@@ -243,8 +249,8 @@ export default function TreasuresPage() {
                   {t('treasures_prev')}
                 </button>
 
-                <div className="font-black">
-                  {t('treasures_page')} {currentPage} {t('treasures_page_of')} {totalPages} {t('treasures_page_items')}
+                <div className="font-black text-sm">
+                  {t('treasures_page')} {currentPage} {t('treasures_page_of')} {totalPages}
                 </div>
 
                 <button
@@ -275,6 +281,16 @@ export default function TreasuresPage() {
           onCraftSuccess={handleCraftSuccess}
         />
       </div>
+
+      {/* 文字截断样式 */}
+      <style>{`
+        .line-clamp-3 {
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+      `}</style>
     </div>
   );
 }

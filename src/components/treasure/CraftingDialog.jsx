@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/components/LanguageContext';
 
-export default function CraftingDialog({ onClose, onCraftSuccess }) {
+export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSuccess }) {
   const { language, t } = useLanguage();
   const queryClient = useQueryClient();
   
@@ -20,8 +20,7 @@ export default function CraftingDialog({ onClose, onCraftSuccess }) {
     Legendary: { from: 'Epic', count: 3 }
   };
 
-  const { data: allLoot = [] } = useQueryClient().getQueryData(['loot']) || { data: [] };
-
+  const allLoot = userLoot || [];
   const currentRecipe = recipes[targetRarity];
   const availableLoot = allLoot.filter(item => item.rarity === currentRecipe.from);
   const canCraft = selectedLoot.length === currentRecipe.count;
@@ -30,6 +29,17 @@ export default function CraftingDialog({ onClose, onCraftSuccess }) {
     setSelectedLoot([]);
     setError('');
   }, [targetRarity]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedLoot([]);
+      setError('');
+      setCraftedLoot(null);
+      setTargetRarity('Rare');
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
 
   const toggleLootSelection = (loot) => {
     if (selectedLoot.find(item => item.id === loot.id)) {
@@ -53,7 +63,6 @@ export default function CraftingDialog({ onClose, onCraftSuccess }) {
 
       if (result.success) {
         setCraftedLoot(result.newLoot);
-        queryClient.invalidateQueries(['loot']);
         if (onCraftSuccess) onCraftSuccess();
       } else {
         setError(result.error || (language === 'zh' ? '合成失败，请重试' : 'Crafting failed, please retry'));
@@ -77,6 +86,13 @@ export default function CraftingDialog({ onClose, onCraftSuccess }) {
       <div 
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
         style={{ backgroundColor: 'rgba(0,0,0,0.95)' }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setCraftedLoot(null);
+            setSelectedLoot([]);
+            onClose();
+          }
+        }}
       >
         <div 
           className="relative max-w-md w-full p-8 transform animate-bounce-in"
@@ -170,7 +186,11 @@ export default function CraftingDialog({ onClose, onCraftSuccess }) {
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
-      onClick={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
     >
       <div 
         className="relative max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 transform"
@@ -179,7 +199,6 @@ export default function CraftingDialog({ onClose, onCraftSuccess }) {
           border: '5px solid #000',
           boxShadow: '12px 12px 0px #000'
         }}
-        onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}

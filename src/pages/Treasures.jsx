@@ -11,7 +11,7 @@ export default function TreasuresPage() {
   const [rarityFilter, setRarityFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [showCraftingDialog, setShowCraftingDialog] = useState(false);
-  const itemsPerPage = 12;
+  const itemsPerPage = 7;
   const queryClient = useQueryClient();
 
   const { data: allLoot = [], isLoading } = useQuery({

@@ -52,8 +52,41 @@ Deno.serve(async (req) => {
     console.log('📅 2年前日期:', twoYearsAgoStr);
     console.log('🔍 将删除所有 completionDate < ' + twoYearsAgoStr + ' 的项目');
     
-    // 5. TODO: 查询需要删除的项目
-    // - 查询 status='completed' 且 completionDate < twoYearsAgoStr 的项目
+    // 5. 查询需要删除的项目（使用 service role 权限）
+    console.log('');
+    console.log('📊 第一步：查询符合条件的大项目...');
+    
+    let oldProjects = [];
+    try {
+      // 查询所有已完成的项目
+      const allCompletedProjects = await base44.asServiceRole.entities.LongTermProject.filter({
+        status: 'completed'
+      });
+      
+      console.log('✅ 查询到所有已完成的项目数量:', allCompletedProjects.length);
+      
+      // 在内存中过滤出超过2年的项目
+      oldProjects = allCompletedProjects.filter(project => {
+        if (!project.completionDate) return false;
+        return project.completionDate < twoYearsAgoStr;
+      });
+      
+      console.log('🎯 符合删除条件的项目数量:', oldProjects.length);
+      
+      if (oldProjects.length > 0) {
+        console.log('');
+        console.log('📋 需要删除的项目列表：');
+        oldProjects.forEach((project, index) => {
+          console.log(`  ${index + 1}. ${project.projectName} (完成于: ${project.completionDate}, ID: ${project.id})`);
+        });
+      } else {
+        console.log('✅ 没有找到需要删除的项目！');
+      }
+      
+    } catch (error) {
+      console.error('❌ 查询项目失败:', error.message);
+      throw new Error('查询大项目记录失败: ' + error.message);
+    }
     
     // 6. TODO: 删除关联的任务
     // - 根据 longTermProjectId 查询并删除所有关联任务
@@ -61,18 +94,25 @@ Deno.serve(async (req) => {
     // 7. TODO: 删除项目本身
     // - 删除所有符合条件的 LongTermProject 记录
     
-    // 8. 返回成功响应（临时响应，后续会包含实际清理结果）
+    // 8. 返回成功响应（包含查询到的项目信息）
     return Response.json({
       success: true,
-      message: '清理函数已成功执行（当前为测试模式）',
+      message: oldProjects.length > 0 
+        ? `找到 ${oldProjects.length} 个需要删除的项目（尚未执行删除）`
+        : '没有找到需要删除的项目',
       executedBy: user.email,
       executedAt: now.toISOString(),
       cutoffDate: twoYearsAgoStr,
-      explanation: `将删除所有完成日期早于 ${twoYearsAgoStr} 的大项目`,
-      // 后续会添加实际的清理统计数据
+      explanation: `查询所有完成日期早于 ${twoYearsAgoStr} 的大项目`,
+      foundProjects: oldProjects.map(p => ({
+        id: p.id,
+        name: p.projectName,
+        completionDate: p.completionDate
+      })),
       stats: {
-        projectsDeleted: 0,
-        questsDeleted: 0
+        projectsFound: oldProjects.length,
+        projectsDeleted: 0,  // 尚未删除
+        questsDeleted: 0     // 尚未删除
       }
     });
     

@@ -379,9 +379,9 @@ export default function QuestBoard() {
             // 删除关联的任务和项目本身
             for (const project of oldProjects) {
               try {
-                // 查询并删除关联任务
-                // Filter quests by longTermProjectId directly using a query to avoid fetching all quests
-                const relatedQuests = await base44.entities.Quest.filter({ longTermProjectId: project.id });
+                // 查询并删除关联任务 (Updated as per outline)
+                const allQuests = await base44.entities.Quest.list();
+                const relatedQuests = allQuests.filter(q => q.longTermProjectId === project.id);
                 
                 for (const quest of relatedQuests) {
                   try {
@@ -507,7 +507,8 @@ export default function QuestBoard() {
       batchInvalidateQueries(['user']);
       setStreakBreakInfo(null);
       
-      // No need to set hasProcessedDayRollover.current here, reload will clear it.
+      const rolloverKey = `${today}-${currentUser.id}`;
+      hasProcessedDayRollover.current = rolloverKey;
       
       setToast(t('questboard_toast_freeze_token_used'));
       setTimeout(() => setToast(null), 3000);
@@ -533,7 +534,8 @@ export default function QuestBoard() {
       batchInvalidateQueries(['user']);
       setStreakBreakInfo(null);
       
-      // No need to set hasProcessedDayRollover.current here, reload will clear it.
+      const rolloverKey = `${today}-${currentUser.id}`;
+      hasProcessedDayRollover.current = rolloverKey;
       
       setToast(t('questboard_toast_streak_broken'));
       setTimeout(() => setToast(null), 3000);

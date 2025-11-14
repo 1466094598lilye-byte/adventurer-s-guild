@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const LanguageContext = createContext();
@@ -34,6 +33,11 @@ export function LanguageProvider({ children }) {
       nav_journal: '冒险日志',
       nav_treasures: '宝物库',
       nav_profile: '冒险者',
+      
+      // Guest Mode Warning
+      guest_mode_warning_title: '游客模式',
+      guest_mode_warning_subtitle: '数据无法保存，建议登录以保护你的冒险记录',
+      login_button: '登录',
       
       // Quest Board
       questboard_title: '委托板',
@@ -287,6 +291,23 @@ export function LanguageProvider({ children }) {
       crafting_success_title: '合成成功！',
       crafting_collect: '收入囊中',
       crafting_error: '合成失败',
+      
+      // Exchange System
+      exchange_title: '传说宝物兑换所',
+      exchange_subtitle: '用珍贵的传说宝物换取保命的冻结券',
+      exchange_ratio: '兑换比例',
+      exchange_ratio_hint: '2个传说宝物 = 1张冻结券',
+      exchange_legendary_count: '当前拥有传说宝物',
+      exchange_select_prompt: '选择要兑换的传说宝物（需选择2个）',
+      exchange_selected: '已选择',
+      exchange_available: '可选传说宝物',
+      exchange_no_legendary: '暂无传说宝物，继续冒险或合成获取吧！',
+      exchange_button: '兑换冻结券',
+      exchange_in_progress: '兑换中...',
+      exchange_success_title: '兑换成功！',
+      exchange_success_message: '获得 1 张冻结券',
+      exchange_collect: '收入囊中',
+      exchange_error: '兑换失败',
     },
     en: {
       // Navigation
@@ -294,6 +315,11 @@ export function LanguageProvider({ children }) {
       nav_journal: 'Journal',
       nav_treasures: 'Treasures',
       nav_profile: 'Profile',
+      
+      // Guest Mode Warning
+      guest_mode_warning_title: 'Guest Mode',
+      guest_mode_warning_subtitle: 'Data cannot be saved. Please log in to protect your adventure records',
+      login_button: 'Login',
       
       // Quest Board
       questboard_title: 'Quest Board',
@@ -547,6 +573,23 @@ export function LanguageProvider({ children }) {
       crafting_success_title: 'Crafting Success!',
       crafting_collect: 'Collect',
       crafting_error: 'Crafting Failed',
+      
+      // Exchange System
+      exchange_title: 'Legendary Exchange',
+      exchange_subtitle: 'Trade precious legendary treasures for life-saving freeze tokens',
+      exchange_ratio: 'Exchange Ratio',
+      exchange_ratio_hint: '2 Legendary Treasures = 1 Freeze Token',
+      exchange_legendary_count: 'Current Legendary Treasures',
+      exchange_select_prompt: 'Select legendary treasures to exchange (need 2)',
+      exchange_selected: 'Selected',
+      exchange_available: 'Available Legendary Treasures',
+      exchange_no_legendary: 'No legendary treasures. Continue adventuring or craft to obtain!',
+      exchange_button: 'Exchange for Freeze Token',
+      exchange_in_progress: 'Exchanging...',
+      exchange_success_title: 'Exchange Success!',
+      exchange_success_message: 'Obtained 1 Freeze Token',
+      exchange_collect: 'Collect',
+      exchange_error: 'Exchange Failed',
     }
   };
 

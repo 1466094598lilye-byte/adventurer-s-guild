@@ -1,12 +1,27 @@
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Scroll, BookOpen, Gem, User } from "lucide-react";
+import { Scroll, BookOpen, Gem, User, LogIn } from "lucide-react";
 import { LanguageProvider, useLanguage } from "@/components/LanguageContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 
 function LayoutContent({ children }) {
   const location = useLocation();
   const { t } = useLanguage();
+
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch (error) {
+        return null;
+      }
+    },
+    retry: false,
+    staleTime: 10000,
+  });
 
   const tabs = [
     { name: 'QuestBoard', label: t('nav_questboard'), icon: Scroll },
@@ -19,9 +34,49 @@ function LayoutContent({ children }) {
     return location.pathname === createPageUrl(pageName);
   };
 
+  const handleLogin = () => {
+    base44.auth.redirectToLogin(window.location.pathname);
+  };
+
   return (
     <ErrorBoundary>
       <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F9FAFB' }}>
+        {/* Guest Mode Warning Banner */}
+        {!user && (
+          <div 
+            className="w-full py-3 px-4 flex items-center justify-between gap-3 sticky top-0 z-40"
+            style={{
+              backgroundColor: '#FFE66D',
+              borderBottom: '5px solid #000',
+              boxShadow: '0 5px 0px rgba(0,0,0,0.1)'
+            }}
+          >
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="text-2xl flex-shrink-0">⚠️</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-black text-sm uppercase leading-tight">
+                  {t('guest_mode_warning_title')}
+                </p>
+                <p className="font-bold text-xs leading-tight mt-0.5" style={{ color: '#666' }}>
+                  {t('guest_mode_warning_subtitle')}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleLogin}
+              className="flex-shrink-0 px-4 py-2 font-black uppercase text-sm flex items-center gap-2"
+              style={{
+                backgroundColor: '#4ECDC4',
+                border: '3px solid #000',
+                boxShadow: '3px 3px 0px #000'
+              }}
+            >
+              <LogIn className="w-4 h-4" strokeWidth={3} />
+              {t('login_button')}
+            </button>
+          </div>
+        )}
+
         {/* Main Content */}
         <div className="flex-1 pb-20">
           {children}

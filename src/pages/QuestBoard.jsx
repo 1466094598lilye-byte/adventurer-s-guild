@@ -1067,29 +1067,45 @@ export default function QuestBoard() {
   };
 
   const handleToggleRestDay = async () => {
+    // 检查用户是否登录
+    if (!user) {
+      alert(language === 'zh' 
+        ? '请先登录以使用此功能' 
+        : 'Please log in to use this feature');
+      return;
+    }
+
     if (quests.length > 0 && !isRestDay) {
       alert(t('questboard_alert_cannot_set_rest_day_with_quests'));
       return;
     }
     
-    const restDays = user?.restDays || [];
-    const isRestDayCurrently = restDays.includes(today);
-    
-    if (isRestDayCurrently) {
-      await base44.auth.updateMe({
-        restDays: restDays.filter(d => d !== today)
-      });
-      setToast(t('questboard_toast_rest_canceled_success'));
-    } else {
-      await base44.auth.updateMe({
-        restDays: [...restDays, today]
-      });
-      setToast(t('questboard_toast_rest_set_success'));
+    try {
+      const restDays = user?.restDays || [];
+      const isRestDayCurrently = restDays.includes(today);
+      
+      if (isRestDayCurrently) {
+        await base44.auth.updateMe({
+          restDays: restDays.filter(d => d !== today)
+        });
+        setToast(t('questboard_toast_rest_canceled_success'));
+      } else {
+        await base44.auth.updateMe({
+          restDays: [...restDays, today]
+        });
+        setToast(t('questboard_toast_rest_set_success'));
+      }
+      
+      batchInvalidateQueries(['user']);
+      setShowRestDayDialog(false);
+      setTimeout(() => setToast(null), 2000);
+    } catch (error) {
+      console.error('设置休息日失败:', error);
+      alert(language === 'zh'
+        ? '操作失败，请重试'
+        : 'Operation failed, please try again');
+      setShowRestDayDialog(false);
     }
-    
-    batchInvalidateQueries(['user']);
-    setShowRestDayDialog(false);
-    setTimeout(() => setToast(null), 2000);
   };
 
   const handleChestClose = async () => {

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const LanguageContext = createContext();
@@ -36,7 +37,7 @@ export function LanguageProvider({ children }) {
       
       // Guest Mode Warning
       guest_mode_warning_title: '游客模式',
-      guest_mode_warning_subtitle: '数据无法保存，建议登录以保护你的冒险记录',
+      guest_mode_warning_subtitle: '刷新页面数据会丢失，建议登录以永久保存你的冒险记录',
       login_button: '登录',
       
       // Quest Board
@@ -318,7 +319,7 @@ export function LanguageProvider({ children }) {
       
       // Guest Mode Warning
       guest_mode_warning_title: 'Guest Mode',
-      guest_mode_warning_subtitle: 'Data cannot be saved. Please log in to protect your adventure records',
+      guest_mode_warning_subtitle: 'Data will be lost on page refresh. Please log in to save your progress permanently',
       login_button: 'Login',
       
       // Quest Board
@@ -354,7 +355,7 @@ export function LanguageProvider({ children }) {
       questboard_alert_break_streak_failed: 'Failed to reset streak, please retry',
       questboard_toast_yesterday_quests_delayed: '{count} unfinished quests from yesterday have been delayed to today',
       questboard_toast_planned_quests_loaded: '{count} planned quests have been loaded',
-      questboard_toast_quest_added_rest_canceled: 'Quest added, rest day automatically cancelled',
+questboard_toast_quest_added_rest_canceled: 'Quest added, rest day automatically cancelled',
       questboard_toast_quests_added_to_board: '{count} quests added to the board!',
       questboard_toast_set_as_routine: 'Set as daily routine quest!',
       questboard_toast_quest_updated: 'Quest updated!',

@@ -3,7 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 /**
  * 清理已完成超过2年的大项目记录及其关联任务
  * 
- * 安全机制：只有管理员(admin)或系统调用可以执行此操作
+ * 安全机制：只删除当前用户自己创建的项目
  * 建议：每周运行一次
  */
 Deno.serve(async (req) => {
@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
     console.log('=== 开始清理旧的大项目记录 ===');
     console.log('执行时间:', new Date().toISOString());
     
-    // 2. 验证用户身份（必须是管理员）
+    // 2. 验证用户身份
     let user;
     try {
       user = await base44.auth.me();
@@ -23,24 +23,13 @@ Deno.serve(async (req) => {
       return Response.json({
         success: false,
         error: 'Unauthorized: Authentication required',
-        message: '需要管理员权限才能执行清理操作'
+        message: '需要登录才能执行清理操作'
       }, { status: 401 });
     }
     
-    // 3. 检查用户角色（只允许 admin）
-    if (!user || user.role !== 'admin') {
-      console.error('权限不足，当前用户角色:', user?.role || 'unknown');
-      return Response.json({
-        success: false,
-        error: 'Forbidden: Admin role required',
-        message: '只有管理员可以执行清理操作',
-        userRole: user?.role || 'unknown'
-      }, { status: 403 });
-    }
+    console.log('✅ 用户认证通过:', user.email);
     
-    console.log('✅ 管理员认证通过:', user.email);
-    
-    // 4. 计算"2年前"的日期（730天）
+    // 3. 计算"2年前"的日期（730天）
     const now = new Date();
     const twoYearsAgo = new Date(now);
     twoYearsAgo.setDate(twoYearsAgo.getDate() - 730); // 2年 = 730天
@@ -52,16 +41,16 @@ Deno.serve(async (req) => {
     console.log('📅 2年前日期:', twoYearsAgoStr);
     console.log('🔍 将删除所有 completionDate < ' + twoYearsAgoStr + ' 的项目');
     
-    // 5. 查询需要删除的项目（使用 service role 权限）
+    // 4. 查询需要删除的项目（使用用户身份查询，自动遵守 RLS）
     console.log('');
     console.log('📊 第一步：查询符合条件的大项目...');
     
     let oldProjects = [];
     try {
-      // 🔧 修复：使用 list() 而不是 filter()，因为 filter() 可能不支持 RLS
-      const allProjects = await base44.asServiceRole.entities.LongTermProject.list();
+      // 使用用户身份查询（会自动只返回用户自己的项目）
+      const allProjects = await base44.entities.LongTermProject.list();
       
-      console.log('✅ 查询到所有项目数量:', allProjects.length);
+      console.log('✅ 查询到用户的所有项目数量:', allProjects.length);
       
       // 🐛 DEBUG: 打印第一个项目的完整结构
       if (allProjects.length > 0) {
@@ -73,14 +62,12 @@ Deno.serve(async (req) => {
       
       // 在内存中过滤出已完成且超过2年的项目
       oldProjects = allProjects.filter(project => {
-        // Base44 实体数据存储在 data 字段中
-        const projectData = project.data || project;
-        const status = projectData.status;
-        const completionDate = projectData.completionDate;
+        const status = project.status;
+        const completionDate = project.completionDate;
         
-        console.log(`检查项目: ${projectData.projectName || '未命名'}`);
+        console.log(`检查项目: ${project.projectName || '未命名'}`);
         console.log(`  状态: ${status}`);
-        console.log(`  完成日期: ${completionDate}`);
+        console.log(`  完成日期: ${completionDate || '无'}`);
         
         // 必须是已完成状态
         if (status !== 'completed') {
@@ -108,10 +95,7 @@ Deno.serve(async (req) => {
         console.log('');
         console.log('📋 需要删除的项目列表：');
         oldProjects.forEach((project, index) => {
-          const projectData = project.data || project;
-          const name = projectData.projectName || '未命名';
-          const date = projectData.completionDate || '无日期';
-          console.log(`  ${index + 1}. ${name} (完成于: ${date}, ID: ${project.id})`);
+          console.log(`  ${index + 1}. ${project.projectName} (完成于: ${project.completionDate}, ID: ${project.id})`);
         });
       } else {
         console.log('✅ 没有找到需要删除的项目！');
@@ -123,13 +107,13 @@ Deno.serve(async (req) => {
       throw new Error('查询大项目记录失败: ' + error.message);
     }
     
-    // 6. TODO: 删除关联的任务
+    // 5. TODO: 删除关联的任务
     // - 根据 longTermProjectId 查询并删除所有关联任务
     
-    // 7. TODO: 删除项目本身
+    // 6. TODO: 删除项目本身
     // - 删除所有符合条件的 LongTermProject 记录
     
-    // 8. 返回成功响应（包含查询到的项目信息）
+    // 7. 返回成功响应（包含查询到的项目信息）
     return Response.json({
       success: true,
       message: oldProjects.length > 0 
@@ -139,14 +123,11 @@ Deno.serve(async (req) => {
       executedAt: now.toISOString(),
       cutoffDate: twoYearsAgoStr,
       explanation: `查询所有完成日期早于 ${twoYearsAgoStr} 的大项目`,
-      foundProjects: oldProjects.map(p => {
-        const projectData = p.data || p;
-        return {
-          id: p.id,
-          name: projectData.projectName || '未命名',
-          completionDate: projectData.completionDate || '无日期'
-        };
-      }),
+      foundProjects: oldProjects.map(p => ({
+        id: p.id,
+        name: p.projectName || '未命名',
+        completionDate: p.completionDate || '无日期'
+      })),
       stats: {
         projectsFound: oldProjects.length,
         projectsDeleted: 0,  // 尚未删除

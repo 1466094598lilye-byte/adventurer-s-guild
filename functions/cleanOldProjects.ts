@@ -52,43 +52,25 @@ Deno.serve(async (req) => {
       
       console.log('✅ 查询到用户的所有项目数量:', allProjects.length);
       
-      // 🐛 DEBUG: 打印第一个项目的完整结构
-      if (allProjects.length > 0) {
-        console.log('');
-        console.log('🐛 调试：第一个项目的数据结构：');
-        console.log(JSON.stringify(allProjects[0], null, 2));
-        console.log('');
-      }
-      
       // 在内存中过滤出已完成且超过2年的项目
       oldProjects = allProjects.filter(project => {
         const status = project.status;
         const completionDate = project.completionDate;
         
-        console.log(`检查项目: ${project.projectName || '未命名'}`);
-        console.log(`  状态: ${status}`);
-        console.log(`  完成日期: ${completionDate || '无'}`);
-        
         // 必须是已完成状态
         if (status !== 'completed') {
-          console.log('  ⏭️  跳过（未完成）');
           return false;
         }
         
         // 必须有完成日期
         if (!completionDate) {
-          console.log('  ⚠️  跳过（没有完成日期）');
           return false;
         }
         
         // 检查是否超过2年
-        const shouldDelete = completionDate < twoYearsAgoStr;
-        console.log(`  📅 ${completionDate} < ${twoYearsAgoStr} ? ${shouldDelete ? '✅ 符合删除条件' : '❌ 不符合'}`);
-        
-        return shouldDelete;
+        return completionDate < twoYearsAgoStr;
       });
       
-      console.log('');
       console.log('🎯 符合删除条件的项目数量:', oldProjects.length);
       
       if (oldProjects.length > 0) {
@@ -99,39 +81,111 @@ Deno.serve(async (req) => {
         });
       } else {
         console.log('✅ 没有找到需要删除的项目！');
+        
+        return Response.json({
+          success: true,
+          message: '没有找到需要删除的项目',
+          executedBy: user.email,
+          executedAt: now.toISOString(),
+          cutoffDate: twoYearsAgoStr,
+          foundProjects: [],
+          stats: {
+            projectsFound: 0,
+            projectsDeleted: 0,
+            questsDeleted: 0
+          }
+        });
       }
       
     } catch (error) {
       console.error('❌ 查询项目失败:', error.message);
-      console.error('错误详情:', error);
       throw new Error('查询大项目记录失败: ' + error.message);
     }
     
-    // 5. TODO: 删除关联的任务
-    // - 根据 longTermProjectId 查询并删除所有关联任务
+    // 5. 删除关联的任务
+    console.log('');
+    console.log('📊 第二步：删除关联的任务...');
     
-    // 6. TODO: 删除项目本身
-    // - 删除所有符合条件的 LongTermProject 记录
+    let totalQuestsDeleted = 0;
     
-    // 7. 返回成功响应（包含查询到的项目信息）
+    for (const project of oldProjects) {
+      console.log('');
+      console.log(`🔍 处理项目: ${project.projectName} (ID: ${project.id})`);
+      
+      try {
+        // 查询该项目的所有关联任务
+        const allQuests = await base44.entities.Quest.list();
+        const relatedQuests = allQuests.filter(q => q.longTermProjectId === project.id);
+        
+        console.log(`  ├─ 找到 ${relatedQuests.length} 个关联任务`);
+        
+        if (relatedQuests.length > 0) {
+          // 逐个删除任务
+          for (const quest of relatedQuests) {
+            try {
+              await base44.entities.Quest.delete(quest.id);
+              totalQuestsDeleted++;
+              console.log(`  ├─ ✅ 删除任务: ${quest.title || quest.actionHint || '未命名'}`);
+            } catch (deleteError) {
+              console.error(`  ├─ ❌ 删除任务失败 (ID: ${quest.id}):`, deleteError.message);
+            }
+          }
+        }
+        
+      } catch (error) {
+        console.error(`  └─ ❌ 查询关联任务失败:`, error.message);
+      }
+    }
+    
+    console.log('');
+    console.log(`✅ 共删除 ${totalQuestsDeleted} 个关联任务`);
+    
+    // 6. 删除项目本身
+    console.log('');
+    console.log('📊 第三步：删除大项目记录...');
+    
+    let projectsDeleted = 0;
+    const deletedProjects = [];
+    const failedProjects = [];
+    
+    for (const project of oldProjects) {
+      try {
+        await base44.entities.LongTermProject.delete(project.id);
+        projectsDeleted++;
+        deletedProjects.push({
+          id: project.id,
+          name: project.projectName,
+          completionDate: project.completionDate
+        });
+        console.log(`✅ 删除项目: ${project.projectName} (ID: ${project.id})`);
+      } catch (error) {
+        console.error(`❌ 删除项目失败 (${project.projectName}):`, error.message);
+        failedProjects.push({
+          id: project.id,
+          name: project.projectName,
+          error: error.message
+        });
+      }
+    }
+    
+    console.log('');
+    console.log('=== 清理完成 ===');
+    console.log(`📊 项目删除成功: ${projectsDeleted}/${oldProjects.length}`);
+    console.log(`📊 任务删除成功: ${totalQuestsDeleted}`);
+    
+    // 7. 返回成功响应
     return Response.json({
       success: true,
-      message: oldProjects.length > 0 
-        ? `找到 ${oldProjects.length} 个需要删除的项目（尚未执行删除）`
-        : '没有找到需要删除的项目',
+      message: `成功删除 ${projectsDeleted} 个大项目和 ${totalQuestsDeleted} 个关联任务`,
       executedBy: user.email,
       executedAt: now.toISOString(),
       cutoffDate: twoYearsAgoStr,
-      explanation: `查询所有完成日期早于 ${twoYearsAgoStr} 的大项目`,
-      foundProjects: oldProjects.map(p => ({
-        id: p.id,
-        name: p.projectName || '未命名',
-        completionDate: p.completionDate || '无日期'
-      })),
+      deletedProjects,
+      failedProjects: failedProjects.length > 0 ? failedProjects : undefined,
       stats: {
         projectsFound: oldProjects.length,
-        projectsDeleted: 0,  // 尚未删除
-        questsDeleted: 0     // 尚未删除
+        projectsDeleted,
+        questsDeleted: totalQuestsDeleted
       }
     });
     

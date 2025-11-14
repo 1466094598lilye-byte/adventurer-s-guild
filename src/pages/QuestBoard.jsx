@@ -43,7 +43,7 @@ export default function QuestBoard() {
   const { language, t } = useLanguage();
 
   const hasProcessedDayRollover = useRef(false);
-  const invalidationTimeoutRef = useRef(null); // Added this
+  const invalidationTimeoutRef = useRef(null);
 
   const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -106,15 +106,15 @@ export default function QuestBoard() {
     },
     retry: 2,
     retryDelay: 1000,
-    staleTime: 5000, // 5秒内不重新获取
-    refetchOnWindowFocus: false, // 防止切换窗口时频繁刷新
+    staleTime: 5000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me(),
     retry: 2,
-    staleTime: 10000, // 10秒内不重新获取
+    staleTime: 10000,
     refetchOnWindowFocus: false,
   });
 
@@ -122,15 +122,10 @@ export default function QuestBoard() {
     queryKey: ['hasLongTermQuests'],
     queryFn: async () => {
       try {
-        // console.log('=== 检查是否有未完成的大项目任务 ==='); // Commented out verbose logging
-        
-        // Query for any active long-term projects with 'todo' status quests
         const todoLongTermQuests = await base44.entities.Quest.filter({ 
           isLongTermProject: true, 
           status: 'todo' 
         }, '-date', 100);
-        
-        // console.log('未完成的大项目任务数量:', todoLongTermQuests.length); // Commented out verbose logging
         
         return todoLongTermQuests.length > 0;
       } catch (error) {
@@ -139,17 +134,17 @@ export default function QuestBoard() {
       }
     },
     initialData: false,
-    staleTime: 30000, // 30秒内不重新获取
+    staleTime: 30000,
     refetchOnWindowFocus: false,
   });
 
-  // 日更逻辑：检查连胜中断 + 未完成任务顺延 + 明日规划任务创建 + 每日修炼任务生成 + 清理旧任务 + 清理旧宝箱记录
+  // 日更逻辑：检查连胜中断 + 未完成任务顺延 + 明日规划任务创建 + 每日修炼任务生成 + 清理旧任务 + 清理旧宝箱记录 + 清理旧大项目
   useEffect(() => {
-    // This function contains the actual rollover steps 1-5, independent of the streak break decision
+    // This function contains the actual rollover steps 1-6, independent of the streak break decision
     const executeDayRolloverLogic = async () => {
-      if (!user) return; // Ensure user is available for this internal logic
+      if (!user) return;
 
-      console.log('=== 执行其他日更逻辑 (步骤 1-5) ===');
+      console.log('=== 执行其他日更逻辑 (步骤 1-6) ===');
       
       try {
         // 1. 清理7天前的已完成任务（排除大项目任务 + 保护每日修炼模板）
@@ -227,7 +222,7 @@ export default function QuestBoard() {
             }
           }
           
-          batchInvalidateQueries(['quests']); // Use batch invalidate
+          batchInvalidateQueries(['quests']);
           const nonRoutineCount = oldQuests.filter(q => !q.isRoutine).length;
           if (nonRoutineCount > 0) {
             setToast(t('questboard_toast_yesterday_quests_delayed', { count: nonRoutineCount }));
@@ -265,7 +260,7 @@ export default function QuestBoard() {
             });
           }
 
-          batchInvalidateQueries(['quests', 'user']); // Use batch invalidate
+          batchInvalidateQueries(['quests', 'user']);
           setToast(t('questboard_toast_planned_quests_loaded', { count: nextDayPlanned.length }));
           setTimeout(() => setToast(null), 3000);
         }
@@ -351,7 +346,68 @@ export default function QuestBoard() {
             }
           }
           
-          batchInvalidateQueries(['quests']); // Use batch invalidate
+          batchInvalidateQueries(['quests']);
+        }
+
+        // 🎯 6. 清理已完成超过2年的大项目及其关联任务
+        console.log('=== 开始清理旧的大项目记录 ===');
+        
+        try {
+          // 计算2年前的日期（730天）
+          const twoYearsAgo = new Date();
+          twoYearsAgo.setDate(twoYearsAgo.getDate() - 730);
+          const twoYearsAgoStr = format(twoYearsAgo, 'yyyy-MM-dd');
+          
+          console.log('📅 2年前日期:', twoYearsAgoStr);
+          
+          // 查询所有大项目
+          const allProjects = await base44.entities.LongTermProject.list();
+          
+          // 筛选出已完成且超过2年的项目
+          const oldProjects = allProjects.filter(project => {
+            return project.status === 'completed' && 
+                   project.completionDate && 
+                   project.completionDate < twoYearsAgoStr;
+          });
+          
+          if (oldProjects.length > 0) {
+            console.log(`🎯 找到 ${oldProjects.length} 个需要清理的旧项目`);
+            
+            let totalQuestsDeleted = 0;
+            let projectsDeleted = 0;
+            
+            // 删除关联的任务和项目本身
+            for (const project of oldProjects) {
+              try {
+                // 查询并删除关联任务
+                // Filter quests by longTermProjectId directly using a query to avoid fetching all quests
+                const relatedQuests = await base44.entities.Quest.filter({ longTermProjectId: project.id });
+                
+                for (const quest of relatedQuests) {
+                  try {
+                    await base44.entities.Quest.delete(quest.id);
+                    totalQuestsDeleted++;
+                  } catch (error) {
+                    console.error(`删除关联任务失败 (ID: ${quest.id}):`, error);
+                  }
+                }
+                
+                // 删除项目本身
+                await base44.entities.LongTermProject.delete(project.id);
+                projectsDeleted++;
+                console.log(`✅ 已清理项目: ${project.projectName} (完成于: ${project.completionDate})`);
+              } catch (error) {
+                console.error(`清理项目失败 (${project.projectName}):`, error);
+              }
+            }
+            
+            console.log(`✅ 大项目清理完成 - 删除 ${projectsDeleted} 个项目，${totalQuestsDeleted} 个关联任务`);
+            batchInvalidateQueries(['hasLongTermQuests', 'quests']); // Invalidate relevant queries
+          } else {
+            console.log('✅ 没有需要清理的旧大项目');
+          }
+        } catch (error) {
+          console.error('清理旧大项目时出错:', error);
         }
         
         console.log('=== 日更逻辑执行完成 ===');
@@ -365,7 +421,6 @@ export default function QuestBoard() {
       if (!user) return;
       
       const rolloverKey = `${today}-${user.id}`;
-      // Prevent re-running the initial check if already processed or if streak break dialog is open
       if (hasProcessedDayRollover.current === rolloverKey || streakBreakInfo) {
         console.log('日更逻辑已执行过或正在处理连胜中断，跳过 initial check');
         return;
@@ -373,7 +428,7 @@ export default function QuestBoard() {
       
       console.log('=== 开始执行日更逻辑 (Initial Check) ===');
 
-      // 🔥 【修复】步骤 0：检查昨天是否有未完成任务，处理连胜中断
+      // 步骤 0：检查昨天是否有未完成任务，处理连胜中断
       console.log('=== 步骤 0: 检查连胜中断 ===');
       const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
       const restDays = user?.restDays || [];
@@ -383,11 +438,6 @@ export default function QuestBoard() {
       console.log('昨天日期:', yesterday);
       console.log('上次完成日期:', lastClearDate);
       console.log('昨天是否为休息日:', restDays.includes(yesterday));
-      
-      // 🔥 【关键修复】正确的逻辑：
-      // 1. 如果 lastClearDate === today，说明今天已经完成了，不检查
-      // 2. 如果 lastClearDate === yesterday，说明昨天完成了，今天还没完成（正常情况）
-      // 3. 如果 lastClearDate < yesterday，说明有间隔，需要检查是否中断
       
       // 先检查今天是否已经完成所有任务
       if (lastClearDate === today) {
@@ -403,7 +453,6 @@ export default function QuestBoard() {
       if (shouldCheckForStreakBreak) {
         console.log('昨天不是休息日，且上次完成日期不是昨天');
         
-        // Query yesterday's tasks to see if there were any and if they were all completed
         const yesterdayQuests = await base44.entities.Quest.filter({ date: yesterday });
         console.log('昨天的任务数量:', yesterdayQuests.length);
         
@@ -418,38 +467,34 @@ export default function QuestBoard() {
             
             if (currentStreak > 0) {
               setStreakBreakInfo({
-                incompleteDays: 1, // Only checking for yesterday
+                incompleteDays: 1,
                 currentStreak: currentStreak,
                 freezeTokenCount: freezeTokenCount
               });
               
               console.log('弹出连胜中断对话框，暂停其他日更逻辑');
-              // IMPORTANT: Return here to pause the rollover until user choice from dialog
               return;
             } else {
               console.log('当前没有连胜（为0），无需触发连胜中断对话框');
             }
           } else {
-            console.log('昨天所有任务都完成了'); // But lastClearDate wasn't yesterday, implying they didn't get a chest.
+            console.log('昨天所有任务都完成了');
           }
         } else {
-          console.log('昨天没有任务'); // No tasks, no streak break.
+          console.log('昨天没有任务');
         }
       } else {
         console.log('昨天是休息日或已完成所有任务，无需检查连胜中断');
       }
 
-      // If no streak break scenario was triggered, mark as processed and execute the rest of the logic.
       hasProcessedDayRollover.current = rolloverKey;
-      await executeDayRolloverLogic(); // Call the wrapped function
+      await executeDayRolloverLogic();
     };
 
-    // Only run handleDayRollover if user is available.
-    // The `streakBreakInfo` in dependency array ensures this effect re-runs if dialog closes.
     if (user) {
       handleDayRollover();
     }
-  }, [user, today, queryClient, t, streakBreakInfo]); // `streakBreakInfo` is a dependency to re-evaluate when it closes.
+  }, [user, today, queryClient, t, streakBreakInfo]);
 
   // Handle use token (called from StreakBreakDialog)
   const handleUseToken = async () => {
@@ -459,20 +504,17 @@ export default function QuestBoard() {
         freezeTokenCount: (currentUser?.freezeTokenCount || 0) - 1
       });
       
-      batchInvalidateQueries(['user']); // Use batch invalidate
+      batchInvalidateQueries(['user']);
       setStreakBreakInfo(null);
       
-      // 🔥 【关键修复】标记日更已处理，防止重复触发
-      const rolloverKey = `${today}-${currentUser.id}`;
-      hasProcessedDayRollover.current = rolloverKey;
+      // No need to set hasProcessedDayRollover.current here, reload will clear it.
       
       setToast(t('questboard_toast_freeze_token_used'));
       setTimeout(() => setToast(null), 3000);
       
-      // 延迟执行日更逻辑（不再重新检查连胜中断）
       setTimeout(async () => {
-        // 直接执行日更逻辑，因为已经处理了连胜问题
-        await executeDayRolloverLogic();
+        // 重载页面以确保所有日更逻辑从头开始执行，并且用户数据是最新的
+        window.location.reload();
       }, 500);
     } catch (error) {
       console.error('使用冻结券失败:', error);
@@ -483,24 +525,22 @@ export default function QuestBoard() {
   // Handle break streak (called from StreakBreakDialog)
   const handleBreakStreak = async () => {
     try {
-      const currentUser = await base44.auth.me(); // Fetch current user to get ID for rolloverKey
+      const currentUser = await base44.auth.me();
       await base44.auth.updateMe({
         streakCount: 0
       });
       
-      batchInvalidateQueries(['user']); // Use batch invalidate
+      batchInvalidateQueries(['user']);
       setStreakBreakInfo(null);
       
-      // 🔥 【关键修复】标记日更已处理，防止重复触发
-      const rolloverKey = `${today}-${currentUser.id}`;
-      hasProcessedDayRollover.current = rolloverKey;
+      // No need to set hasProcessedDayRollover.current here, reload will clear it.
       
       setToast(t('questboard_toast_streak_broken'));
       setTimeout(() => setToast(null), 3000);
       
-      // 延迟执行日更逻辑（不再重新检查连胜中断）
       setTimeout(async () => {
-        await executeDayRolloverLogic();
+        // 重载页面以确保所有日更逻辑从头开始执行，并且用户数据是最新的
+        window.location.reload();
       }, 500);
     } catch (error) {
       console.error('重置连胜失败:', error);
@@ -513,7 +553,6 @@ export default function QuestBoard() {
       console.log('=== createQuestMutation 开始 ===');
       console.log('原始数据:', questData);
       
-      // 调用后端函数加密 title 和 actionHint
       const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
         title: questData.title,
         actionHint: questData.actionHint
@@ -531,7 +570,7 @@ export default function QuestBoard() {
       return result;
     },
     onSuccess: async () => {
-      batchInvalidateQueries(['quests', 'user']); // Use batch invalidate
+      batchInvalidateQueries(['quests', 'user']);
       
       const currentUser = await base44.auth.me();
       const restDays = currentUser?.restDays || [];
@@ -539,7 +578,6 @@ export default function QuestBoard() {
         await base44.auth.updateMe({
           restDays: restDays.filter(d => d !== today)
         });
-        // user query will be invalidated by batchInvalidateQueries
         setToast(t('questboard_toast_quest_added_rest_canceled'));
         setTimeout(() => setToast(null), 2000);
       }
@@ -548,7 +586,6 @@ export default function QuestBoard() {
 
   const updateQuestMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      // 如果更新的数据包含 title 或 actionHint，需要先加密
       const updateData = { ...data };
       
       if (data.title !== undefined || data.actionHint !== undefined || data.originalActionHint !== undefined) {
@@ -568,14 +605,14 @@ export default function QuestBoard() {
       return base44.entities.Quest.update(id, updateData);
     },
     onSuccess: () => {
-      batchInvalidateQueries(['quests']); // Use batch invalidate
+      batchInvalidateQueries(['quests']);
     }
   });
 
   const deleteQuestMutation = useMutation({
     mutationFn: (id) => base44.entities.Quest.delete(id),
     onSuccess: () => {
-      batchInvalidateQueries(['quests']); // Use batch invalidate
+      batchInvalidateQueries(['quests']);
     }
   });
 
@@ -608,7 +645,6 @@ export default function QuestBoard() {
         }
       });
 
-      // 添加到待确认列表（不加密，因为还在前端展示）
       setPendingQuests(prev => [...prev, {
         ...result,
         tags: [],
@@ -642,7 +678,6 @@ export default function QuestBoard() {
     setIsConfirmingPending(true);
     try {
       for (const quest of pendingQuests) {
-        // 通过 mutation 创建（会自动加密）
         await createQuestMutation.mutateAsync({
           title: quest.title,
           actionHint: quest.actionHint,
@@ -718,7 +753,7 @@ export default function QuestBoard() {
           loot: lootResult
         });
 
-        batchInvalidateQueries(['user', 'loot']); // Use batch invalidate
+        batchInvalidateQueries(['user', 'loot']);
         
         break;
       }
@@ -730,7 +765,6 @@ export default function QuestBoard() {
     console.log('任务信息:', quest);
     
     try {
-      // 1. 更新任务状态
       await updateQuestMutation.mutateAsync({
         id: quest.id,
         data: { status: 'done' }
@@ -739,11 +773,10 @@ export default function QuestBoard() {
       
       setSelectedQuest(quest);
 
-      // 2. 等待缓存刷新完成
-      batchInvalidateQueries(['quests']); // Use batch invalidate
+      batchInvalidateQueries(['quests']);
       console.log('查询缓存已刷新');
 
-      // 3. 处理大项目完成检查
+      // 处理大项目完成检查
       if (quest.isLongTermProject && quest.longTermProjectId) {
         setTimeout(async () => {
           try {
@@ -778,15 +811,12 @@ export default function QuestBoard() {
         }, 500);
       }
       
-      // 4. 延迟一下确保状态完全更新，然后检查是否全部完成
       await new Promise(resolve => setTimeout(resolve, 300));
       
       console.log('=== 开始检查是否全部完成 ===');
       console.log('今日日期:', today);
       
       try {
-        // 直接从服务器获取最新数据，不依赖缓存
-        // Note: The `queryFn` for 'quests' decrypts data. So `updatedQuests` will have plaintext.
         const updatedQuests = await queryClient.fetchQuery({
           queryKey: ['quests', today],
           queryFn: async () => {
@@ -801,7 +831,7 @@ export default function QuestBoard() {
                   return { ...q, title: data.title, actionHint: data.actionHint };
                 } catch (error) {
                   console.warn('Failed to decrypt quest during all-done check:', q.id, error);
-                  return q; // Return original if decryption fails
+                  return q;
                 }
               })
             );
@@ -821,7 +851,6 @@ export default function QuestBoard() {
         if (allDone && updatedQuests.length > 0) {
           console.log('=== 所有任务已完成，开始处理连胜和宝箱 ===');
           
-          // 先关闭所有其他对话框，避免层级冲突
           console.log('关闭所有其他对话框...');
           setShowCalendar(false);
           setShowLongTermDialog(false);
@@ -908,7 +937,6 @@ export default function QuestBoard() {
           const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
           console.log('新的最长连胜:', newLongestStreak);
           
-          // 更新用户连胜数据
           await base44.auth.updateMe({
             streakCount: newStreak,
             longestStreak: newLongestStreak,
@@ -916,12 +944,10 @@ export default function QuestBoard() {
           });
           console.log('用户连胜数据已更新');
           
-          batchInvalidateQueries(['user']); // Use batch invalidate
+          batchInvalidateQueries(['user']);
           
-          // 检查里程碑奖励
           await checkAndAwardMilestone(newStreak);
           
-          // 处理宝箱
           const chests = await base44.entities.DailyChest.filter({ date: today });
           console.log('现有宝箱数量:', chests.length);
           console.log('宝箱详情:', chests);
@@ -1021,7 +1047,6 @@ export default function QuestBoard() {
         date: editingQuest.date
       };
 
-      // 通过 mutation 更新（会自动加密）
       await updateQuestMutation.mutateAsync({
         id: editingQuest.id,
         data: updateData
@@ -1032,7 +1057,7 @@ export default function QuestBoard() {
 
       setEditingQuest(null);
 
-      batchInvalidateQueries(['quests', 'user']); // Use batch invalidate
+      batchInvalidateQueries(['quests', 'user']);
     } catch (error) {
       console.error("更新失败", error);
       alert(t('questboard_alert_update_failed'));
@@ -1060,7 +1085,7 @@ export default function QuestBoard() {
       setToast(t('questboard_toast_rest_set_success'));
     }
     
-    batchInvalidateQueries(['user']); // Use batch invalidate
+    batchInvalidateQueries(['user']);
     setShowRestDayDialog(false);
     setTimeout(() => setToast(null), 2000);
   };
@@ -1102,7 +1127,7 @@ export default function QuestBoard() {
         lastPlannedDate: today
       });
       
-      batchInvalidateQueries(['user']); // Use batch invalidate
+      batchInvalidateQueries(['user']);
       setToast(t('questboard_toast_plan_saved_success', { count: plannedQuests.length }));
       setTimeout(() => setToast(null), 3000);
     } catch (error) {
@@ -1117,15 +1142,13 @@ export default function QuestBoard() {
   };
 
   const handleLongTermQuestsCreated = (count) => {
-    batchInvalidateQueries(['quests', 'hasLongTermQuests']); // Use batch invalidate
+    batchInvalidateQueries(['quests', 'hasLongTermQuests']);
     setToast(t('questboard_toast_longterm_quests_added_success', { count: count }));
     setTimeout(() => setToast(null), 3000);
   };
 
   const handleCalendarUpdate = () => {
-    batchInvalidateQueries(['quests', 'hasLongTermQuests']); // Use batch invalidate
-    
-    // 强制重新获取，确保立即更新
+    batchInvalidateQueries(['quests', 'hasLongTermQuests']);
     queryClient.refetchQueries({ queryKey: ['hasLongTermQuests'] });
   };
 
@@ -1759,7 +1782,6 @@ export default function QuestBoard() {
         )}
       </div>
 
-      {/* 🔥 连胜中断对话框 */}
       {streakBreakInfo && (
         <StreakBreakDialog
           incompleteDays={streakBreakInfo.incompleteDays}
@@ -1767,7 +1789,7 @@ export default function QuestBoard() {
           freezeTokenCount={streakBreakInfo.freezeTokenCount}
           onUseToken={handleUseToken}
           onBreakStreak={handleBreakStreak}
-          onClose={() => setStreakBreakInfo(null)} // Allows closing, but usually an action is chosen
+          onClose={() => setStreakBreakInfo(null)}
         />
       )}
 

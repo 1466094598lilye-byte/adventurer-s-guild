@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -112,8 +111,14 @@ export default function QuestBoard() {
 
   const { data: user } = useQuery({
     queryKey: ['user'],
-    queryFn: () => base44.auth.me(),
-    retry: 2,
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch (error) {
+        return null;
+      }
+    },
+    retry: false,
     staleTime: 10000,
     refetchOnWindowFocus: false,
   });
@@ -574,14 +579,17 @@ export default function QuestBoard() {
     onSuccess: async () => {
       batchInvalidateQueries(['quests', 'user']);
       
-      const currentUser = await base44.auth.me();
-      const restDays = currentUser?.restDays || [];
-      if (restDays.includes(today)) {
-        await base44.auth.updateMe({
-          restDays: restDays.filter(d => d !== today)
-        });
-        setToast(t('questboard_toast_quest_added_rest_canceled'));
-        setTimeout(() => setToast(null), 2000);
+      // 只有登录用户才处理休息日取消逻辑
+      if (user) {
+        const currentUser = await base44.auth.me();
+        const restDays = currentUser?.restDays || [];
+        if (restDays.includes(today)) {
+          await base44.auth.updateMe({
+            restDays: restDays.filter(d => d !== today)
+          });
+          setToast(t('questboard_toast_quest_added_rest_canceled'));
+          setTimeout(() => setToast(null), 2000);
+        }
       }
     }
   });
@@ -620,14 +628,6 @@ export default function QuestBoard() {
 
   const handleTextSubmit = async () => {
     if (!textInput.trim() || isProcessing) return;
-    
-    // 检查用户是否登录
-    if (!user) {
-      alert(language === 'zh' 
-        ? '请先登录以创建任务' 
-        : 'Please log in to create tasks');
-      return;
-    }
     
     setIsProcessing(true);
     try {
@@ -684,14 +684,6 @@ export default function QuestBoard() {
 
   const handleConfirmPendingQuests = async () => {
     if (pendingQuests.length === 0 || isConfirmingPending) return;
-    
-    // 检查用户是否登录
-    if (!user) {
-      alert(language === 'zh' 
-        ? '请先登录以保存任务' 
-        : 'Please log in to save tasks');
-      return;
-    }
     
     setIsConfirmingPending(true);
     try {
@@ -875,96 +867,99 @@ export default function QuestBoard() {
           setShowRestDayDialog(false);
           await new Promise(resolve => setTimeout(resolve, 100));
           
-          const currentUser = await base44.auth.me();
-          console.log('当前用户数据:', currentUser);
-          console.log('lastClearDate:', currentUser?.lastClearDate);
-          console.log('今日日期:', today);
-          
-          if (currentUser?.lastClearDate === today) {
-            console.log('今天已经完成过所有任务，不重复增加连胜');
+          // 只有登录用户才更新连胜
+          if (user) {
+            const currentUser = await base44.auth.me();
+            console.log('当前用户数据:', currentUser);
+            console.log('lastClearDate:', currentUser?.lastClearDate);
+            console.log('今日日期:', today);
             
-            const chests = await base44.entities.DailyChest.filter({ date: today });
-            console.log('检查宝箱 - 数量:', chests.length);
-            
-            if (chests.length === 0) {
-              console.log('没有宝箱，创建新宝箱');
-              await base44.entities.DailyChest.create({ 
-                date: today, 
-                opened: false 
-              });
-              console.log('宝箱创建成功，准备显示');
-              setTimeout(() => {
-                console.log('执行 setShowChest(true)');
-                setShowChest(true);
-              }, 500);
-            } else {
-              console.log('宝箱已存在，opened 状态:', chests[0].opened);
-              if (!chests[0].opened) {
-                console.log('宝箱未开启，显示宝箱界面');
+            if (currentUser?.lastClearDate === today) {
+              console.log('今天已经完成过所有任务，不重复增加连胜');
+              
+              const chests = await base44.entities.DailyChest.filter({ date: today });
+              console.log('检查宝箱 - 数量:', chests.length);
+              
+              if (chests.length === 0) {
+                console.log('没有宝箱，创建新宝箱');
+                await base44.entities.DailyChest.create({ 
+                  date: today, 
+                  opened: false 
+                });
+                console.log('宝箱创建成功，准备显示');
                 setTimeout(() => {
                   console.log('执行 setShowChest(true)');
                   setShowChest(true);
                 }, 500);
               } else {
-                console.log('宝箱已开启过，不显示');
-              }
-            }
-            
-            return;
-          }
-          
-          // 计算连胜
-          let newStreak = 1;
-          const lastClearDate = currentUser?.lastClearDate;
-          const restDays = currentUser?.restDays || [];
-          
-          if (lastClearDate) {
-            let checkDate = new Date();
-            checkDate.setDate(checkDate.getDate() - 1);
-            
-            let daysBack = 0;
-            let foundLastWorkDay = false;
-            
-            while (daysBack < 365 && !foundLastWorkDay) {
-              const checkDateStr = format(checkDate, 'yyyy-MM-dd');
-              
-              if (!restDays.includes(checkDateStr)) {
-                if (checkDateStr === lastClearDate) {
-                  newStreak = (currentUser?.streakCount || 0) + 1;
-                  console.log('连续完成（跳过了休息日），连胜 +1，新连胜:', newStreak);
+                console.log('宝箱已存在，opened 状态:', chests[0].opened);
+                if (!chests[0].opened) {
+                  console.log('宝箱未开启，显示宝箱界面');
+                  setTimeout(() => {
+                    console.log('执行 setShowChest(true)');
+                    setShowChest(true);
+                  }, 500);
                 } else {
-                  console.log('中断了，连胜重置为1');
-                  newStreak = 1;
+                  console.log('宝箱已开启过，不显示');
                 }
-                foundLastWorkDay = true;
               }
               
-              daysBack++;
-              checkDate.setDate(checkDate.getDate() - 1);
+              return;
             }
             
-            if (!foundLastWorkDay) {
-              console.log('未找到上一个工作日，连胜设为1');
+            // 计算连胜
+            let newStreak = 1;
+            const lastClearDate = currentUser?.lastClearDate;
+            const restDays = currentUser?.restDays || [];
+            
+            if (lastClearDate) {
+              let checkDate = new Date();
+              checkDate.setDate(checkDate.getDate() - 1);
+              
+              let daysBack = 0;
+              let foundLastWorkDay = false;
+              
+              while (daysBack < 365 && !foundLastWorkDay) {
+                const checkDateStr = format(checkDate, 'yyyy-MM-dd');
+                
+                if (!restDays.includes(checkDateStr)) {
+                  if (checkDateStr === lastClearDate) {
+                    newStreak = (currentUser?.streakCount || 0) + 1;
+                    console.log('连续完成（跳过了休息日），连胜 +1，新连胜:', newStreak);
+                  } else {
+                    console.log('中断了，连胜重置为1');
+                    newStreak = 1;
+                  }
+                  foundLastWorkDay = true;
+                }
+                
+                daysBack++;
+                checkDate.setDate(checkDate.getDate() - 1);
+              }
+              
+              if (!foundLastWorkDay) {
+                console.log('未找到上一个工作日，连胜设为1');
+                newStreak = 1;
+              }
+            } else {
+              console.log('第一次完成所有任务，连胜设为1');
               newStreak = 1;
             }
-          } else {
-            console.log('第一次完成所有任务，连胜设为1');
-            newStreak = 1;
+            
+            const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
+            console.log('新的最长连胜:', newLongestStreak);
+            
+            await base44.auth.updateMe({
+              streakCount: newStreak,
+              longestStreak: newLongestStreak,
+              lastClearDate: today
+            });
+            console.log('用户连胜数据已更新');
+            
+            batchInvalidateQueries(['user']);
+            
+            await checkAndAwardMilestone(newStreak);
           }
-          
-          const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
-          console.log('新的最长连胜:', newLongestStreak);
-          
-          await base44.auth.updateMe({
-            streakCount: newStreak,
-            longestStreak: newLongestStreak,
-            lastClearDate: today
-          });
-          console.log('用户连胜数据已更新');
-          
-          batchInvalidateQueries(['user']);
-          
-          await checkAndAwardMilestone(newStreak);
           
           const chests = await base44.entities.DailyChest.filter({ date: today });
           console.log('现有宝箱数量:', chests.length);
@@ -1083,11 +1078,11 @@ export default function QuestBoard() {
   };
 
   const handleToggleRestDay = async () => {
-    // 检查用户是否登录
+    // 游客模式下不允许设置休息日（因为需要保存到 user 数据）
     if (!user) {
       alert(language === 'zh' 
-        ? '请先登录以使用此功能' 
-        : 'Please log in to use this feature');
+        ? '游客模式下无法设置休息日（需要登录保存数据）' 
+        : 'Cannot set rest day in guest mode (login required to save data)');
       return;
     }
 
@@ -1130,6 +1125,9 @@ export default function QuestBoard() {
     
     await new Promise(resolve => setTimeout(resolve, 200));
     
+    // 只有登录用户才检查规划
+    if (!user) return;
+    
     const currentUser = await base44.auth.me();
     const lastPlanned = currentUser?.lastPlannedDate;
     
@@ -1155,6 +1153,8 @@ export default function QuestBoard() {
   };
 
   const handlePlanSaved = async (plannedQuests) => {
+    if (!user) return;
+    
     try {
       await base44.auth.updateMe({
         nextDayPlannedQuests: plannedQuests,
@@ -1171,6 +1171,13 @@ export default function QuestBoard() {
   };
 
   const handleOpenPlanning = () => {
+    if (!user) {
+      alert(language === 'zh'
+        ? '游客模式下无法规划明日任务（需要登录保存数据）'
+        : 'Cannot plan tomorrow\'s quests in guest mode (login required to save data)');
+      return;
+    }
+    
     setShowCelebrationInPlanning(false);
     setShowPlanningDialog(true);
   };
@@ -1465,7 +1472,7 @@ export default function QuestBoard() {
           </div>
         )}
 
-        {(nextDayPlannedCount > 0 || canShowPlanningButton) && (
+        {user && (nextDayPlannedCount > 0 || canShowPlanningButton) && (
           <div 
             className="mb-6 p-4"
             style={{
@@ -1562,20 +1569,25 @@ export default function QuestBoard() {
         <div className="mt-6">
           <Button
             onClick={() => setShowRestDayDialog(true)}
-            disabled={quests.length > 0 && !isRestDay}
+            disabled={!user || (quests.length > 0 && !isRestDay)}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
             style={{
               backgroundColor: isRestDay ? '#FF6B35' : '#4ECDC4',
               color: isRestDay ? '#FFF' : '#000',
               border: '4px solid #000',
               boxShadow: '6px 6px 0px #000',
-              opacity: (quests.length > 0 && !isRestDay) ? 0.5 : 1
+              opacity: (!user || (quests.length > 0 && !isRestDay)) ? 0.5 : 1
             }}
           >
             <Coffee className="w-6 h-6" strokeWidth={3} />
             {isRestDay ? t('questboard_cancel_rest') : t('questboard_set_rest')}
           </Button>
-          {quests.length > 0 && !isRestDay && (
+          {!user && (
+            <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
+              {language === 'zh' ? '游客模式下无法设置休息日' : 'Cannot set rest day in guest mode'}
+            </p>
+          )}
+          {user && quests.length > 0 && !isRestDay && (
             <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
               {t('questboard_cannot_set_rest_day_hint')}
             </p>
@@ -1610,7 +1622,7 @@ export default function QuestBoard() {
           />
         )}
 
-        {showPlanningDialog && (
+        {showPlanningDialog && user && (
           <EndOfDaySummaryAndPlanning
             showCelebration={showCelebrationInPlanning}
             currentStreak={user?.streakCount || 0}

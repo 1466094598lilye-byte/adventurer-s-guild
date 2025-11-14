@@ -40,18 +40,35 @@ Deno.serve(async (req) => {
     
     console.log('✅ 管理员认证通过:', user.email);
     
-    // 4. TODO: 这里将实现实际的清理逻辑
-    // - 计算2年前的日期
-    // - 查询需要删除的项目
-    // - 删除关联的任务
-    // - 删除项目本身
+    // 4. 计算"2年前"的日期（730天）
+    const now = new Date();
+    const twoYearsAgo = new Date(now);
+    twoYearsAgo.setDate(twoYearsAgo.getDate() - 730); // 2年 = 730天
     
-    // 5. 返回成功响应（临时响应，后续会包含实际清理结果）
+    // 格式化为 yyyy-MM-dd
+    const twoYearsAgoStr = twoYearsAgo.toISOString().split('T')[0];
+    
+    console.log('📅 当前日期:', now.toISOString().split('T')[0]);
+    console.log('📅 2年前日期:', twoYearsAgoStr);
+    console.log('🔍 将删除所有 completionDate < ' + twoYearsAgoStr + ' 的项目');
+    
+    // 5. TODO: 查询需要删除的项目
+    // - 查询 status='completed' 且 completionDate < twoYearsAgoStr 的项目
+    
+    // 6. TODO: 删除关联的任务
+    // - 根据 longTermProjectId 查询并删除所有关联任务
+    
+    // 7. TODO: 删除项目本身
+    // - 删除所有符合条件的 LongTermProject 记录
+    
+    // 8. 返回成功响应（临时响应，后续会包含实际清理结果）
     return Response.json({
       success: true,
       message: '清理函数已成功执行（当前为测试模式）',
       executedBy: user.email,
-      executedAt: new Date().toISOString(),
+      executedAt: now.toISOString(),
+      cutoffDate: twoYearsAgoStr,
+      explanation: `将删除所有完成日期早于 ${twoYearsAgoStr} 的大项目`,
       // 后续会添加实际的清理统计数据
       stats: {
         projectsDeleted: 0,

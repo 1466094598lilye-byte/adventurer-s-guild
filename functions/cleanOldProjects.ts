@@ -58,35 +58,45 @@ Deno.serve(async (req) => {
     
     let oldProjects = [];
     try {
-      // 查询所有已完成的项目
-      const allCompletedProjects = await base44.asServiceRole.entities.LongTermProject.filter({
-        status: 'completed'
-      });
+      // 🔧 修复：使用 list() 而不是 filter()，因为 filter() 可能不支持 RLS
+      const allProjects = await base44.asServiceRole.entities.LongTermProject.list();
       
-      console.log('✅ 查询到所有已完成的项目数量:', allCompletedProjects.length);
+      console.log('✅ 查询到所有项目数量:', allProjects.length);
       
       // 🐛 DEBUG: 打印第一个项目的完整结构
-      if (allCompletedProjects.length > 0) {
+      if (allProjects.length > 0) {
         console.log('');
         console.log('🐛 调试：第一个项目的数据结构：');
-        console.log(JSON.stringify(allCompletedProjects[0], null, 2));
+        console.log(JSON.stringify(allProjects[0], null, 2));
         console.log('');
       }
       
-      // 在内存中过滤出超过2年的项目
-      oldProjects = allCompletedProjects.filter(project => {
-        // 尝试多种可能的数据访问方式
-        const completionDate = project.completionDate || project.data?.completionDate;
+      // 在内存中过滤出已完成且超过2年的项目
+      oldProjects = allProjects.filter(project => {
+        // Base44 实体数据存储在 data 字段中
+        const projectData = project.data || project;
+        const status = projectData.status;
+        const completionDate = projectData.completionDate;
         
-        console.log(`检查项目: ${project.projectName || project.data?.projectName}, 完成日期: ${completionDate}`);
+        console.log(`检查项目: ${projectData.projectName || '未命名'}`);
+        console.log(`  状态: ${status}`);
+        console.log(`  完成日期: ${completionDate}`);
         
-        if (!completionDate) {
-          console.log('  ⚠️  没有完成日期，跳过');
+        // 必须是已完成状态
+        if (status !== 'completed') {
+          console.log('  ⏭️  跳过（未完成）');
           return false;
         }
         
+        // 必须有完成日期
+        if (!completionDate) {
+          console.log('  ⚠️  跳过（没有完成日期）');
+          return false;
+        }
+        
+        // 检查是否超过2年
         const shouldDelete = completionDate < twoYearsAgoStr;
-        console.log(`  📅 ${completionDate} < ${twoYearsAgoStr} ? ${shouldDelete}`);
+        console.log(`  📅 ${completionDate} < ${twoYearsAgoStr} ? ${shouldDelete ? '✅ 符合删除条件' : '❌ 不符合'}`);
         
         return shouldDelete;
       });
@@ -98,8 +108,9 @@ Deno.serve(async (req) => {
         console.log('');
         console.log('📋 需要删除的项目列表：');
         oldProjects.forEach((project, index) => {
-          const name = project.projectName || project.data?.projectName || '未命名';
-          const date = project.completionDate || project.data?.completionDate || '无日期';
+          const projectData = project.data || project;
+          const name = projectData.projectName || '未命名';
+          const date = projectData.completionDate || '无日期';
           console.log(`  ${index + 1}. ${name} (完成于: ${date}, ID: ${project.id})`);
         });
       } else {
@@ -128,11 +139,14 @@ Deno.serve(async (req) => {
       executedAt: now.toISOString(),
       cutoffDate: twoYearsAgoStr,
       explanation: `查询所有完成日期早于 ${twoYearsAgoStr} 的大项目`,
-      foundProjects: oldProjects.map(p => ({
-        id: p.id,
-        name: p.projectName || p.data?.projectName || '未命名',
-        completionDate: p.completionDate || p.data?.completionDate || '无日期'
-      })),
+      foundProjects: oldProjects.map(p => {
+        const projectData = p.data || p;
+        return {
+          id: p.id,
+          name: projectData.projectName || '未命名',
+          completionDate: projectData.completionDate || '无日期'
+        };
+      }),
       stats: {
         projectsFound: oldProjects.length,
         projectsDeleted: 0,  // 尚未删除

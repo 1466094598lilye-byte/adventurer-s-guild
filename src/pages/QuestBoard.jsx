@@ -621,6 +621,14 @@ export default function QuestBoard() {
   const handleTextSubmit = async () => {
     if (!textInput.trim() || isProcessing) return;
     
+    // 检查用户是否登录
+    if (!user) {
+      alert(language === 'zh' 
+        ? '请先登录以创建任务' 
+        : 'Please log in to create tasks');
+      return;
+    }
+    
     setIsProcessing(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
@@ -676,6 +684,14 @@ export default function QuestBoard() {
 
   const handleConfirmPendingQuests = async () => {
     if (pendingQuests.length === 0 || isConfirmingPending) return;
+    
+    // 检查用户是否登录
+    if (!user) {
+      alert(language === 'zh' 
+        ? '请先登录以保存任务' 
+        : 'Please log in to save tasks');
+      return;
+    }
     
     setIsConfirmingPending(true);
     try {

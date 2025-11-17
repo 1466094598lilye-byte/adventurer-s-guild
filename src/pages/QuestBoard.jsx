@@ -500,13 +500,13 @@ export default function QuestBoard() {
       }
 
       hasProcessedDayRollover.current = rolloverKey;
-      await executeDayRoloverLogic();
+      await executeDayRolloverLogic();
     };
 
     if (user) {
       handleDayRollover();
     }
-  }, [user, today, yesterday, queryClient, t, streakBreakInfo]);
+  }, [user, today, yesterday, queryClient, t]); // Removed streakBreakInfo from dependencies to prevent infinite loop
 
   // Handle use token (called from StreakBreakDialog)
   const handleUseToken = async () => {
@@ -1324,7 +1324,7 @@ export default function QuestBoard() {
           </Button>
           
           <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
-            💡 {t('questboard_longterm_hint')}
+            {t('questboard_longterm_hint')}
           </p>
 
           {pendingQuests.length > 0 && (

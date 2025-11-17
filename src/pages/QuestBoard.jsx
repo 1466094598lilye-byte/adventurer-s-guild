@@ -45,6 +45,7 @@ export default function QuestBoard() {
   const invalidationTimeoutRef = useRef(null);
 
   const today = format(new Date(), 'yyyy-MM-dd');
+  const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
 
   // 🔥 优化：批量刷新查询，避免频繁触发
   const batchInvalidateQueries = (keys) => {
@@ -215,7 +216,6 @@ export default function QuestBoard() {
         }
 
         // 3. 处理昨天未完成的任务（顺延到今天）
-        const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
         const oldQuests = await base44.entities.Quest.filter({ date: yesterday, status: 'todo' });
         
         if (oldQuests.length > 0) {
@@ -435,7 +435,6 @@ export default function QuestBoard() {
 
       // 步骤 0：检查昨天是否有未完成任务，处理连胜中断
       console.log('=== 步骤 0: 检查连胜中断 ===');
-      const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
       const restDays = user?.restDays || [];
       const lastClearDate = user?.lastClearDate;
       
@@ -499,14 +498,18 @@ export default function QuestBoard() {
     if (user) {
       handleDayRollover();
     }
-  }, [user, today, queryClient, t, streakBreakInfo]);
+  }, [user, today, yesterday, queryClient, t, streakBreakInfo]);
 
   // Handle use token (called from StreakBreakDialog)
   const handleUseToken = async () => {
     try {
       const currentUser = await base44.auth.me();
+      
+      // 🔧 修复：使用冻结券时，将 lastClearDate 设置为昨天，表示"昨天已处理"
+      // 这样刷新后就不会再次触发连胜中断检查
       await base44.auth.updateMe({
-        freezeTokenCount: (currentUser?.freezeTokenCount || 0) - 1
+        freezeTokenCount: (currentUser?.freezeTokenCount || 0) - 1,
+        lastClearDate: yesterday  // 关键修复：标记昨天已处理
       });
       
       batchInvalidateQueries(['user']);
@@ -518,8 +521,8 @@ export default function QuestBoard() {
       setToast(t('questboard_toast_freeze_token_used'));
       setTimeout(() => setToast(null), 3000);
       
+      // 刷新页面以确保所有数据同步
       setTimeout(async () => {
-        // 重载页面以确保所有日更逻辑从头开始执行，并且用户数据是最新的
         window.location.reload();
       }, 500);
     } catch (error) {
@@ -546,7 +549,6 @@ export default function QuestBoard() {
       setTimeout(() => setToast(null), 3000);
       
       setTimeout(async () => {
-        // 重载页面以确保所有日更逻辑从头开始执行，并且用户数据是最新的
         window.location.reload();
       }, 500);
     } catch (error) {

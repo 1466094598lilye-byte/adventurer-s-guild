@@ -39,6 +39,7 @@ export default function QuestBoard() {
   const [completedProject, setCompletedProject] = useState(null);
   const [currentHour, setCurrentHour] = useState(new Date().getHours());
   const [streakBreakInfo, setStreakBreakInfo] = useState(null);
+  const [isLoadingRoutineQuests, setIsLoadingRoutineQuests] = useState(false); // Added state
   const queryClient = useQueryClient();
   const { language, t } = useLanguage();
 
@@ -278,6 +279,9 @@ export default function QuestBoard() {
         const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
         
         if (allRoutineQuests.length > 0) {
+          // 🔧 显示"正在加载每日修炼"提示
+          setIsLoadingRoutineQuests(true);
+          
           const uniqueRoutinesMap = new Map();
           for (const quest of allRoutineQuests) {
             let decryptedActionHint = quest.actionHint;
@@ -352,6 +356,8 @@ export default function QuestBoard() {
             }
           }
           
+          // 🔧 关闭加载提示
+          setIsLoadingRoutineQuests(false);
           batchInvalidateQueries(['quests']);
         }
 
@@ -419,6 +425,7 @@ export default function QuestBoard() {
         console.log('=== 日更逻辑执行完成 ===');
       } catch (error) {
         console.error('日更逻辑执行失败:', error);
+        setIsLoadingRoutineQuests(false); // Ensure loader is hidden on error
       }
     };
 
@@ -493,7 +500,7 @@ export default function QuestBoard() {
       }
 
       hasProcessedDayRollover.current = rolloverKey;
-      await executeDayRolloverLogic();
+      await executeDayRoloverLogic();
     };
 
     if (user) {
@@ -1840,6 +1847,61 @@ export default function QuestBoard() {
           onBreakStreak={handleBreakStreak}
           onClose={() => setStreakBreakInfo(null)}
         />
+      )}
+
+      {/* 🔧 新增：正在加载每日修炼任务的弹窗 */}
+      {isLoadingRoutineQuests && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+        >
+          <div 
+            className="relative max-w-md w-full p-8 transform"
+            style={{
+              backgroundColor: '#FFE66D',
+              border: '5px solid #000',
+              boxShadow: '12px 12px 0px #000'
+            }}
+          >
+            <div className="text-center">
+              <Loader2 
+                className="w-16 h-16 mx-auto mb-4 animate-spin" 
+                strokeWidth={4}
+                style={{ color: '#000' }}
+              />
+              
+              <h2 
+                className="text-2xl font-black uppercase mb-3"
+                style={{ color: '#000' }}
+              >
+                {language === 'zh' ? '⚙️ 正在加载每日修炼 ⚙️' : '⚙️ Loading Daily Routines ⚙️'}
+              </h2>
+
+              <div 
+                className="p-4"
+                style={{
+                  backgroundColor: '#FFF',
+                  border: '3px solid #000'
+                }}
+              >
+                <p className="font-bold leading-relaxed">
+                  {language === 'zh'
+                    ? '工会正在为你准备今日的每日修炼任务，请稍候片刻，不要刷新页面...'
+                    : 'The Guild is preparing your daily routine quests. Please wait a moment and do not refresh the page...'}
+                </p>
+              </div>
+
+              <p 
+                className="text-xs font-bold mt-4"
+                style={{ color: '#666' }}
+              >
+                {language === 'zh'
+                  ? '💡 通常只需要几秒钟'
+                  : '💡 This usually takes just a few seconds'}
+              </p>
+            </div>
+          </div>
+        </div>
       )}
 
       {toast && (

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -274,14 +273,11 @@ export default function QuestBoard() {
 
         // 5. 处理每日修炼任务（自动生成今日任务，保持原有评级）
         console.log('=== 开始处理每日修炼任务 ===');
-        
+
         const todayQuests = await base44.entities.Quest.filter({ date: today });
         const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
-        
+
         if (allRoutineQuests.length > 0) {
-          // 🔧 显示"正在加载每日修炼"提示
-          setIsLoadingRoutineQuests(true);
-          
           const uniqueRoutinesMap = new Map();
           for (const quest of allRoutineQuests) {
             let decryptedActionHint = quest.actionHint;
@@ -303,12 +299,29 @@ export default function QuestBoard() {
               }
             }
           }
-          
+
+          // 🔧 先检查是否真的需要生成新任务
+          let needToCreate = false;
           for (const [actionHintPlain, templateQuest] of uniqueRoutinesMap) {
             const alreadyExists = todayQuests.some(
               q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === templateQuest.actionHint)
             );
-            
+            if (!alreadyExists) {
+              needToCreate = true;
+              break;
+            }
+          }
+
+          // 只有在真正需要创建时才显示加载弹窗
+          if (needToCreate) {
+            setIsLoadingRoutineQuests(true);
+          }
+
+          for (const [actionHintPlain, templateQuest] of uniqueRoutinesMap) {
+            const alreadyExists = todayQuests.some(
+              q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === templateQuest.actionHint)
+            );
+
             if (alreadyExists) continue;
             
             try {
@@ -355,11 +368,13 @@ export default function QuestBoard() {
               console.error(`生成每日修炼任务失败: ${actionHintPlain}`, error);
             }
           }
-          
-          // 🔧 关闭加载提示
-          setIsLoadingRoutineQuests(false);
-          batchInvalidateQueries(['quests']);
-        }
+
+          // 🔧 只有在真正创建了任务时才关闭加载提示
+          if (needToCreate) {
+            setIsLoadingRoutineQuests(false);
+            batchInvalidateQueries(['quests']);
+          }
+          }
 
         // 🎯 6. 清理已完成超过2年的大项目及其关联任务
         console.log('=== 开始清理旧的大项目记录 ===');

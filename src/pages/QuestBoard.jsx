@@ -128,44 +128,32 @@ export default function QuestBoard() {
   const { data: hasAnyLongTermQuests = false } = useQuery({
     queryKey: ['hasLongTermQuests'],
     queryFn: async () => {
+      console.log('=== 🔍 开始检查是否有长期项目（hasAnyLongTermQuests Query） ===');
       try {
-        console.log('=== 检查是否有长期项目 ===');
-        
-        // 先查询所有大项目
-        const allProjects = await base44.entities.LongTermProject.list();
-        console.log('所有大项目数量:', allProjects.length);
-        console.log('所有大项目:', allProjects);
-        
-        // 查询活跃的大项目
-        const activeProjects = await base44.entities.LongTermProject.filter({ 
-          status: 'active'
-        }, '-created_date', 100);
-        console.log('活跃大项目数量:', activeProjects.length);
-        console.log('活跃大项目:', activeProjects);
-        
-        // 查询所有大项目任务
+        // 直接查询所有大项目任务（最可靠的方式）
         const allLongTermQuests = await base44.entities.Quest.filter({ 
           isLongTermProject: true 
         });
-        console.log('所有大项目任务数量:', allLongTermQuests.length);
+        console.log('📋 所有大项目任务数量:', allLongTermQuests.length);
         
-        const hasProjects = allProjects.length > 0;
-        const hasQuests = allLongTermQuests.length > 0;
+        if (allLongTermQuests.length > 0) {
+          console.log('✅ 找到大项目任务，显示限时活动日程表按钮');
+          console.log('任务列表前5个:', allLongTermQuests.slice(0, 5));
+        } else {
+          console.log('❌ 没有大项目任务，不显示限时活动日程表按钮');
+        }
         
-        console.log('是否有大项目记录:', hasProjects);
-        console.log('是否有大项目任务:', hasQuests);
-        console.log('最终返回值（有大项目或有任务）:', hasProjects || hasQuests);
-        
-        return hasProjects || hasQuests;
+        return allLongTermQuests.length > 0;
       } catch (error) {
         console.error('❌ 检查长期项目失败:', error);
         console.error('错误堆栈:', error.stack);
         return false;
       }
     },
+    enabled: true, // 确保查询始终启用
     initialData: false,
-    staleTime: 30000,
-    refetchOnWindowFocus: false,
+    staleTime: 10000, // 减少缓存时间
+    refetchOnWindowFocus: true, // 窗口获得焦点时重新获取
   });
 
   // 日更逻辑：检查连胜中断 + 未完成任务顺延 + 明日规划任务创建 + 每日修炼任务生成 + 清理旧任务 + 清理旧宝箱记录 + 清理旧大项目
@@ -1399,7 +1387,10 @@ export default function QuestBoard() {
           )}
         </div>
 
-        {hasAnyLongTermQuests && (
+        {(() => {
+          console.log('🎯 渲染检查 - hasAnyLongTermQuests:', hasAnyLongTermQuests);
+          return hasAnyLongTermQuests;
+        })() && (
           <div 
             className="mb-6 p-4"
             style={{

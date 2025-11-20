@@ -1485,7 +1485,25 @@ export default function QuestBoard() {
           </div>
         )}
 
-        <div className="mt-6">
+        <div className="mt-6 space-y-4">
+          <Button
+            onClick={handleOpenChest}
+            disabled={!canOpenChest}
+            className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
+            style={{
+              backgroundColor: canOpenChest ? '#FFE66D' : '#E0E0E0',
+              color: canOpenChest ? '#000' : '#999',
+              border: '4px solid #000',
+              boxShadow: '6px 6px 0px #000',
+              opacity: canOpenChest ? 1 : 0.6
+            }}
+          >
+            📦 {canOpenChest 
+              ? (language === 'zh' ? '开启今日宝箱' : 'Open Daily Chest')
+              : (language === 'zh' ? '今日宝箱（完成所有委托后开启）' : 'Daily Chest (Complete all quests to unlock)')
+            }
+          </Button>
+
           <Button
             onClick={() => setShowRestDayDialog(true)}
             disabled={!user || (quests.length > 0 && !isRestDay)}

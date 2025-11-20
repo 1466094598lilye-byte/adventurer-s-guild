@@ -129,7 +129,9 @@ export default function QuestBoard() {
     queryKey: ['hasLongTermQuests'],
     queryFn: async () => {
       try {
-        const allProjects = await base44.entities.LongTermProject.list();
+        const allProjects = await base44.entities.LongTermProject.filter({ 
+          status: 'active'
+        }, '-created_date', 100);
         
         return allProjects.length > 0;
       } catch (error) {

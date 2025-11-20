@@ -22,6 +22,8 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const [showAddLaterForm, setShowAddLaterForm] = useState(false);
   const [laterTaskInput, setLaterTaskInput] = useState('');
   const [selectedLaterDate, setSelectedLaterDate] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const { t, language } = useLanguage();
 
   useEffect(() => {
@@ -29,6 +31,8 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   }, []);
 
   const loadLongTermQuests = async () => {
+    setIsLoading(true);
+    setLoadError(null);
     try {
       const quests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
       
@@ -409,7 +413,46 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
           </p>
         </div>
 
-        {longTermQuests.length === 0 ? (
+        {isLoading ? (
+          <div
+            className="p-8 text-center"
+            style={{
+              backgroundColor: '#FFE66D',
+              border: '4px solid #000'
+            }}
+          >
+            <Loader2 className="w-16 h-16 mx-auto mb-4 animate-spin" strokeWidth={3} />
+            <p className="font-black text-xl">
+              {language === 'zh' ? '加载中...' : 'Loading...'}
+            </p>
+          </div>
+        ) : loadError ? (
+          <div
+            className="p-8 text-center"
+            style={{
+              backgroundColor: '#FF6B35',
+              border: '4px solid #000'
+            }}
+          >
+            <p className="font-black text-xl mb-2 text-white">
+              {language === 'zh' ? '加载失败' : 'Loading Failed'}
+            </p>
+            <p className="font-bold text-sm text-white mb-4">
+              {loadError}
+            </p>
+            <button
+              onClick={loadLongTermQuests}
+              className="px-4 py-2 font-black uppercase"
+              style={{
+                backgroundColor: '#FFF',
+                border: '3px solid #000',
+                boxShadow: '3px 3px 0px #000'
+              }}
+            >
+              {language === 'zh' ? '重试' : 'Retry'}
+            </button>
+          </div>
+        ) : longTermQuests.length === 0 ? (
           <div
             className="p-8 text-center"
             style={{

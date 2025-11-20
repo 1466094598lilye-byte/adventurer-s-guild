@@ -125,7 +125,7 @@ export default function QuestBoard() {
     refetchOnWindowFocus: false,
   });
 
-  const { data: hasAnyLongTermQuests = false } = useQuery({
+  const { data: hasAnyLongTermQuests = false, isLoading: isLoadingLongTermQuests } = useQuery({
     queryKey: ['hasLongTermQuests'],
     queryFn: async () => {
       console.log('=== 🔍 检查未完成的大项目任务 ===');
@@ -150,8 +150,7 @@ export default function QuestBoard() {
       }
     },
     enabled: true,
-    initialData: false,
-    staleTime: 10000,
+    staleTime: 5000,
     refetchOnWindowFocus: true,
   });
 
@@ -1386,10 +1385,7 @@ export default function QuestBoard() {
           )}
         </div>
 
-        {(() => {
-          console.log('🎯 渲染检查 - hasAnyLongTermQuests:', hasAnyLongTermQuests);
-          return hasAnyLongTermQuests;
-        })() && (
+        {(isLoadingLongTermQuests || hasAnyLongTermQuests) && (
           <div 
             className="mb-6 p-4"
             style={{
@@ -1400,10 +1396,21 @@ export default function QuestBoard() {
           >
             <Button
               onClick={() => setShowCalendar(true)}
+              disabled={isLoadingLongTermQuests}
               className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3 text-white"
+              style={{ opacity: isLoadingLongTermQuests ? 0.6 : 1 }}
             >
-              <CalendarIcon className="w-6 h-6" strokeWidth={3} />
-              {t('questboard_calendar_btn')}
+              {isLoadingLongTermQuests ? (
+                <>
+                  <Loader2 className="w-6 h-6 animate-spin" strokeWidth={3} />
+                  {language === 'zh' ? '检查中...' : 'Checking...'}
+                </>
+              ) : (
+                <>
+                  <CalendarIcon className="w-6 h-6" strokeWidth={3} />
+                  {t('questboard_calendar_btn')}
+                </>
+              )}
             </Button>
             <p className="text-center text-xs font-bold mt-2 text-white">
               {t('questboard_calendar_hint')}

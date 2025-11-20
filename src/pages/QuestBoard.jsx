@@ -129,13 +129,37 @@ export default function QuestBoard() {
     queryKey: ['hasLongTermQuests'],
     queryFn: async () => {
       try {
-        const allProjects = await base44.entities.LongTermProject.filter({ 
+        console.log('=== 检查是否有长期项目 ===');
+        
+        // 先查询所有大项目
+        const allProjects = await base44.entities.LongTermProject.list();
+        console.log('所有大项目数量:', allProjects.length);
+        console.log('所有大项目:', allProjects);
+        
+        // 查询活跃的大项目
+        const activeProjects = await base44.entities.LongTermProject.filter({ 
           status: 'active'
         }, '-created_date', 100);
+        console.log('活跃大项目数量:', activeProjects.length);
+        console.log('活跃大项目:', activeProjects);
         
-        return allProjects.length > 0;
+        // 查询所有大项目任务
+        const allLongTermQuests = await base44.entities.Quest.filter({ 
+          isLongTermProject: true 
+        });
+        console.log('所有大项目任务数量:', allLongTermQuests.length);
+        
+        const hasProjects = allProjects.length > 0;
+        const hasQuests = allLongTermQuests.length > 0;
+        
+        console.log('是否有大项目记录:', hasProjects);
+        console.log('是否有大项目任务:', hasQuests);
+        console.log('最终返回值（有大项目或有任务）:', hasProjects || hasQuests);
+        
+        return hasProjects || hasQuests;
       } catch (error) {
-        console.error('检查长期项目失败:', error);
+        console.error('❌ 检查长期项目失败:', error);
+        console.error('错误堆栈:', error.stack);
         return false;
       }
     },

@@ -1375,6 +1375,37 @@ export default function QuestBoard() {
           )}
         </div>
 
+        <div 
+          className="mb-6 p-4"
+          style={{
+            backgroundColor: canOpenChest ? '#FFE66D' : '#E0E0E0',
+            border: '5px solid #000',
+            boxShadow: '8px 8px 0px #000'
+          }}
+        >
+          <Button
+            onClick={handleOpenChest}
+            disabled={!canOpenChest}
+            className="w-full py-5 font-black uppercase text-xl flex items-center justify-center gap-3"
+            style={{
+              backgroundColor: canOpenChest ? '#000' : '#999',
+              color: canOpenChest ? '#FFE66D' : '#666',
+              border: '4px solid #000',
+              boxShadow: '5px 5px 0px rgba(0,0,0,0.3)'
+            }}
+          >
+            📦 {canOpenChest 
+              ? (language === 'zh' ? '开启今日宝箱' : 'Open Daily Chest')
+              : (language === 'zh' ? '今日宝箱（完成所有委托后开启）' : 'Daily Chest (Complete all quests to unlock)')
+            }
+          </Button>
+          {!canOpenChest && (
+            <p className="text-center text-xs font-bold mt-3" style={{ color: '#666' }}>
+              💡 {language === 'zh' ? '完成今日所有任务后即可开启宝箱' : 'Complete all quests to unlock the chest'}
+            </p>
+          )}
+        </div>
+
         {hasAnyLongTermQuests && (
           <div 
             className="mb-6 p-4"
@@ -1396,26 +1427,6 @@ export default function QuestBoard() {
             </p>
           </div>
         )}
-
-        <div className="mb-6">
-          <Button
-            onClick={handleOpenChest}
-            disabled={!canOpenChest}
-            className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
-            style={{
-              backgroundColor: canOpenChest ? '#FFE66D' : '#E0E0E0',
-              color: canOpenChest ? '#000' : '#999',
-              border: '4px solid #000',
-              boxShadow: '6px 6px 0px #000',
-              opacity: canOpenChest ? 1 : 0.6
-            }}
-          >
-            📦 {canOpenChest 
-              ? (language === 'zh' ? '开启今日宝箱' : 'Open Daily Chest')
-              : (language === 'zh' ? '今日宝箱（完成所有委托后开启）' : 'Daily Chest (Complete all quests to unlock)')
-            }
-          </Button>
-        </div>
 
         {user && (nextDayPlannedCount > 0 || canShowPlanningButton) && (
           <div 

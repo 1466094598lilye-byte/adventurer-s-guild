@@ -129,12 +129,11 @@ export default function QuestBoard() {
     queryKey: ['hasLongTermQuests'],
     queryFn: async () => {
       try {
-        const todoLongTermQuests = await base44.entities.Quest.filter({ 
-          isLongTermProject: true, 
-          status: 'todo' 
+        const allLongTermQuests = await base44.entities.Quest.filter({ 
+          isLongTermProject: true
         }, '-date', 100);
         
-        return todoLongTermQuests.length > 0;
+        return allLongTermQuests.length > 0;
       } catch (error) {
         console.error('检查长期任务失败:', error);
         return false;

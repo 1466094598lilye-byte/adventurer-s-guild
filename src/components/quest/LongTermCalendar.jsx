@@ -68,12 +68,15 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         };
       }));
 
-      const finalQuests = decryptedAndValidQuests.filter(Boolean); // Filter out any nulls from invalid dates
+      const finalQuests = decryptedAndValidQuests.filter(Boolean);
       setLongTermQuests(finalQuests);
-      return finalQuests; // Return the processed list for immediate use
+      setIsLoading(false);
+      return finalQuests;
     } catch (error) {
       console.error('加载大项目任务失败:', error);
-      return []; // Return an empty array on error
+      setLoadError(error.message || '加载失败');
+      setIsLoading(false);
+      return [];
     }
   };
 

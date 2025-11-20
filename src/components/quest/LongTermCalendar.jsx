@@ -31,10 +31,14 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   }, []);
 
   const loadLongTermQuests = async () => {
+    console.log('=== 开始加载限时活动日程 ===');
     setIsLoading(true);
     setLoadError(null);
     try {
+      console.log('正在查询 isLongTermProject=true 的任务...');
       const quests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
+      console.log('查询到原始任务数量:', quests.length);
+      console.log('原始任务列表:', quests);
       
       const decryptedAndValidQuests = await Promise.all(quests.map(async q => {
         if (!q.date) return null; // Filter out quests with no date
@@ -69,11 +73,15 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       }));
 
       const finalQuests = decryptedAndValidQuests.filter(Boolean);
+      console.log('解密和过滤后的任务数量:', finalQuests.length);
+      console.log('最终任务列表:', finalQuests);
       setLongTermQuests(finalQuests);
       setIsLoading(false);
+      console.log('=== 限时活动日程加载完成 ===');
       return finalQuests;
     } catch (error) {
-      console.error('加载大项目任务失败:', error);
+      console.error('❌ 加载大项目任务失败:', error);
+      console.error('错误详情:', error.stack);
       setLoadError(error.message || '加载失败');
       setIsLoading(false);
       return [];

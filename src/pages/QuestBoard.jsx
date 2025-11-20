@@ -980,11 +980,18 @@ export default function QuestBoard() {
     setShowChest(false);
     batchInvalidateQueries(['chest', 'quests']);
     
-    // 宝箱关闭后，检查是否需要弹出规划弹窗
-    if (user && user.lastPlannedDate !== today) {
-      console.log('=== 触发规划明日委托弹窗 ===');
-      setShowCelebrationInPlanning(true);
-      setShowPlanningDialog(true);
+    // 宝箱关闭后，检查是否需要弹出规划弹窗（获取最新用户数据）
+    if (user) {
+      try {
+        const currentUser = await base44.auth.me();
+        if (currentUser.lastPlannedDate !== today) {
+          console.log('=== 触发规划明日委托弹窗 ===');
+          setShowCelebrationInPlanning(true);
+          setShowPlanningDialog(true);
+        }
+      } catch (error) {
+        console.error('获取用户数据失败:', error);
+      }
     }
   };
 

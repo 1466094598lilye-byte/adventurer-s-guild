@@ -1427,14 +1427,20 @@ export default function QuestBoard() {
             }}
           >
             {nextDayPlannedCount > 0 && (
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <CalendarIcon className="w-5 h-5 text-white" strokeWidth={3} />
-                <p className="font-black uppercase text-white">
-                  {t('questboard_planned_quests')} {nextDayPlannedCount} {t('common_items')}{language === 'zh' ? '委托' : ' quests'}
-                </p>
-              </div>
+              <Button
+                onClick={handleOpenPlanning}
+                className="w-full py-3 font-black uppercase flex items-center justify-center gap-2 mb-3"
+                style={{
+                  backgroundColor: '#FFE66D',
+                  border: '3px solid #000',
+                  boxShadow: '4px 4px 0px #000'
+                }}
+              >
+                <CalendarIcon className="w-5 h-5" strokeWidth={3} />
+                {t('questboard_planned_quests')} {nextDayPlannedCount} {t('common_items')}{language === 'zh' ? '委托' : ' quests'}
+              </Button>
             )}
-            
+
             {canShowPlanningButton && (
               <Button
                 onClick={handleOpenPlanning}
@@ -1449,7 +1455,7 @@ export default function QuestBoard() {
                 {t('questboard_plan_tomorrow')}
               </Button>
             )}
-            
+
             {!canShowPlanningButton && nextDayPlannedCount === 0 && user?.lastPlannedDate !== today && (
               <p className="text-center text-xs font-bold text-white mt-2">
                 💡 {language === 'zh' 

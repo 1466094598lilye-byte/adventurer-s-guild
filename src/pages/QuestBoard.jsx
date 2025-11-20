@@ -1116,7 +1116,6 @@ export default function QuestBoard() {
         return null;
       }
     },
-    enabled: allQuestsDone,
     staleTime: 5000,
     refetchOnWindowFocus: false,
   });

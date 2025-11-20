@@ -969,6 +969,13 @@ export default function QuestBoard() {
     console.log('=== 宝箱关闭 ===');
     setShowChest(false);
     batchInvalidateQueries(['chest', 'quests']);
+    
+    // 宝箱关闭后，检查是否需要弹出规划弹窗
+    if (user && user.lastPlannedDate !== today) {
+      console.log('=== 触发规划明日委托弹窗 ===');
+      setShowCelebrationInPlanning(true);
+      setShowPlanningDialog(true);
+    }
   };
 
   const handleOpenChest = async () => {

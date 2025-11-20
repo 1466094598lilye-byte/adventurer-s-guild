@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
 
     // Fetch all provided loot items
     const lootItems = await Promise.all(
-      lootIds.map(id => base44.asServiceRole.entities.Loot.filter({ id }))
+      lootIds.map(id => base44.entities.Loot.filter({ id }))
     );
 
     // Verify all items exist and belong to the user
@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
     // Generate new loot with LLM
     const { prompt, nameRange, descRange } = generatePrompt(targetRarity, language);
 
-    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const result = await base44.integrations.Core.InvokeLLM({
       prompt: prompt,
       response_json_schema: {
         type: "object",
@@ -95,18 +95,17 @@ Deno.serve(async (req) => {
     });
 
     // Create new loot item
-    const newLoot = await base44.asServiceRole.entities.Loot.create({
+    const newLoot = await base44.entities.Loot.create({
       name: result.name,
       flavorText: result.flavorText,
       icon: result.icon,
       rarity: targetRarity,
-      obtainedAt: new Date().toISOString(),
-      created_by: user.email
+      obtainedAt: new Date().toISOString()
     });
 
     // Delete consumed items
     await Promise.all(
-      lootIds.map(id => base44.asServiceRole.entities.Loot.delete(id))
+      lootIds.map(id => base44.entities.Loot.delete(id))
     );
 
     return Response.json({ 

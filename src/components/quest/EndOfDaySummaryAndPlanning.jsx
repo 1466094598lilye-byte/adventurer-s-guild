@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { X, Loader2, Sparkles, ChevronDown, ChevronUp, Plus, Repeat } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -235,7 +234,7 @@ export default function EndOfDaySummaryAndPlanning({
       className="fixed inset-0 flex items-center justify-center p-4 overflow-y-auto"
       style={{ 
         backgroundColor: 'rgba(0,0,0,0.9)',
-        zIndex: 60
+        zIndex: 55
       }}
       onClick={onClose}
     >

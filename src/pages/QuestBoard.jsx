@@ -128,32 +128,31 @@ export default function QuestBoard() {
   const { data: hasAnyLongTermQuests = false } = useQuery({
     queryKey: ['hasLongTermQuests'],
     queryFn: async () => {
-      console.log('=== 🔍 开始检查是否有长期项目（hasAnyLongTermQuests Query） ===');
+      console.log('=== 🔍 检查未完成的大项目任务 ===');
       try {
-        // 直接查询所有大项目任务（最可靠的方式）
         const allLongTermQuests = await base44.entities.Quest.filter({ 
           isLongTermProject: true 
         });
-        console.log('📋 所有大项目任务数量:', allLongTermQuests.length);
         
-        if (allLongTermQuests.length > 0) {
-          console.log('✅ 找到大项目任务，显示限时活动日程表按钮');
-          console.log('任务列表前5个:', allLongTermQuests.slice(0, 5));
+        const incompleteTasks = allLongTermQuests.filter(q => q.status !== 'done');
+        console.log('📋 未完成的大项目任务数量:', incompleteTasks.length);
+        
+        if (incompleteTasks.length > 0) {
+          console.log('✅ 有未完成任务，显示按钮');
         } else {
-          console.log('❌ 没有大项目任务，不显示限时活动日程表按钮');
+          console.log('❌ 无未完成任务，不显示按钮');
         }
         
-        return allLongTermQuests.length > 0;
+        return incompleteTasks.length > 0;
       } catch (error) {
-        console.error('❌ 检查长期项目失败:', error);
-        console.error('错误堆栈:', error.stack);
+        console.error('❌ 检查失败:', error);
         return false;
       }
     },
-    enabled: true, // 确保查询始终启用
+    enabled: true,
     initialData: false,
-    staleTime: 10000, // 减少缓存时间
-    refetchOnWindowFocus: true, // 窗口获得焦点时重新获取
+    staleTime: 10000,
+    refetchOnWindowFocus: true,
   });
 
   // 日更逻辑：检查连胜中断 + 未完成任务顺延 + 明日规划任务创建 + 每日修炼任务生成 + 清理旧任务 + 清理旧宝箱记录 + 清理旧大项目

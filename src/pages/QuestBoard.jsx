@@ -249,35 +249,62 @@ export default function QuestBoard() {
         const nextDayPlanned = user.nextDayPlannedQuests || [];
         const lastPlanned = user.lastPlannedDate;
 
-        if (nextDayPlanned.length > 0 && lastPlanned && lastPlanned < today) {
-          console.log(`发现 ${nextDayPlanned.length} 项已规划任务，开始创建...`);
-          
-          await base44.auth.updateMe({
-            nextDayPlannedQuests: [],
-            lastPlannedDate: today
-          });
-          
-          for (const plannedQuest of nextDayPlanned) {
-            const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
-              title: plannedQuest.title,
-              actionHint: plannedQuest.actionHint
-            });
-            
-            await base44.entities.Quest.create({
-              title: encrypted.encryptedTitle,
-              actionHint: encrypted.encryptedActionHint,
-              difficulty: plannedQuest.difficulty,
-              rarity: plannedQuest.rarity,
-              date: today,
-              status: 'todo',
-              source: 'ai',
-              tags: plannedQuest.tags || []
-            });
-          }
+        console.log('=== 检查明日规划任务 ===');
+        console.log('nextDayPlanned:', nextDayPlanned);
+        console.log('lastPlanned:', lastPlanned);
+        console.log('today:', today);
+        console.log('条件判断:', nextDayPlanned.length > 0, lastPlanned, lastPlanned < today);
 
-          batchInvalidateQueries(['quests', 'user']);
-          setToast(t('questboard_toast_planned_quests_loaded', { count: nextDayPlanned.length }));
-          setTimeout(() => setToast(null), 3000);
+        if (nextDayPlanned.length > 0 && lastPlanned && lastPlanned < today) {
+          console.log(`✅ 发现 ${nextDayPlanned.length} 项已规划任务，开始创建...`);
+
+          // 🔧 修复：先创建任务，成功后再清空（避免中途出错导致任务丢失）
+          const createdQuestIds = [];
+
+          try {
+            for (const plannedQuest of nextDayPlanned) {
+              console.log('正在创建任务:', plannedQuest);
+
+              const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
+                title: plannedQuest.title,
+                actionHint: plannedQuest.actionHint
+              });
+
+              const createdQuest = await base44.entities.Quest.create({
+                title: encrypted.encryptedTitle,
+                actionHint: encrypted.encryptedActionHint,
+                difficulty: plannedQuest.difficulty,
+                rarity: plannedQuest.rarity,
+                date: today,
+                status: 'todo',
+                source: 'ai',
+                tags: plannedQuest.tags || []
+              });
+
+              createdQuestIds.push(createdQuest.id);
+              console.log('任务创建成功:', createdQuest.id);
+            }
+
+            // 所有任务创建成功后，才清空规划列表
+            await base44.auth.updateMe({
+              nextDayPlannedQuests: [],
+              lastPlannedDate: today
+            });
+
+            console.log('✅ 明日规划任务全部创建成功，已清空规划列表');
+
+            batchInvalidateQueries(['quests', 'user']);
+            setToast(t('questboard_toast_planned_quests_loaded', { count: nextDayPlanned.length }));
+            setTimeout(() => setToast(null), 3000);
+          } catch (error) {
+            console.error('❌ 创建规划任务时出错:', error);
+            // 如果出错，不清空 nextDayPlannedQuests，保留数据
+            alert(language === 'zh' 
+              ? `创建规划任务失败：${error.message}，请刷新页面重试` 
+              : `Failed to create planned quests: ${error.message}, please refresh`);
+          }
+        } else {
+          console.log('❌ 没有符合条件的明日规划任务');
         }
 
         // 5. 处理每日修炼任务（自动生成今日任务，保持原有评级）

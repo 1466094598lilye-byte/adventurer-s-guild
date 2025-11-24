@@ -1821,8 +1821,11 @@ export default function QuestBoard() {
       {/* 🔧 新增：正在加载每日修炼任务的弹窗 */}
       {isLoadingRoutineQuests && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+          className="fixed inset-0 flex items-center justify-center p-4"
+          style={{ 
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            zIndex: 9999
+          }}
         >
           <div 
             className="relative max-w-md w-full p-8 transform"

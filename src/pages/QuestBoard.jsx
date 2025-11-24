@@ -536,25 +536,27 @@ export default function QuestBoard() {
   const handleUseToken = async () => {
     try {
       const currentUser = await base44.auth.me();
-      
+
       // 🔧 修复：使用冻结券时，将 lastClearDate 设置为昨天，表示"昨天已处理"
       // 这样刷新后就不会再次触发连胜中断检查
       await base44.auth.updateMe({
         freezeTokenCount: (currentUser?.freezeTokenCount || 0) - 1,
         lastClearDate: yesterday  // 关键修复：标记昨天已处理
       });
-      
+
       batchInvalidateQueries(['user']);
       setStreakBreakInfo(null);
-      
-      const rolloverKey = `${today}-${currentUser.id}`;
-      hasProcessedDayRollover.current = rolloverKey;
-      
+
       setToast(t('questboard_toast_freeze_token_used'));
       setTimeout(() => setToast(null), 3000);
-      
+
+      // 🔧 执行日更逻辑（不再跳过）
+      const rolloverKey = `${today}-${currentUser.id}`;
+      hasProcessedDayRollover.current = rolloverKey;
+      await executeDayRolloverLogic();
+
       // 刷新页面以确保所有数据同步
-      setTimeout(async () => {
+      setTimeout(() => {
         window.location.reload();
       }, 500);
     } catch (error) {
@@ -570,17 +572,19 @@ export default function QuestBoard() {
       await base44.auth.updateMe({
         streakCount: 0
       });
-      
+
       batchInvalidateQueries(['user']);
       setStreakBreakInfo(null);
-      
-      const rolloverKey = `${today}-${currentUser.id}`;
-      hasProcessedDayRollover.current = rolloverKey;
-      
+
       setToast(t('questboard_toast_streak_broken'));
       setTimeout(() => setToast(null), 3000);
-      
-      setTimeout(async () => {
+
+      // 🔧 执行日更逻辑（不再跳过）
+      const rolloverKey = `${today}-${currentUser.id}`;
+      hasProcessedDayRollover.current = rolloverKey;
+      await executeDayRolloverLogic();
+
+      setTimeout(() => {
         window.location.reload();
       }, 500);
     } catch (error) {

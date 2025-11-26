@@ -222,7 +222,7 @@ export default function QuestBoard() {
         }
 
         // 2. 清理7天前的已完成任务（排除大项目任务 + 保护每日修炼模板）
-        console.log('=== 开始清理旧任务 ===');
+        console.log('=== 步骤2: 开始清理旧任务 ===');
         
         const sevenDaysAgoDate = new Date();
         sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 7);

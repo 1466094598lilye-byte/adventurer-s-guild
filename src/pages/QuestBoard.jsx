@@ -261,8 +261,8 @@ export default function QuestBoard() {
           console.log(`✅ 已清理 ${deletedCount} 个7天前的已完成任务`);
         }
 
-        // 2. 清理7天前的已开启宝箱记录
-        console.log('=== 开始清理旧宝箱记录 ===');
+        // 3. 清理7天前的已开启宝箱记录
+        console.log('=== 步骤3: 开始清理旧宝箱记录 ===');
         
         try {
           const allChests = await base44.entities.DailyChest.filter({ opened: true }, '-date', 200);
@@ -283,7 +283,8 @@ export default function QuestBoard() {
           console.error('清理宝箱记录时出错:', error);
         }
 
-        // 3. 处理昨天未完成的任务（顺延到今天）
+        // 4. 处理昨天未完成的任务（顺延到今天）
+        console.log('=== 步骤4: 处理昨天未完成任务 ===');
         const oldQuests = await base44.entities.Quest.filter({ date: yesterday, status: 'todo' });
         
         if (oldQuests.length > 0) {
@@ -304,7 +305,7 @@ export default function QuestBoard() {
         }
 
         // 5. 处理每日修炼任务（自动生成今日任务，保持原有评级）
-        console.log('=== 开始处理每日修炼任务 ===');
+        console.log('=== 步骤5: 开始处理每日修炼任务 ===');
 
         const todayQuests = await base44.entities.Quest.filter({ date: today });
         const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
@@ -408,8 +409,8 @@ export default function QuestBoard() {
           }
           }
 
-        // 🎯 6. 清理已完成超过2年的大项目及其关联任务
-        console.log('=== 开始清理旧的大项目记录 ===');
+        // 6. 清理已完成超过2年的大项目及其关联任务
+        console.log('=== 步骤6: 开始清理旧的大项目记录 ===');
         
         try {
           // 计算2年前的日期（730天）

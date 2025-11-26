@@ -574,12 +574,7 @@ export default function QuestBoard() {
       setToast(t('questboard_toast_freeze_token_used'));
       setTimeout(() => setToast(null), 3000);
 
-      // 🔧 执行日更逻辑（不再跳过）
-      const rolloverKey = `${today}-${currentUser.id}`;
-      hasProcessedDayRollover.current = rolloverKey;
-      await executeDayRolloverLogic();
-
-      // 刷新页面以确保所有数据同步
+      // 刷新页面以确保所有数据同步（日更逻辑会在刷新后自动执行）
       setTimeout(() => {
         window.location.reload();
       }, 500);
@@ -603,11 +598,7 @@ export default function QuestBoard() {
       setToast(t('questboard_toast_streak_broken'));
       setTimeout(() => setToast(null), 3000);
 
-      // 🔧 执行日更逻辑（不再跳过）
-      const rolloverKey = `${today}-${currentUser.id}`;
-      hasProcessedDayRollover.current = rolloverKey;
-      await executeDayRolloverLogic();
-
+      // 刷新页面以确保所有数据同步（日更逻辑会在刷新后自动执行）
       setTimeout(() => {
         window.location.reload();
       }, 500);

@@ -156,14 +156,72 @@ export default function QuestBoard() {
 
   // 日更逻辑：检查连胜中断 + 未完成任务顺延 + 明日规划任务创建 + 每日修炼任务生成 + 清理旧任务 + 清理旧宝箱记录 + 清理旧大项目
   useEffect(() => {
-    // This function contains the actual rollover steps 1-6, independent of the streak break decision
+    // This function contains the actual rollover steps 1-7, independent of the streak break decision
     const executeDayRolloverLogic = async () => {
       if (!user) return;
 
-      console.log('=== 执行其他日更逻辑 (步骤 1-6) ===');
-      
+      console.log('=== 执行其他日更逻辑 (步骤 1-7) ===');
+
       try {
-        // 1. 清理7天前的已完成任务（排除大项目任务 + 保护每日修炼模板）
+        // 🔥 1. 【最高优先级】处理明日规划任务（创建为今日任务）
+        const nextDayPlanned = user.nextDayPlannedQuests || [];
+        const lastPlanned = user.lastPlannedDate;
+
+        console.log('=== 步骤1: 检查明日规划任务 ===');
+        console.log('nextDayPlanned:', nextDayPlanned);
+        console.log('lastPlanned:', lastPlanned);
+        console.log('today:', today);
+
+        if (nextDayPlanned.length > 0 && lastPlanned && lastPlanned < today) {
+          console.log(`✅ 发现 ${nextDayPlanned.length} 项已规划任务，开始创建...`);
+
+          const createdQuestIds = [];
+
+          try {
+            for (const plannedQuest of nextDayPlanned) {
+              console.log('正在创建任务:', plannedQuest);
+
+              const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
+                title: plannedQuest.title,
+                actionHint: plannedQuest.actionHint
+              });
+
+              const createdQuest = await base44.entities.Quest.create({
+                title: encrypted.encryptedTitle,
+                actionHint: encrypted.encryptedActionHint,
+                difficulty: plannedQuest.difficulty,
+                rarity: plannedQuest.rarity,
+                date: today,
+                status: 'todo',
+                source: 'ai',
+                tags: plannedQuest.tags || []
+              });
+
+              createdQuestIds.push(createdQuest.id);
+              console.log('任务创建成功:', createdQuest.id);
+            }
+
+            await base44.auth.updateMe({
+              nextDayPlannedQuests: [],
+              lastPlannedDate: today
+            });
+
+            console.log('✅ 明日规划任务全部创建成功，已清空规划列表');
+
+            batchInvalidateQueries(['quests', 'user']);
+            setToast(t('questboard_toast_planned_quests_loaded', { count: nextDayPlanned.length }));
+            setTimeout(() => setToast(null), 3000);
+          } catch (error) {
+            console.error('❌ 创建规划任务时出错:', error);
+            alert(language === 'zh' 
+              ? `创建规划任务失败：${error.message}，请刷新页面重试` 
+              : `Failed to create planned quests: ${error.message}, please refresh`);
+          }
+        } else {
+          console.log('❌ 没有符合条件的明日规划任务');
+        }
+
+        // 2. 清理7天前的已完成任务（排除大项目任务 + 保护每日修炼模板）
         console.log('=== 开始清理旧任务 ===');
         
         const sevenDaysAgoDate = new Date();

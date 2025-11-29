@@ -482,7 +482,9 @@ export default function QuestBoard() {
         console.log('=== 日更逻辑执行完成 ===');
       } catch (error) {
         console.error('日更逻辑执行失败:', error);
-        setIsLoadingRoutineQuests(false); // Ensure loader is hidden on error
+      } finally {
+        // 🔧 无论成功失败，都关闭加载状态
+        setIsDayRolloverInProgress(false);
       }
     };
 

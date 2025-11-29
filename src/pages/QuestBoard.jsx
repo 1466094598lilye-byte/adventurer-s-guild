@@ -307,7 +307,10 @@ export default function QuestBoard() {
         // 5. 处理每日修炼任务（自动生成今日任务，保持原有评级）
         console.log('=== 步骤5: 开始处理每日修炼任务 ===');
 
-        const todayQuests = await base44.entities.Quest.filter({ date: today });
+        // 🔧 重新获取今日任务列表（因为前面可能已经创建了明日规划任务）
+        const todayQuestsForRoutine = await base44.entities.Quest.filter({ date: today });
+        console.log('当前今日任务数量:', todayQuestsForRoutine.length);
+        
         const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
 
         if (allRoutineQuests.length > 0) {

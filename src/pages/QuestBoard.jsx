@@ -550,6 +550,7 @@ export default function QuestBoard() {
               });
               
               console.log('弹出连胜中断对话框，暂停其他日更逻辑');
+              setIsDayRolloverInProgress(false); // 🔧 关闭加载状态，显示连胜中断弹窗
               return;
             } else {
               console.log('当前没有连胜（为0），无需触发连胜中断对话框');

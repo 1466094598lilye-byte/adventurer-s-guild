@@ -490,11 +490,17 @@ export default function QuestBoard() {
 
 
     const handleDayRollover = async () => {
-      if (!user) return;
+      // 🔧 即使没有用户也要处理（游客模式下直接关闭加载状态）
+      if (!user) {
+        console.log('游客模式，跳过日更逻辑');
+        setIsDayRolloverInProgress(false);
+        return;
+      }
       
       const rolloverKey = `${today}-${user.id}`;
       if (hasProcessedDayRollover.current === rolloverKey || streakBreakInfo) {
         console.log('日更逻辑已执行过或正在处理连胜中断，跳过 initial check');
+        setIsDayRolloverInProgress(false);
         return;
       }
       

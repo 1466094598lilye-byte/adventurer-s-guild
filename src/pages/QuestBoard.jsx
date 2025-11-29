@@ -354,11 +354,6 @@ export default function QuestBoard() {
 
           console.log('是否需要创建每日修炼任务:', needToCreate);
 
-          // 只有在真正需要创建时才显示加载弹窗
-          if (needToCreate) {
-            setIsLoadingRoutineQuests(true);
-          }
-
           for (const [actionHintPlain, templateQuest] of uniqueRoutinesMap) {
             const alreadyExists = todayQuestsForRoutine.some(
               q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === templateQuest.actionHint)

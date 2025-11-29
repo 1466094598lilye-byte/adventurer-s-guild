@@ -158,8 +158,6 @@ export default function QuestBoard() {
   useEffect(() => {
     // This function contains the actual rollover steps 1-7, independent of the streak break decision
     const executeDayRolloverLogic = async () => {
-      if (!user) return;
-
       console.log('=== 执行其他日更逻辑 (步骤 1-7) ===');
 
       try {

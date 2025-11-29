@@ -339,14 +339,17 @@ export default function QuestBoard() {
           // 🔧 先检查是否真的需要生成新任务
           let needToCreate = false;
           for (const [actionHintPlain, templateQuest] of uniqueRoutinesMap) {
-            const alreadyExists = todayQuests.some(
+            const alreadyExists = todayQuestsForRoutine.some(
               q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === templateQuest.actionHint)
             );
+            console.log(`检查每日修炼 "${actionHintPlain}": 已存在=${alreadyExists}`);
             if (!alreadyExists) {
               needToCreate = true;
               break;
             }
           }
+
+          console.log('是否需要创建每日修炼任务:', needToCreate);
 
           // 只有在真正需要创建时才显示加载弹窗
           if (needToCreate) {
@@ -354,7 +357,7 @@ export default function QuestBoard() {
           }
 
           for (const [actionHintPlain, templateQuest] of uniqueRoutinesMap) {
-            const alreadyExists = todayQuests.some(
+            const alreadyExists = todayQuestsForRoutine.some(
               q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === templateQuest.actionHint)
             );
 

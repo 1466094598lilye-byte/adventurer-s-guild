@@ -164,13 +164,18 @@ export default function QuestBoard() {
 
       try {
         // 🔥 1. 【最高优先级】处理明日规划任务（创建为今日任务）
-        const nextDayPlanned = user.nextDayPlannedQuests || [];
-        const lastPlanned = user.lastPlannedDate;
+        // 🔧 重新获取最新的用户数据，避免使用过时的缓存数据
+        const freshUser = await base44.auth.me();
+        const nextDayPlanned = freshUser?.nextDayPlannedQuests || [];
+        const lastPlanned = freshUser?.lastPlannedDate;
 
         console.log('=== 步骤1: 检查明日规划任务 ===');
         console.log('nextDayPlanned:', nextDayPlanned);
         console.log('lastPlanned:', lastPlanned);
         console.log('today:', today);
+        console.log('条件: nextDayPlanned.length > 0 =', nextDayPlanned.length > 0);
+        console.log('条件: lastPlanned存在 =', !!lastPlanned);
+        console.log('条件: lastPlanned < today =', lastPlanned < today);
 
         if (nextDayPlanned.length > 0 && lastPlanned && lastPlanned < today) {
           console.log(`✅ 发现 ${nextDayPlanned.length} 项已规划任务，开始创建...`);

@@ -1848,8 +1848,8 @@ export default function QuestBoard() {
         />
       )}
 
-      {/* 🔧 新增：正在加载每日修炼任务的弹窗 */}
-      {isLoadingRoutineQuests && (
+      {/* 🔧 日更加载弹窗 - 页面加载时最先显示，日更逻辑完成后关闭 */}
+      {isDayRolloverInProgress && (
         <div 
           className="fixed inset-0 flex items-center justify-center p-4"
           style={{ 
@@ -1876,7 +1876,7 @@ export default function QuestBoard() {
                 className="text-2xl font-black uppercase mb-3"
                 style={{ color: '#000' }}
               >
-                {language === 'zh' ? '⚙️ 正在加载每日修炼 ⚙️' : '⚙️ Loading Daily Routines ⚙️'}
+                {language === 'zh' ? '⚙️ 工会同步中 ⚙️' : '⚙️ Guild Syncing ⚙️'}
               </h2>
 
               <div 
@@ -1888,8 +1888,8 @@ export default function QuestBoard() {
               >
                 <p className="font-bold leading-relaxed">
                   {language === 'zh'
-                    ? '工会正在为你准备今日的每日修炼任务，请稍候片刻，不要刷新页面...'
-                    : 'The Guild is preparing your daily routine quests. Please wait a moment and do not refresh the page...'}
+                    ? '正在加载今日委托和规划任务，请稍候片刻...'
+                    : 'Loading today\'s quests and planned tasks, please wait...'}
                 </p>
               </div>
 

@@ -406,12 +406,11 @@ export default function QuestBoard() {
             }
           }
 
-          // 🔧 只有在真正创建了任务时才关闭加载提示
+          // 🔧 如果创建了任务，刷新查询
           if (needToCreate) {
-            setIsLoadingRoutineQuests(false);
             batchInvalidateQueries(['quests']);
           }
-          }
+        }
 
         // 6. 清理已完成超过2年的大项目及其关联任务
         console.log('=== 步骤6: 开始清理旧的大项目记录 ===');

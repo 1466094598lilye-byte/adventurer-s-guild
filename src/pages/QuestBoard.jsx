@@ -317,97 +317,107 @@ export default function QuestBoard() {
         const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
 
         if (allRoutineQuests.length > 0) {
-          const uniqueRoutinesMap = new Map();
-          for (const quest of allRoutineQuests) {
-            let decryptedActionHint = quest.actionHint;
-            try {
-              const { data } = await base44.functions.invoke('decryptQuestData', {
-                encryptedActionHint: quest.actionHint
-              });
-              decryptedActionHint = data.actionHint;
-            } catch (error) {
-              console.warn(`Failed to decrypt actionHint for routine quest ${quest.id}:`, error);
-            }
+          // 🔥 并行解密所有每日修炼任务
+          const decryptedRoutines = await Promise.all(
+            allRoutineQuests.map(async (quest) => {
+              try {
+                const { data } = await base44.functions.invoke('decryptQuestData', {
+                  encryptedActionHint: quest.actionHint
+                });
+                return { ...quest, decryptedActionHint: data.actionHint };
+              } catch (error) {
+                console.warn(`Failed to decrypt actionHint for routine quest ${quest.id}:`, error);
+                return { ...quest, decryptedActionHint: quest.actionHint };
+              }
+            })
+          );
 
-            const key = decryptedActionHint;
+          const uniqueRoutinesMap = new Map();
+          for (const quest of decryptedRoutines) {
+            const key = quest.decryptedActionHint;
             if (key) {
               const effectiveKey = quest.originalActionHint || key;
               if (!uniqueRoutinesMap.has(effectiveKey) || 
                   new Date(quest.created_date) > new Date(uniqueRoutinesMap.get(effectiveKey).created_date)) {
-                uniqueRoutinesMap.set(effectiveKey, { ...quest, decryptedActionHint: key });
+                uniqueRoutinesMap.set(effectiveKey, quest);
               }
             }
           }
 
-          // 🔧 先检查是否真的需要生成新任务
-          let needToCreate = false;
+          // 🔧 筛选需要创建的任务
+          const toCreate = [];
           for (const [actionHintPlain, templateQuest] of uniqueRoutinesMap) {
             const alreadyExists = todayQuestsForRoutine.some(
               q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === templateQuest.actionHint)
             );
-            console.log(`检查每日修炼 "${actionHintPlain}": 已存在=${alreadyExists}`);
             if (!alreadyExists) {
-              needToCreate = true;
-              break;
+              toCreate.push({ actionHintPlain, templateQuest });
             }
           }
 
-          console.log('是否需要创建每日修炼任务:', needToCreate);
+          console.log('需要创建的每日修炼任务数量:', toCreate.length);
 
-          for (const [actionHintPlain, templateQuest] of uniqueRoutinesMap) {
-            const alreadyExists = todayQuestsForRoutine.some(
-              q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === templateQuest.actionHint)
+          if (toCreate.length > 0) {
+            // 🔥 并行调用 LLM 生成所有标题
+            const llmResults = await Promise.all(
+              toCreate.map(({ actionHintPlain }) =>
+                base44.integrations.Core.InvokeLLM({
+                  prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
+
+        **当前冒险者每日修炼内容：** ${actionHintPlain}
+
+        请为这个每日修炼任务生成**全新的**RPG风格标题（只需要标题，不需要重新评定难度）。
+
+        要求：
+        1. 标题要有变化，不要每天都一样（但核心内容要体现任务本质）
+        2. 格式：【2字类型】+ 7字标题
+        3. 保持任务的核心特征
+
+        只返回标题。`,
+                  response_json_schema: {
+                    type: "object",
+                    properties: {
+                      title: { type: "string" }
+                    },
+                    required: ["title"]
+                  }
+                }).catch(err => {
+                  console.error(`LLM生成标题失败: ${actionHintPlain}`, err);
+                  return null;
+                })
+              )
             );
 
-            if (alreadyExists) continue;
-            
-            try {
-              const result = await base44.integrations.Core.InvokeLLM({
-                prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
+            // 🔥 并行加密并创建任务
+            await Promise.all(
+              toCreate.map(async ({ actionHintPlain, templateQuest }, index) => {
+                const result = llmResults[index];
+                if (!result) return;
 
-**当前冒险者每日修炼内容：** ${actionHintPlain}
+                try {
+                  const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
+                    title: result.title,
+                    actionHint: actionHintPlain
+                  });
 
-请为这个每日修炼任务生成**全新的**RPG风格标题（只需要标题，不需要重新评定难度）。
-
-要求：
-1. 标题要有变化，不要每天都一样（但核心内容要体现任务本质）
-2. 格式：【2字类型】+ 7字标题
-3. 保持任务的核心特征
-
-只返回标题。`,
-                response_json_schema: {
-                  type: "object",
-                  properties: {
-                    title: { type: "string" }
-                  },
-                  required: ["title"]
+                  await base44.entities.Quest.create({
+                    title: encrypted.encryptedTitle,
+                    actionHint: encrypted.encryptedActionHint,
+                    difficulty: templateQuest.difficulty,
+                    rarity: templateQuest.rarity,
+                    date: today,
+                    status: 'todo',
+                    source: 'routine',
+                    isRoutine: true,
+                    originalActionHint: actionHintPlain,
+                    tags: []
+                  });
+                } catch (error) {
+                  console.error(`创建每日修炼任务失败: ${actionHintPlain}`, error);
                 }
-              });
+              })
+            );
 
-              const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
-                title: result.title,
-                actionHint: actionHintPlain
-              });
-              
-              await base44.entities.Quest.create({
-                title: encrypted.encryptedTitle,
-                actionHint: encrypted.encryptedActionHint,
-                difficulty: templateQuest.difficulty,
-                rarity: templateQuest.rarity,
-                date: today,
-                status: 'todo',
-                source: 'routine',
-                isRoutine: true,
-                originalActionHint: actionHintPlain,
-                tags: []
-              });
-            } catch (error) {
-              console.error(`生成每日修炼任务失败: ${actionHintPlain}`, error);
-            }
-          }
-
-          // 🔧 如果创建了任务，刷新查询
-          if (needToCreate) {
             batchInvalidateQueries(['quests']);
           }
         }

@@ -42,7 +42,20 @@ export default function QuestBoard() {
   const queryClient = useQueryClient();
   const { language, t } = useLanguage();
 
-  const hasProcessedDayRollover = useRef(false);
+  // 检查 localStorage 是否今天已完成日更
+  const getRolloverKey = (userId) => `dayRollover_${userId}_${today}`;
+  const hasCompletedRolloverToday = (userId) => {
+    try {
+      return localStorage.getItem(getRolloverKey(userId)) === 'done';
+    } catch {
+      return false;
+    }
+  };
+  const markRolloverComplete = (userId) => {
+    try {
+      localStorage.setItem(getRolloverKey(userId), 'done');
+    } catch {}
+  };
   const invalidationTimeoutRef = useRef(null);
 
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -494,20 +507,18 @@ export default function QuestBoard() {
 
 
     const handleDayRollover = async () => {
-      // 🔧 即使没有用户也要处理（游客模式下直接关闭加载状态）
+      // 游客模式下跳过日更逻辑
       if (!user) {
         console.log('游客模式，跳过日更逻辑');
-        setIsDayRolloverInProgress(false);
         return;
       }
-      
-      const rolloverKey = `${today}-${user.id}`;
-      if (hasProcessedDayRollover.current === rolloverKey || streakBreakInfo) {
-        console.log('日更逻辑已执行过或正在处理连胜中断，跳过 initial check');
-        setIsDayRolloverInProgress(false);
+
+      // 检查是否今天已完成日更（使用 localStorage 持久化）
+      if (hasCompletedRolloverToday(user.id) || streakBreakInfo) {
+        console.log('日更逻辑已执行过或正在处理连胜中断，跳过');
         return;
       }
-      
+
       console.log('=== 开始执行日更逻辑 (Initial Check) ===');
 
       // 步骤 0：检查昨天是否有未完成任务，处理连胜中断
@@ -523,8 +534,10 @@ export default function QuestBoard() {
       // 先检查今天是否已经完成所有任务
       if (lastClearDate === today) {
         console.log('✅ 今天已经完成所有任务，无需检查连胜中断');
-        hasProcessedDayRollover.current = rolloverKey;
+        // 立即显示加载弹窗
+        setIsDayRolloverInProgress(true);
         await executeDayRolloverLogic();
+        markRolloverComplete(user.id);
         return;
       }
       

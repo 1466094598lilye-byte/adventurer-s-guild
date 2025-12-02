@@ -608,9 +608,11 @@ export default function QuestBoard() {
   // Handle break streak (called from StreakBreakDialog)
   const handleBreakStreak = async () => {
     try {
-      const currentUser = await base44.auth.me();
+      // 🔧 添加 streakManuallyReset 标记，区分"用户主动重置"和"bug导致丢失"
       await base44.auth.updateMe({
-        streakCount: 0
+        streakCount: 0,
+        streakManuallyReset: true,
+        lastClearDate: yesterday  // 标记昨天已处理，避免再次触发连胜中断检查
       });
 
       batchInvalidateQueries(['user']);

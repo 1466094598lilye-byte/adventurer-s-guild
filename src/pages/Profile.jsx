@@ -1,4 +1,3 @@
-
 import React from 'react'; // Added React import
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -40,10 +39,12 @@ export default function Profile() {
     }
   };
 
-  // 检测是否需要显示恢复按钮（连胜为0且最长连胜大于0）
+  // 检测是否需要显示恢复按钮（连胜为0且最长连胜大于0，且不是用户主动重置的）
   React.useEffect(() => {
-    if (user && user.streakCount === 0 && user.longestStreak > 0) {
+    if (user && user.streakCount === 0 && user.longestStreak > 0 && !user.streakManuallyReset) {
       setShowRestoreButton(true);
+    } else {
+      setShowRestoreButton(false);
     }
   }, [user]);
 

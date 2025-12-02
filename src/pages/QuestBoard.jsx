@@ -582,9 +582,11 @@ export default function QuestBoard() {
         console.log('昨天是休息日或已完成所有任务，无需检查连胜中断');
       }
 
-      hasProcessedDayRollover.current = rolloverKey;
+      // 立即显示加载弹窗
+      setIsDayRolloverInProgress(true);
       await executeDayRolloverLogic();
-    };
+      markRolloverComplete(user.id);
+      };
 
     // 🔧 无论是否有用户都执行（游客模式下会快速返回并关闭加载状态）
     handleDayRollover();

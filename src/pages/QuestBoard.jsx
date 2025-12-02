@@ -38,7 +38,7 @@ export default function QuestBoard() {
   const [completedProject, setCompletedProject] = useState(null);
   const [currentHour, setCurrentHour] = useState(new Date().getHours());
   const [streakBreakInfo, setStreakBreakInfo] = useState(null);
-  const [isDayRolloverInProgress, setIsDayRolloverInProgress] = useState(true); // 🔧 一开始就显示加载状态
+  const [isDayRolloverInProgress, setIsDayRolloverInProgress] = useState(false);
   const queryClient = useQueryClient();
   const { language, t } = useLanguage();
 

@@ -513,61 +513,51 @@ export default function QuestBoard() {
         return;
       }
 
-      // 检查是否今天已完成日更（使用 localStorage 持久化）
-      if (hasCompletedRolloverToday(user.id) || streakBreakInfo) {
-        console.log('日更逻辑已执行过或正在处理连胜中断，跳过');
+      // 如果正在处理连胜中断，跳过
+      if (streakBreakInfo) {
+        console.log('正在处理连胜中断，跳过日更逻辑');
         return;
       }
 
       console.log('=== 开始执行日更逻辑 (Initial Check) ===');
 
-      // 步骤 0：检查昨天是否有未完成任务，处理连胜中断
+      // 步骤 0：检查昨天是否有未完成任务，处理连胜中断（每次都检查，不受 localStorage 影响）
       console.log('=== 步骤 0: 检查连胜中断 ===');
       const restDays = user?.restDays || [];
       const lastClearDate = user?.lastClearDate;
-      
+
       console.log('今天日期:', today);
       console.log('昨天日期:', yesterday);
       console.log('上次完成日期:', lastClearDate);
       console.log('昨天是否为休息日:', restDays.includes(yesterday));
-      
-      // 先检查今天是否已经完成所有任务
-      if (lastClearDate === today) {
-        console.log('✅ 今天已经完成所有任务，无需检查连胜中断');
-        // 立即显示加载弹窗
-        setIsDayRolloverInProgress(true);
-        await executeDayRolloverLogic();
-        markRolloverComplete(user.id);
-        return;
-      }
-      
-      // 只有在昨天不是休息日 AND 上次完成日期不是昨天（说明昨天没完成）时才检查
-      const shouldCheckForStreakBreak = !restDays.includes(yesterday) && lastClearDate !== yesterday;
-      
+
+      // 只有在昨天不是休息日 AND 上次完成日期不是昨天 AND 今天也没完成时才检查
+      const shouldCheckForStreakBreak = !restDays.includes(yesterday) && lastClearDate !== yesterday && lastClearDate !== today;
+
       if (shouldCheckForStreakBreak) {
-        console.log('昨天不是休息日，且上次完成日期不是昨天');
-        
+        console.log('昨天不是休息日，且上次完成日期不是昨天或今天');
+
         const yesterdayQuests = await base44.entities.Quest.filter({ date: yesterday });
         console.log('昨天的任务数量:', yesterdayQuests.length);
-        
+
         if (yesterdayQuests.length > 0) {
           const allDoneYesterday = yesterdayQuests.every(q => q.status === 'done');
           console.log('昨天任务是否全部完成:', allDoneYesterday);
-          
+
           if (!allDoneYesterday) {
             console.log('昨天有未完成任务，需要处理连胜中断');
             const currentStreak = user?.streakCount || 0;
             const freezeTokenCount = user?.freezeTokenCount || 0;
-            
+
             if (currentStreak > 0) {
               setStreakBreakInfo({
                 incompleteDays: 1,
                 currentStreak: currentStreak,
                 freezeTokenCount: freezeTokenCount
               });
-              
+
               console.log('弹出连胜中断对话框，暂停其他日更逻辑');
-              setIsDayRolloverInProgress(false); // 🔧 关闭加载状态，显示连胜中断弹窗
+              setIsDayRolloverInProgress(false);
               return;
             } else {
               console.log('当前没有连胜（为0），无需触发连胜中断对话框');
@@ -580,6 +570,12 @@ export default function QuestBoard() {
         }
       } else {
         console.log('昨天是休息日或已完成所有任务，无需检查连胜中断');
+      }
+
+      // 检查是否今天已完成日更（使用 localStorage 持久化）- 仅用于跳过步骤 1-7
+      if (hasCompletedRolloverToday(user.id)) {
+        console.log('日更逻辑（步骤1-7）已执行过，跳过');
+        return;
       }
 
       // 立即显示加载弹窗

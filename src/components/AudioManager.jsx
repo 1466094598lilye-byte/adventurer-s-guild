@@ -1,6 +1,23 @@
-// 音效管理器 - 使用 Cache API 持久化存储音效文件
+// 音效管理器 - 使用 Service Worker + 内存缓存
 
 const CACHE_NAME = 'quest-audio-cache-v1';
+
+// 注册 Service Worker
+export async function registerAudioServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    try {
+      const registration = await navigator.serviceWorker.register(
+        '/api/audioServiceWorker',
+        { scope: '/' }
+      );
+      console.log('[AudioManager] Service Worker registered:', registration.scope);
+      return registration;
+    } catch (error) {
+      console.warn('[AudioManager] Service Worker registration failed:', error);
+    }
+  }
+  return null;
+}
 
 const AUDIO_URLS = {
   // 宝箱相关
@@ -24,8 +41,7 @@ const AUDIO_URLS = {
 // 内存缓存（用于快速播放，避免每次从 Cache API 读取）
 const memoryCache = new Map();
 
-// 初始化音效管理器 - 使用 localStorage 标记 + 内存缓存
-// Cache API 对跨域资源有限制，改用更简单可靠的方案
+// 初始化音效管理器
 let initialized = false;
 
 export async function initAudioManager() {
@@ -34,6 +50,9 @@ export async function initAudioManager() {
     console.log('[AudioManager] Already initialized, skipping');
     return;
   }
+  
+  // 注册 Service Worker（会在后台缓存音效文件）
+  await registerAudioServiceWorker();
   
   // 检查内存缓存是否已有数据（SPA 内部导航不会丢失）
   if (memoryCache.size === Object.keys(AUDIO_URLS).length) {
@@ -44,6 +63,7 @@ export async function initAudioManager() {
 
   console.log('[AudioManager] Starting to preload audio files...');
   
+  // 加载到内存缓存（Service Worker 会自动从缓存返回）
   const promises = Object.entries(AUDIO_URLS).map(async ([key, url]) => {
     try {
       const response = await fetch(url);

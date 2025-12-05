@@ -20,6 +20,11 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
   const confirmReopen = () => {
     setShowConfirm(false);
     setIsGlowing(true);
+    
+    // 播放返回待办音效
+    const reopenAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%A4%A7%E9%A1%B9%E7%9B%AE%E5%88%A0%E9%99%A4%E9%9F%B3%E6%95%88.mp3');
+    reopenAudio.play().catch(() => {});
+    
     onReopen(quest);
     setTimeout(() => setIsGlowing(false), 500);
   };

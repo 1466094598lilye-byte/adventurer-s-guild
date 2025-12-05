@@ -11,10 +11,6 @@ export default function PraiseDialog({ quest, onClose }) {
   const [praiser, setPraiser] = useState('');
 
   useEffect(() => {
-    // 播放表扬弹出音效
-    const praiseAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E8%A1%A8%E6%89%AC%E5%BC%B9%E5%87%BA%E9%9F%B3%E6%95%88.mp3');
-    praiseAudio.play().catch(() => {});
-    
     generatePraise();
   }, []);
 
@@ -40,6 +36,10 @@ export default function PraiseDialog({ quest, onClose }) {
       setPraise(result.praise || (language === 'zh' 
         ? '我看到了你的努力。这份坚持正在让你变得更强大。'
         : 'I witnessed your effort. This persistence is making you stronger.'));
+      
+      // 表扬信文字生成完成后播放音效
+      const praiseAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E8%A1%A8%E6%89%AC%E5%BC%B9%E5%87%BA%E9%9F%B3%E6%95%88.mp3');
+      praiseAudio.play().catch(() => {});
     } catch (error) {
       setPraise(language === 'zh'
         ? '我看到了你的努力。这份坚持正在让你变得更强大。'

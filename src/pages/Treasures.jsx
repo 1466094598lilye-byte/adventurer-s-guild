@@ -147,7 +147,11 @@ export default function TreasuresPage() {
         {/* 合成宝物按钮 */}
         <div className="mb-6">
           <button
-            onClick={() => setShowCraftingDialog(true)}
+            onClick={() => {
+              const workshopAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E8%BF%9B%E5%85%A5%E5%B7%A5%E5%9D%8A%E9%9F%B3%E6%95%88.mp3');
+              workshopAudio.play().catch(() => {});
+              setShowCraftingDialog(true);
+            }}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
             style={{
               backgroundColor: '#FF6B35',

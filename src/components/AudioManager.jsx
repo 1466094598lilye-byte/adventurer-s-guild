@@ -65,7 +65,7 @@ export async function initAudioManager() {
   console.log(`[AudioManager] Total sounds to load: ${entries.length}`);
 
   // 使用 Promise.allSettled 并行加载所有音频，失败也不阻塞
-  await Promise.allSettled(
+  const results = await Promise.allSettled(
     entries.map(async ([key, url]) => {
       try {
         console.log(`[AudioManager] Fetching ${key} from ${url}`);
@@ -82,16 +82,29 @@ export async function initAudioManager() {
         audioBuffers[key] = audioBuffer;
 
         console.log(`[AudioManager] ✓ Loaded: ${key} (duration: ${audioBuffer.duration.toFixed(2)}s)`);
+        return { key, success: true };
 
       } catch (err) {
         console.error(`[AudioManager] ✗ Failed to load ${key}:`, err);
+        console.error(`[AudioManager] ✗ URL was: ${url}`);
+        return { key, success: false, error: err.message };
       }
     })
   );
 
   initialized = true;
+  
+  const failed = results.filter(r => r.status === 'fulfilled' && !r.value.success);
+  
   console.log(`[AudioManager] Initialization complete! Loaded ${Object.keys(audioBuffers).length}/${entries.length} sounds`);
   console.log("[AudioManager] Available sounds:", Object.keys(audioBuffers));
+  
+  if (failed.length > 0) {
+    console.error(`[AudioManager] ⚠️ FAILED TO LOAD ${failed.length} SOUNDS:`);
+    failed.forEach(r => {
+      console.error(`  - ${r.value.key}: ${r.value.error}`);
+    });
+  }
 }
 
 // ----------------------

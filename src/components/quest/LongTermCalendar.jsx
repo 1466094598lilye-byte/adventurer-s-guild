@@ -34,6 +34,12 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
     console.log('=== 开始加载限时活动日程 ===');
     setIsLoading(true);
     setLoadError(null);
+    
+    // 播放加载音效（循环）
+    const loadingAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%8A%A0%E8%BD%BD%E6%97%B6%E6%92%AD%E6%94%BE.mp3');
+    loadingAudio.loop = true;
+    loadingAudio.play().catch(() => {});
+    
     try {
       console.log('正在查询 isLongTermProject=true 的任务...');
       const quests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
@@ -75,6 +81,11 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       const finalQuests = decryptedAndValidQuests.filter(Boolean);
       console.log('解密和过滤后的任务数量:', finalQuests.length);
       console.log('最终任务列表:', finalQuests);
+      
+      // 停止加载音效
+      loadingAudio.pause();
+      loadingAudio.currentTime = 0;
+      
       setLongTermQuests(finalQuests);
       setIsLoading(false);
       console.log('=== 限时活动日程加载完成 ===');
@@ -87,6 +98,10 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       
       return finalQuests;
     } catch (error) {
+      // 停止加载音效
+      loadingAudio.pause();
+      loadingAudio.currentTime = 0;
+      
       console.error('❌ 加载大项目任务失败:', error);
       console.error('错误详情:', error.stack);
       setLoadError(error.message || '加载失败');

@@ -1,6 +1,6 @@
 // 音效管理器 - 使用 Service Worker + 内存缓存
 
-const CACHE_NAME = 'quest-audio-cache-v1';
+const CACHE_NAME = 'quest-audio-cache-v2';
 
 // 注册 Service Worker
 export async function registerAudioServiceWorker() {

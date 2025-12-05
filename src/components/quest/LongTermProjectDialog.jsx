@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { format } from 'date-fns';
 import { useLanguage } from '@/components/LanguageContext';
 import { getLongTermParsingPrompt } from '@/components/prompts';
+import { playSound, stopSound } from '@/components/AudioManager';
 
 export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
   const [textInput, setTextInput] = useState('');
@@ -17,11 +18,9 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
     if (!textInput.trim() || isProcessing) return;
     
     setIsProcessing(true);
-    
+
     // 播放加载音效（循环）
-    const loadingAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%8A%A0%E8%BD%BD%E6%97%B6%E6%92%AD%E6%94%BE.mp3');
-    loadingAudio.loop = true;
-    loadingAudio.play().catch(() => {});
+    const loadingAudio = playSound('loadingLoop', { loop: true });
     
     try {
       const { prompt, schema } = getLongTermParsingPrompt(language, textInput.trim());
@@ -39,16 +38,13 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
       
       // 解析完成后播放音效
       if (result.tasks && result.tasks.length > 0) {
-        const parseCompleteAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%A4%A7%E9%A1%B9%E7%9B%AE%E5%BC%B9%E5%87%BA%E9%9F%B3%E6%95%88.mp3');
-        parseCompleteAudio.play().catch(() => {});
+        playSound('projectParsed');
       }
       // 停止加载音效
-      loadingAudio.pause();
-      loadingAudio.currentTime = 0;
+      stopSound(loadingAudio);
     } catch (error) {
       // 停止加载音效
-      loadingAudio.pause();
-      loadingAudio.currentTime = 0;
+      stopSound(loadingAudio);
       console.error('解析失败:', error);
       alert(t('questboard_alert_task_parse_failed', { message: error.message || t('common_try_again') }));
     }
@@ -72,11 +68,9 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
     if (parsedQuests.length === 0 || isCreating) return;
     
     setIsCreating(true);
-    
+
     // 播放加载音效（循环）
-    const loadingAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%8A%A0%E8%BD%BD%E6%97%B6%E6%92%AD%E6%94%BE.mp3');
-    loadingAudio.loop = true;
-    loadingAudio.play().catch(() => {});
+    const loadingAudio = playSound('loadingLoop', { loop: true });
     
     try {
       console.log('=== 开始创建大项目任务 ===');
@@ -176,12 +170,10 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
       console.log('今天的日期是:', todayStr);
 
       // 停止加载音效
-      loadingAudio.pause();
-      loadingAudio.currentTime = 0;
-      
+      stopSound(loadingAudio);
+
       // 播放加入委托板音效
-      const addToBoardAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%A4%A7%E9%A1%B9%E7%9B%AE%E5%8A%A0%E5%85%A5%E5%A7%94%E6%89%98%E6%9D%BF.mp3');
-      addToBoardAudio.play().catch(() => {});
+      playSound('projectAdded');
 
       if (onQuestsCreated) {
         onQuestsCreated(parsedQuests.length);
@@ -190,8 +182,7 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
       onClose();
     } catch (error) {
       // 停止加载音效
-      loadingAudio.pause();
-      loadingAudio.currentTime = 0;
+      stopSound(loadingAudio);
       console.error('❌ 创建任务失败:', error);
       alert(t('questboard_alert_create_quest_failed'));
     }

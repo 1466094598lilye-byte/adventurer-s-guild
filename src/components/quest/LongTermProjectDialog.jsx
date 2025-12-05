@@ -157,6 +157,10 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
       console.log('=== 所有任务创建完成 ===');
       console.log('今天的日期是:', todayStr);
 
+      // 播放加入委托板音效
+      const addToBoardAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%A4%A7%E9%A1%B9%E7%9B%AE%E5%8A%A0%E5%85%A5%E5%A7%94%E6%89%98%E6%9D%BF.mp3');
+      addToBoardAudio.play().catch(() => {});
+
       if (onQuestsCreated) {
         onQuestsCreated(parsedQuests.length);
       }

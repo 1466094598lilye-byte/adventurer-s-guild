@@ -5,6 +5,7 @@ import { Gem, Filter, ChevronLeft, ChevronRight, Hammer, ChevronDown, ChevronUp,
 import { format } from 'date-fns';
 import { useLanguage } from '@/components/LanguageContext';
 import CraftingDialog from '@/components/treasure/CraftingDialog';
+import { playSound } from '@/components/AudioManager';
 
 export default function TreasuresPage() {
   const { t, language } = useLanguage();
@@ -42,8 +43,7 @@ export default function TreasuresPage() {
     },
     onSuccess: () => {
       // 播放兑换成功音效
-      const successAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%90%88%E6%88%90%E6%88%90%E5%8A%9F%E9%9F%B3%E6%95%88.mp3');
-      successAudio.play().catch(() => {});
+      playSound('craftingSuccess');
       
       queryClient.invalidateQueries(['loot']);
       queryClient.invalidateQueries(['user']);
@@ -148,8 +148,7 @@ export default function TreasuresPage() {
         <div className="mb-6">
           <button
             onClick={() => {
-              const workshopAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E8%BF%9B%E5%85%A5%E5%B7%A5%E5%9D%8A%E9%9F%B3%E6%95%88.mp3');
-              workshopAudio.play().catch(() => {});
+              playSound('enterWorkshop');
               setShowCraftingDialog(true);
             }}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"

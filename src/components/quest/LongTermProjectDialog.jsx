@@ -36,15 +36,16 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
 
       setParsedQuests(result.tasks || []);
       
+      // 停止加载音效
+      if (loadingAudio) stopSound(loadingAudio);
+      
       // 解析完成后播放音效
       if (result.tasks && result.tasks.length > 0) {
-        playSound('projectParsed');
+        await playSound('projectParsed');
       }
-      // 停止加载音效
-      stopSound(loadingAudio);
     } catch (error) {
       // 停止加载音效
-      stopSound(loadingAudio);
+      if (loadingAudio) stopSound(loadingAudio);
       console.error('解析失败:', error);
       alert(t('questboard_alert_task_parse_failed', { message: error.message || t('common_try_again') }));
     }
@@ -170,10 +171,10 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
       console.log('今天的日期是:', todayStr);
 
       // 停止加载音效
-      stopSound(loadingAudio);
+      if (loadingAudio) stopSound(loadingAudio);
 
       // 播放加入委托板音效
-      playSound('projectAdded');
+      await playSound('projectAdded');
 
       if (onQuestsCreated) {
         onQuestsCreated(parsedQuests.length);
@@ -182,7 +183,7 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
       onClose();
     } catch (error) {
       // 停止加载音效
-      stopSound(loadingAudio);
+      if (loadingAudio) stopSound(loadingAudio);
       console.error('❌ 创建任务失败:', error);
       alert(t('questboard_alert_create_quest_failed'));
     }

@@ -95,11 +95,16 @@ export async function initAudioManager() {
 }
 
 // ----------------------
-// 播放音效（真正的零延迟）
+// 播放音效（懒加载模式）
 // ----------------------
-export function playSound(key, options = {}) {
-  // 静默失败：如果音频系统未就绪或音频不存在，直接返回不报错
-  if (!audioCtx || !initialized || !audioBuffers[key]) {
+export async function playSound(key, options = {}) {
+  // 首次调用时自动初始化
+  if (!initialized) {
+    await initAudioManager();
+  }
+  
+  // 如果初始化失败或音频不存在，静默返回
+  if (!audioCtx || !audioBuffers[key]) {
     return null;
   }
 

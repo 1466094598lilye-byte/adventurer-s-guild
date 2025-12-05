@@ -12,10 +12,7 @@ function LayoutContent({ children }) {
   const location = useLocation();
   const { t } = useLanguage();
 
-  // 初始化音效管理器，预加载所有音效
-  // useEffect(() => {
-  //   initAudioManager();
-  // }, []);
+
 
   const { data: user } = useQuery({
     queryKey: ['user'],

@@ -171,7 +171,11 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       
       console.log('=== 删除完成 ===');
       
-      // 6. 关闭对话框
+      // 6. 播放删除音效
+      const deleteAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%A4%A7%E9%A1%B9%E7%9B%AE%E5%88%A0%E9%99%A4%E9%9F%B3%E6%95%88.mp3');
+      deleteAudio.play().catch(() => {});
+      
+      // 7. 关闭对话框
       onClose();
     } catch (error) {
       console.error('删除失败:', error);
@@ -184,6 +188,10 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const handleDeleteQuest = async (questId) => {
     try {
       await base44.entities.Quest.delete(questId);
+      
+      // 播放删除音效
+      const deleteAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%A4%A7%E9%A1%B9%E7%9B%AE%E5%88%A0%E9%99%A4%E9%9F%B3%E6%95%88.mp3');
+      deleteAudio.play().catch(() => {});
       await new Promise(resolve => setTimeout(resolve, 300));
       const updatedLongTermQuests = await loadLongTermQuests(); // Get the latest decrypted quests
       

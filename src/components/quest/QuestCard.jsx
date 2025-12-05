@@ -147,7 +147,11 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
 
           {/* Complete Button - Smaller */}
           <button
-            onClick={() => onComplete(quest)}
+            onClick={() => {
+              const audio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%8B%BE%E6%8E%89%E4%BB%BB%E5%8A%A1%E9%9F%B3%E6%95%88.mp3');
+              audio.play().catch(() => {});
+              onComplete(quest);
+            }}
             disabled={isDone}
             className="flex-shrink-0 w-10 h-10 flex items-center justify-center font-black transition-all"
             style={{

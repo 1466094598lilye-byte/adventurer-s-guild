@@ -41,10 +41,16 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
 
   if (!isOpen) return null;
 
+  const playSelectSound = () => {
+    const audio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%8A%A0%E5%85%A5%E5%90%88%E6%88%90.mp3');
+    audio.play().catch(() => {});
+  };
+
   const toggleLootSelection = (loot) => {
     if (selectedLoot.find(item => item.id === loot.id)) {
       setSelectedLoot(selectedLoot.filter(item => item.id !== loot.id));
     } else if (selectedLoot.length < currentRecipe.count) {
+      playSelectSound();
       setSelectedLoot([...selectedLoot, loot]);
     }
   };

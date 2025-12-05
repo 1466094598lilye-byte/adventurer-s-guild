@@ -69,7 +69,9 @@ export async function initAudioManager() {
     entries.map(async ([key, url]) => {
       try {
         console.log(`[AudioManager] Fetching ${key} from ${url}`);
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          cache: 'force-cache'
+        });
         
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}: ${res.statusText}`);

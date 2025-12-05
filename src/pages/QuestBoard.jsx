@@ -794,6 +794,7 @@ export default function QuestBoard() {
       
       setPendingQuests([]);
       setExpandedPending(null);
+      playQuestAddedSound();
       setToast(t('questboard_toast_quests_added_to_board', { count: pendingQuests.length }));
       setTimeout(() => setToast(null), 2000);
     } catch (error) {

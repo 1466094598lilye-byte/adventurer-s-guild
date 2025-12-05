@@ -717,6 +717,7 @@ export default function QuestBoard() {
     if (!textInput.trim() || isProcessing) return;
     
     setIsProcessing(true);
+    const loadingAudio = playLoadingSound();
     try {
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: getTaskNamingPrompt(language, textInput.trim(), false),
@@ -753,6 +754,8 @@ export default function QuestBoard() {
       console.error('任务处理错误:', error);
       alert(t('questboard_alert_task_parse_failed', { message: error.message || t('common_try_again') }));
     }
+    loadingAudio.pause();
+    loadingAudio.currentTime = 0;
     setIsProcessing(false);
   };
 
@@ -774,10 +777,18 @@ export default function QuestBoard() {
     audio.play().catch(() => {});
   };
 
+  const playLoadingSound = () => {
+    const audio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%8A%A0%E8%BD%BD%E6%97%B6%E6%92%AD%E6%94%BE.mp3');
+    audio.loop = true;
+    audio.play().catch(() => {});
+    return audio;
+  };
+
   const handleConfirmPendingQuests = async () => {
     if (pendingQuests.length === 0 || isConfirmingPending) return;
     
     setIsConfirmingPending(true);
+    const loadingAudio = playLoadingSound();
     try {
       for (const quest of pendingQuests) {
         await createQuestMutation.mutateAsync({
@@ -801,6 +812,8 @@ export default function QuestBoard() {
       console.error('创建任务失败:', error);
       alert(t('questboard_alert_create_quest_failed'));
     }
+    loadingAudio.pause();
+    loadingAudio.currentTime = 0;
     setIsConfirmingPending(false);
   };
 

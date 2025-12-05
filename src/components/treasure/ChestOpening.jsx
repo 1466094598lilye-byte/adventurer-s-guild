@@ -239,7 +239,11 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
               </div>
 
               <button
-                onClick={onClose}
+                onClick={() => {
+                  const collectAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E6%94%B6%E4%B8%8B%E5%AE%9D%E7%89%A9%E9%9F%B3%E6%95%88.mp3');
+                  collectAudio.play().catch(() => {});
+                  onClose();
+                }}
                 className="w-full py-3 font-black uppercase"
                 style={{
                   backgroundColor: '#FFE66D',

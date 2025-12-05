@@ -7,7 +7,7 @@ async function registerAudioServiceWorker() {
   if ('serviceWorker' in navigator) {
     try {
       const registration = await navigator.serviceWorker.register(
-        '/api/audioServiceWorker',
+        '/functions/audioServiceWorker',
         { scope: '/' }
       );
       console.log('[AudioManager] Service Worker registered:', registration.scope);

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Check, MoreVertical, Edit, Trash2, RotateCcw } from 'lucide-react';
 import DifficultyBadge from './DifficultyBadge';
 import { format } from 'date-fns';

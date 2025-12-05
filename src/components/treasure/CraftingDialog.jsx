@@ -74,6 +74,9 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
 
       if (result.success) {
         setCraftedLoot(result.newLoot);
+        // 播放合成成功音效
+        const successAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%90%88%E6%88%90%E6%88%90%E5%8A%9F%E9%9F%B3%E6%95%88.mp3');
+        successAudio.play().catch(() => {});
         if (onCraftSuccess) onCraftSuccess();
       } else {
         setError(result.error || (language === 'zh' ? '合成失败，请重试' : 'Crafting failed, please retry'));

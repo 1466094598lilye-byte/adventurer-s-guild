@@ -1,4 +1,4 @@
-export default async function handler(req, ctx) {
+Deno.serve(async (req) => {
   const AUDIO_URLS = [
     'https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%AE%9D%E7%AE%B1%E9%9F%B3%E6%95%88.mp3',
     'https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E6%94%B6%E4%B8%8B%E5%AE%9D%E7%89%A9%E9%9F%B3%E6%95%88.mp3',
@@ -60,4 +60,4 @@ self.addEventListener('fetch', (event) => {
       "Service-Worker-Allowed": "/"
     }
   });
-}
+});

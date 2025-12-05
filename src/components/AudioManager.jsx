@@ -64,27 +64,30 @@ export async function initAudioManager() {
   const entries = Object.entries(AUDIO_URLS);
   console.log(`[AudioManager] Total sounds to load: ${entries.length}`);
 
-  for (const [key, url] of entries) {
-    try {
-      console.log(`[AudioManager] Fetching ${key} from ${url}`);
-      const res = await fetch(url);
-      
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+  // 使用 Promise.allSettled 并行加载所有音频，失败也不阻塞
+  await Promise.allSettled(
+    entries.map(async ([key, url]) => {
+      try {
+        console.log(`[AudioManager] Fetching ${key} from ${url}`);
+        const res = await fetch(url);
+        
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        
+        const arrayBuffer = await res.arrayBuffer();
+        console.log(`[AudioManager] Fetched ${key}, size: ${arrayBuffer.byteLength} bytes`);
+        
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        audioBuffers[key] = audioBuffer;
+
+        console.log(`[AudioManager] ✓ Loaded: ${key} (duration: ${audioBuffer.duration.toFixed(2)}s)`);
+
+      } catch (err) {
+        console.error(`[AudioManager] ✗ Failed to load ${key}:`, err);
       }
-      
-      const arrayBuffer = await res.arrayBuffer();
-      console.log(`[AudioManager] Fetched ${key}, size: ${arrayBuffer.byteLength} bytes`);
-      
-      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-      audioBuffers[key] = audioBuffer;
-
-      console.log(`[AudioManager] ✓ Loaded: ${key} (duration: ${audioBuffer.duration.toFixed(2)}s)`);
-
-    } catch (err) {
-      console.error(`[AudioManager] ✗ Failed to load ${key}:`, err);
-    }
-  }
+    })
+  );
 
   initialized = true;
   console.log(`[AudioManager] Initialization complete! Loaded ${Object.keys(audioBuffers).length}/${entries.length} sounds`);
@@ -95,22 +98,8 @@ export async function initAudioManager() {
 // 播放音效（真正的零延迟）
 // ----------------------
 export function playSound(key, options = {}) {
-  console.log(`[AudioManager] playSound called for: ${key}`);
-  
-  if (!audioCtx) {
-    console.warn(`[AudioManager] AudioContext not created yet`);
-    return null;
-  }
-  
-  if (!initialized) {
-    console.warn(`[AudioManager] Not initialized yet (still loading sounds...)`);
-    return null;
-  }
-
-  const buffer = audioBuffers[key];
-  if (!buffer) {
-    console.warn(`[AudioManager] Sound not found: ${key}`);
-    console.log(`[AudioManager] Available sounds:`, Object.keys(audioBuffers));
+  // 静默失败：如果音频系统未就绪或音频不存在，直接返回不报错
+  if (!audioCtx || !initialized || !audioBuffers[key]) {
     return null;
   }
 

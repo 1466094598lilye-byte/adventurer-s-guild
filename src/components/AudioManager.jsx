@@ -36,7 +36,12 @@ export async function initAudioManager() {
   if (initialized) return;
 
   // 必须在用户第一次交互后创建
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  } catch (err) {
+    console.error("[AudioManager] Failed to create AudioContext:", err);
+    return;
+  }
 
   console.log("[AudioManager] Fetching & decoding audio...");
 
@@ -64,7 +69,10 @@ export async function initAudioManager() {
 // 播放音效（真正的零延迟）
 // ----------------------
 export function playSound(key, options = {}) {
-  if (!audioCtx) return;
+  if (!audioCtx || !initialized) {
+    console.warn(`[AudioManager] Not initialized yet`);
+    return null;
+  }
 
   const buffer = audioBuffers[key];
   if (!buffer) {
@@ -72,20 +80,25 @@ export function playSound(key, options = {}) {
     return null;
   }
 
-  const { loop = false, volume = 0.7 } = options;
+  try {
+    const { loop = false, volume = 0.7 } = options;
 
-  // 每次播放都必须创建新的 source
-  const source = audioCtx.createBufferSource();
-  source.buffer = buffer;
-  source.loop = loop;
+    // 每次播放都必须创建新的 source
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.loop = loop;
 
-  const gainNode = audioCtx.createGain();
-  gainNode.gain.value = volume;
+    const gainNode = audioCtx.createGain();
+    gainNode.gain.value = volume;
 
-  source.connect(gainNode).connect(audioCtx.destination);
-  source.start(0);
+    source.connect(gainNode).connect(audioCtx.destination);
+    source.start(0);
 
-  return { source, gainNode };
+    return { source, gainNode };
+  } catch (err) {
+    console.error(`[AudioManager] Failed to play ${key}:`, err);
+    return null;
+  }
 }
 
 // ----------------------

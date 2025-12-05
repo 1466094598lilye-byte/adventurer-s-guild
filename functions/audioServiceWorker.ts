@@ -2,7 +2,7 @@
 // Handles cross-origin mp3 files with opaque responses
 
 Deno.serve(async (req) => {
-  // 使用与 AudioManager 完全相同的 URL
+  // Deno 注入的音频 URL 列表（与 AudioManager 保持一致）
   const AUDIO_URLS = [
     'https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%AE%9D%E7%AE%B1%E9%9F%B3%E6%95%88.mp3',
     'https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E6%94%B6%E4%B8%8B%E5%AE%9D%E7%89%A9%E9%9F%B3%E6%95%88.mp3',
@@ -16,48 +16,34 @@ Deno.serve(async (req) => {
   ];
 
   const swCode = `
-const CACHE_NAME = 'quest-audio-cache-v2';
+const CACHE_NAME = 'quest-audio-cache-v3';
 
-const AUDIO_URLS = ${JSON.stringify(AUDIO_URLS, null, 2)};
+const AUDIO_URLS = ${JSON.stringify(AUDIO_URLS)};
 
-// Install event - pre-cache all audio files
+// Install event - 使用 cache.addAll 预缓存所有音频
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing Service Worker v2...');
+  console.log('[SW] Installing Service Worker v3...');
   
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(async (cache) => {
-        console.log('[SW] Caching audio files...');
-        
-        // 使用 no-cors 模式逐个缓存，处理跨域 opaque response
-        const cachePromises = AUDIO_URLS.map(async (url) => {
-          try {
-            // 先检查是否已缓存
-            const existing = await cache.match(url);
-            if (existing) {
-              console.log('[SW] Already cached:', url.split('/').pop());
-              return;
-            }
-            
-            // 使用 no-cors 获取跨域资源（返回 opaque response）
-            const response = await fetch(url, { mode: 'no-cors' });
-            await cache.put(url, response);
-            console.log('[SW] Cached:', url.split('/').pop());
-          } catch (err) {
-            console.warn('[SW] Failed to cache:', url.split('/').pop(), err.message);
-          }
-        });
-        
-        await Promise.all(cachePromises);
-        console.log('[SW] All audio files cached');
+      .then((cache) => {
+        console.log('[SW] Caching all audio files with cache.addAll...');
+        return cache.addAll(AUDIO_URLS);
       })
-      .then(() => self.skipWaiting())
+      .then(() => {
+        console.log('[SW] All audio files cached successfully');
+        return self.skipWaiting();
+      })
+      .catch((err) => {
+        console.warn('[SW] cache.addAll failed:', err);
+        return self.skipWaiting();
+      })
   );
 });
 
-// Activate event - clean old caches and take control
+// Activate event - 清理旧缓存并立即接管
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating Service Worker v2...');
+  console.log('[SW] Activating Service Worker v3...');
   
   event.waitUntil(
     caches.keys()
@@ -78,15 +64,13 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve from cache first, then network
+// Fetch event - 仅拦截 AUDIO_URLS 中的请求
 self.addEventListener('fetch', (event) => {
   const url = event.request.url;
   
-  // 只拦截音频文件请求
-  const isAudioUrl = AUDIO_URLS.includes(url) || url.endsWith('.mp3');
-  
-  if (!isAudioUrl) {
-    return; // 不拦截非音频请求
+  // 仅精确匹配 AUDIO_URLS 中的 URL
+  if (!AUDIO_URLS.includes(url)) {
+    return;
   }
   
   event.respondWith(
@@ -97,11 +81,10 @@ self.addEventListener('fetch', (event) => {
           return cachedResponse;
         }
         
-        // 缓存未命中，从网络获取并缓存
+        // 缓存未命中，从网络获取并缓存（不检查 response.ok）
         console.log('[SW] Cache miss, fetching:', url.split('/').pop());
-        return fetch(event.request, { mode: 'no-cors' })
+        return fetch(event.request)
           .then((response) => {
-            // 缓存新获取的资源
             const responseToCache = response.clone();
             caches.open(CACHE_NAME)
               .then((cache) => {
@@ -113,13 +96,12 @@ self.addEventListener('fetch', (event) => {
       })
       .catch((error) => {
         console.error('[SW] Fetch failed:', error);
-        // 返回空响应避免崩溃
         return new Response('', { status: 503, statusText: 'Service Unavailable' });
       })
   );
 });
 
-console.log('[SW] Service Worker script loaded');
+console.log('[SW] Service Worker v3 script loaded');
 `;
 
   return new Response(swCode, {

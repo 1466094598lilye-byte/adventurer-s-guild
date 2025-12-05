@@ -5,10 +5,17 @@ import { LanguageProvider, useLanguage } from "@/components/LanguageContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { initAudioManager } from "@/components/AudioManager";
 
 function LayoutContent({ children }) {
   const location = useLocation();
   const { t } = useLanguage();
+
+  // 初始化音效管理器，预加载所有音效
+  useEffect(() => {
+    initAudioManager();
+  }, []);
 
   const { data: user } = useQuery({
     queryKey: ['user'],

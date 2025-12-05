@@ -20,7 +20,7 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
     setIsProcessing(true);
 
     // 播放加载音效（循环）
-    const loadingAudio = playSound('loadingLoop', { loop: true });
+    const loadingAudio = await playSound('loadingLoop', { loop: true });
     
     try {
       const { prompt, schema } = getLongTermParsingPrompt(language, textInput.trim());
@@ -71,7 +71,7 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
     setIsCreating(true);
 
     // 播放加载音效（循环）
-    const loadingAudio = playSound('loadingLoop', { loop: true });
+    const loadingAudio = await playSound('loadingLoop', { loop: true });
     
     try {
       console.log('=== 开始创建大项目任务 ===');

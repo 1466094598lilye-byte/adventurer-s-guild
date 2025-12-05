@@ -1,4 +1,6 @@
-// 音效管理器 - 内存预加载方案
+// --------------------------------------------------
+// 真正的"内存预加载音频系统" - 使用 Web Audio API
+// --------------------------------------------------
 
 const AUDIO_URLS = {
   // 宝箱相关
@@ -19,60 +21,79 @@ const AUDIO_URLS = {
   projectAdded: 'https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%A4%A7%E9%A1%B9%E7%9B%AE%E5%8A%A0%E5%85%A5%E5%A7%94%E6%89%98%E6%9D%BF.mp3',
 };
 
-// 预加载的音频对象缓存
-const audioCache = {};
+// AudioContext（浏览器必须在用户点击后才能启动）
+let audioCtx = null;
+
+// 真正缓存的是音频 buffer（内存数据）
+const audioBuffers = {};
+
 let initialized = false;
 
+// ----------------------
+// 初始化 & 预加载全部音频
+// ----------------------
 export async function initAudioManager() {
   if (initialized) return;
-  
-  console.log('[AudioManager] Preloading all audio files...');
-  
-  // 预加载所有音频到内存
-  const promises = Object.entries(AUDIO_URLS).map(([key, url]) => {
-    return new Promise((resolve) => {
-      const audio = new Audio(url);
-      audio.preload = 'auto';
-      audio.addEventListener('canplaythrough', () => {
-        audioCache[key] = url;
-        console.log(`[AudioManager] Preloaded: ${key}`);
-        resolve();
-      }, { once: true });
-      audio.addEventListener('error', () => {
-        console.warn(`[AudioManager] Failed to preload: ${key}`);
-        resolve(); // 即使失败也继续
-      }, { once: true });
-      audio.load();
-    });
-  });
-  
-  await Promise.all(promises);
+
+  // 必须在用户第一次交互后创建
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  console.log("[AudioManager] Fetching & decoding audio...");
+
+  const entries = Object.entries(AUDIO_URLS);
+
+  for (const [key, url] of entries) {
+    try {
+      const res = await fetch(url);
+      const arrayBuffer = await res.arrayBuffer();
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+      audioBuffers[key] = audioBuffer;
+
+      console.log(`[AudioManager] Loaded: ${key}`);
+
+    } catch (err) {
+      console.error(`[AudioManager] Failed: ${key}`, err);
+    }
+  }
+
   initialized = true;
-  console.log('[AudioManager] All audio files preloaded');
+  console.log("[AudioManager] All audio loaded into memory.");
 }
 
-// 播放音效
+// ----------------------
+// 播放音效（真正的零延迟）
+// ----------------------
 export function playSound(key, options = {}) {
-  const { loop = false } = options;
-  
-  const url = AUDIO_URLS[key];
-  if (!url) {
+  if (!audioCtx) return;
+
+  const buffer = audioBuffers[key];
+  if (!buffer) {
     console.warn(`[AudioManager] Sound not found: ${key}`);
     return null;
   }
-  
-  const audio = new Audio(url);
-  audio.loop = loop;
-  audio.volume = 0.7;
-  audio.play().catch(() => {});
-  return audio;
+
+  const { loop = false, volume = 0.7 } = options;
+
+  // 每次播放都必须创建新的 source
+  const source = audioCtx.createBufferSource();
+  source.buffer = buffer;
+  source.loop = loop;
+
+  const gainNode = audioCtx.createGain();
+  gainNode.gain.value = volume;
+
+  source.connect(gainNode).connect(audioCtx.destination);
+  source.start(0);
+
+  return { source, gainNode };
 }
 
-// 停止循环音效
-export function stopSound(audio) {
-  if (audio) {
-    audio.pause();
-    audio.currentTime = 0;
+// ----------------------
+// 停止循环
+// ----------------------
+export function stopSound(handle) {
+  if (handle && handle.source) {
+    handle.source.stop();
   }
 }
 

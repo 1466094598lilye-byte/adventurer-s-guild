@@ -32,7 +32,10 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
   }, [targetRarity]);
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      // 播放进入工坊音效
+      playSound('enterWorkshop');
+    } else {
       setSelectedLoot([]);
       setError('');
       setCraftedLoot(null);

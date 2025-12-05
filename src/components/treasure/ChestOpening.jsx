@@ -3,7 +3,8 @@ import { Gift, Sparkles, X, Shield } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/components/LanguageContext';
-import { getTreasurePrompt } from '@/components/prompts'; // Changed import path
+import { getTreasurePrompt } from '@/components/prompts';
+import { playSound } from '@/components/AudioManager';
 
 export default function ChestOpening({ date, onClose, onLootGenerated }) {
   const { language, t } = useLanguage();
@@ -88,8 +89,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
         setShowLoot(true);
         
         // 宝物出来时播放开箱音效
-        const chestAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%AE%9D%E7%AE%B1%E9%9F%B3%E6%95%88.mp3');
-        chestAudio.play().catch(() => {});
+        playSound('chestOpen');
         
         onLootGenerated(savedLoot);
       } catch (error) {
@@ -241,8 +241,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
 
               <button
                 onClick={() => {
-                  const collectAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E6%94%B6%E4%B8%8B%E5%AE%9D%E7%89%A9%E9%9F%B3%E6%95%88.mp3');
-                  collectAudio.play().catch(() => {});
+                  playSound('collectTreasure');
                   onClose();
                 }}
                 className="w-full py-3 font-black uppercase"

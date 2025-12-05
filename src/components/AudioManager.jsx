@@ -112,6 +112,8 @@ export function playSound(key, options = {}) {
       audioCtx.resume();
     }
 
+    const buffer = audioBuffers[key];
+
     // 每次播放都必须创建新的 source
     const source = audioCtx.createBufferSource();
     source.buffer = buffer;

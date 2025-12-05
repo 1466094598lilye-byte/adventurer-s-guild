@@ -33,55 +33,95 @@ let initialized = false;
 // 初始化 & 预加载全部音频
 // ----------------------
 export async function initAudioManager() {
-  if (initialized) return;
+  if (initialized) {
+    console.log("[AudioManager] Already initialized, skipping...");
+    return;
+  }
+
+  console.log("[AudioManager] Starting initialization...");
 
   // 必须在用户第一次交互后创建
   try {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    console.log("[AudioManager] AudioContext created:", audioCtx.state);
   } catch (err) {
     console.error("[AudioManager] Failed to create AudioContext:", err);
     return;
   }
 
+  // Resume AudioContext if suspended
+  if (audioCtx.state === 'suspended') {
+    try {
+      await audioCtx.resume();
+      console.log("[AudioManager] AudioContext resumed");
+    } catch (err) {
+      console.error("[AudioManager] Failed to resume AudioContext:", err);
+    }
+  }
+
   console.log("[AudioManager] Fetching & decoding audio...");
 
   const entries = Object.entries(AUDIO_URLS);
+  console.log(`[AudioManager] Total sounds to load: ${entries.length}`);
 
   for (const [key, url] of entries) {
     try {
+      console.log(`[AudioManager] Fetching ${key} from ${url}`);
       const res = await fetch(url);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+      
       const arrayBuffer = await res.arrayBuffer();
+      console.log(`[AudioManager] Fetched ${key}, size: ${arrayBuffer.byteLength} bytes`);
+      
       const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
       audioBuffers[key] = audioBuffer;
 
-      console.log(`[AudioManager] Loaded: ${key}`);
+      console.log(`[AudioManager] ✓ Loaded: ${key} (duration: ${audioBuffer.duration.toFixed(2)}s)`);
 
     } catch (err) {
-      console.error(`[AudioManager] Failed: ${key}`, err);
+      console.error(`[AudioManager] ✗ Failed to load ${key}:`, err);
     }
   }
 
   initialized = true;
-  console.log("[AudioManager] All audio loaded into memory.");
+  console.log(`[AudioManager] Initialization complete! Loaded ${Object.keys(audioBuffers).length}/${entries.length} sounds`);
+  console.log("[AudioManager] Available sounds:", Object.keys(audioBuffers));
 }
 
 // ----------------------
 // 播放音效（真正的零延迟）
 // ----------------------
 export function playSound(key, options = {}) {
-  if (!audioCtx || !initialized) {
-    console.warn(`[AudioManager] Not initialized yet`);
+  console.log(`[AudioManager] playSound called for: ${key}`);
+  
+  if (!audioCtx) {
+    console.warn(`[AudioManager] AudioContext not created yet`);
+    return null;
+  }
+  
+  if (!initialized) {
+    console.warn(`[AudioManager] Not initialized yet (still loading sounds...)`);
     return null;
   }
 
   const buffer = audioBuffers[key];
   if (!buffer) {
     console.warn(`[AudioManager] Sound not found: ${key}`);
+    console.log(`[AudioManager] Available sounds:`, Object.keys(audioBuffers));
     return null;
   }
 
   try {
     const { loop = false, volume = 0.7 } = options;
+
+    // Resume context if suspended
+    if (audioCtx.state === 'suspended') {
+      console.log("[AudioManager] Resuming suspended AudioContext...");
+      audioCtx.resume();
+    }
 
     // 每次播放都必须创建新的 source
     const source = audioCtx.createBufferSource();
@@ -93,6 +133,8 @@ export function playSound(key, options = {}) {
 
     source.connect(gainNode).connect(audioCtx.destination);
     source.start(0);
+
+    console.log(`[AudioManager] ✓ Playing ${key} (loop: ${loop}, volume: ${volume})`);
 
     return { source, gainNode };
   } catch (err) {

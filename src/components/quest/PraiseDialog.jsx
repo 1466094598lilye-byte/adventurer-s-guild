@@ -9,7 +9,6 @@ export default function PraiseDialog({ quest, onClose }) {
   const [praise, setPraise] = useState('');
   const [loading, setLoading] = useState(true);
   const [praiser, setPraiser] = useState('');
-  const [loadingAudio, setLoadingAudio] = useState(null);
 
   useEffect(() => {
     // 播放表扬弹出音效
@@ -17,20 +16,10 @@ export default function PraiseDialog({ quest, onClose }) {
     praiseAudio.play().catch(() => {});
     
     generatePraise();
-    return () => {
-      if (loadingAudio) {
-        loadingAudio.pause();
-        loadingAudio.currentTime = 0;
-      }
-    };
   }, []);
 
   const generatePraise = async () => {
     setLoading(true);
-    const audio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%8A%A0%E8%BD%BD%E6%97%B6%E6%92%AD%E6%94%BE.mp3');
-    audio.loop = true;
-    audio.play().catch(() => {});
-    setLoadingAudio(audio);
     try {
       const roles = getPraiseRoles(language);
       const selectedRole = roles[Math.floor(Math.random() * roles.length)];
@@ -57,8 +46,6 @@ export default function PraiseDialog({ quest, onClose }) {
         : 'I witnessed your effort. This persistence is making you stronger.');
       setPraiser(language === 'zh' ? '工会长老' : 'Guild Elder');
     }
-    audio.pause();
-    audio.currentTime = 0;
     setLoading(false);
   };
 

@@ -769,6 +769,11 @@ export default function QuestBoard() {
     }
   };
 
+  const playQuestAddedSound = () => {
+    const audio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%8A%A0%E5%85%A5%E5%A7%94%E6%89%98%E6%9D%BF.mp3');
+    audio.play().catch(() => {});
+  };
+
   const handleConfirmPendingQuests = async () => {
     if (pendingQuests.length === 0 || isConfirmingPending) return;
     

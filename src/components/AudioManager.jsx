@@ -24,48 +24,40 @@ const AUDIO_URLS = {
 // 内存缓存（用于快速播放，避免每次从 Cache API 读取）
 const memoryCache = new Map();
 
-// 初始化音效管理器 - 使用 Cache API 持久化存储
+// 初始化音效管理器 - 使用 localStorage 标记 + 内存缓存
+// Cache API 对跨域资源有限制，改用更简单可靠的方案
+let initialized = false;
+
 export async function initAudioManager() {
-  // 检查浏览器是否支持 Cache API
-  if (!('caches' in window)) {
-    console.warn('[AudioManager] Cache API not supported, using memory only');
-    await fallbackPreload();
+  // 防止重复初始化
+  if (initialized) {
+    console.log('[AudioManager] Already initialized, skipping');
+    return;
+  }
+  
+  // 检查内存缓存是否已有数据（SPA 内部导航不会丢失）
+  if (memoryCache.size === Object.keys(AUDIO_URLS).length) {
+    console.log('[AudioManager] Memory cache intact, skipping download');
+    initialized = true;
     return;
   }
 
-  try {
-    const cache = await caches.open(CACHE_NAME);
-    
-    for (const [key, url] of Object.entries(AUDIO_URLS)) {
-      try {
-        // 先检查缓存中是否已有
-        const cachedResponse = await cache.match(url);
-        
-        if (cachedResponse) {
-          // 从持久化缓存加载到内存
-          const arrayBuffer = await cachedResponse.arrayBuffer();
-          memoryCache.set(key, arrayBuffer);
-          console.log(`[AudioManager] Loaded from cache: ${key}`);
-        } else {
-          // 从网络获取并存入持久化缓存
-          const response = await fetch(url);
-          const responseClone = response.clone();
-          await cache.put(url, responseClone);
-          
-          const arrayBuffer = await response.arrayBuffer();
-          memoryCache.set(key, arrayBuffer);
-          console.log(`[AudioManager] Downloaded and cached: ${key}`);
-        }
-      } catch (error) {
-        console.warn(`[AudioManager] Failed to load ${key}:`, error);
-      }
+  console.log('[AudioManager] Starting to preload audio files...');
+  
+  const promises = Object.entries(AUDIO_URLS).map(async ([key, url]) => {
+    try {
+      const response = await fetch(url);
+      const arrayBuffer = await response.arrayBuffer();
+      memoryCache.set(key, arrayBuffer);
+      console.log(`[AudioManager] Loaded: ${key}`);
+    } catch (error) {
+      console.warn(`[AudioManager] Failed to load ${key}:`, error);
     }
-    
-    console.log('[AudioManager] Initialized with persistent cache');
-  } catch (error) {
-    console.warn('[AudioManager] Cache API failed, using memory only', error);
-    await fallbackPreload();
-  }
+  });
+  
+  await Promise.all(promises);
+  initialized = true;
+  console.log(`[AudioManager] Initialized with ${memoryCache.size} sounds`);
 }
 
 // 降级方案：仅内存缓存（不支持 Cache API 的浏览器）

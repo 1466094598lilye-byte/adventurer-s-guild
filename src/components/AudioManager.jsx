@@ -60,20 +60,7 @@ export async function initAudioManager() {
   console.log(`[AudioManager] Initialized with ${memoryCache.size} sounds`);
 }
 
-// 降级方案：仅内存缓存（不支持 Cache API 的浏览器）
-async function fallbackPreload() {
-  const promises = Object.entries(AUDIO_URLS).map(async ([key, url]) => {
-    try {
-      const response = await fetch(url);
-      const arrayBuffer = await response.arrayBuffer();
-      memoryCache.set(key, arrayBuffer);
-    } catch (error) {
-      console.warn(`[AudioManager] Failed to preload ${key}:`, error);
-    }
-  });
-  await Promise.all(promises);
-  console.log('[AudioManager] Initialized with memory cache only');
-}
+
 
 // 播放音效
 export function playSound(key, options = {}) {

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { X, Loader2, ChevronDown, ChevronUp, Edit2, Calendar as CalendarIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -31,6 +30,12 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
       console.log('任务详情:', result.tasks);
 
       setParsedQuests(result.tasks || []);
+      
+      // 解析完成后播放音效
+      if (result.tasks && result.tasks.length > 0) {
+        const parseCompleteAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%A4%A7%E9%A1%B9%E7%9B%AE%E5%BC%B9%E5%87%BA%E9%9F%B3%E6%95%88.mp3');
+        parseCompleteAudio.play().catch(() => {});
+      }
     } catch (error) {
       console.error('解析失败:', error);
       alert(t('questboard_alert_task_parse_failed', { message: error.message || t('common_try_again') }));

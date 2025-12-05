@@ -159,7 +159,14 @@ export async function playSound(key, options = {}) {
 // ----------------------
 export function stopSound(handle) {
   if (handle && handle.source) {
-    handle.source.stop();
+    try {
+      handle.source.stop();
+      console.log('[AudioManager] ✓ Sound stopped');
+    } catch (err) {
+      console.error('[AudioManager] Failed to stop sound:', err);
+    }
+  } else {
+    console.warn('[AudioManager] ⚠️ stopSound called but handle is invalid:', handle);
   }
 }
 

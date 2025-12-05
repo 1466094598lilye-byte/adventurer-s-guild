@@ -41,6 +41,10 @@ export default function TreasuresPage() {
       });
     },
     onSuccess: () => {
+      // 播放兑换成功音效
+      const successAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%90%88%E6%88%90%E6%88%90%E5%8A%9F%E9%9F%B3%E6%95%88.mp3');
+      successAudio.play().catch(() => {});
+      
       queryClient.invalidateQueries(['loot']);
       queryClient.invalidateQueries(['user']);
       setSelectedLegendaries([]);

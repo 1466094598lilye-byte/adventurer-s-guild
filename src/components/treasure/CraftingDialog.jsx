@@ -178,6 +178,9 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
 
             <button
               onClick={() => {
+                // 播放收下宝物音效
+                const collectAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E6%94%B6%E4%B8%8B%E5%AE%9D%E7%89%A9%E9%9F%B3%E6%95%88.mp3');
+                collectAudio.play().catch(() => {});
                 setCraftedLoot(null);
                 setSelectedLoot([]);
                 onClose();

@@ -3,6 +3,7 @@ import { X, Sparkles, Flame } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/components/LanguageContext';
+import { playSound, stopSound } from '@/components/AudioManager';
 
 export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSuccess }) {
   const { language, t } = useLanguage();
@@ -42,8 +43,7 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
   if (!isOpen) return null;
 
   const playSelectSound = () => {
-    const audio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%8A%A0%E5%85%A5%E5%90%88%E6%88%90.mp3');
-    audio.play().catch(() => {});
+    playSound('craftingSelect');
   };
 
   const toggleLootSelection = (loot) => {
@@ -62,9 +62,7 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
     setError('');
 
     // 播放合成中音效
-    const craftingAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%90%88%E6%88%90%E4%B8%AD%E9%9F%B3%E6%95%88.mp3');
-    craftingAudio.loop = true;
-    craftingAudio.play().catch(() => {});
+    const craftingAudio = playSound('craftingLoop', { loop: true });
 
     try {
       const { data: result } = await base44.functions.invoke('craftLoot', {
@@ -75,8 +73,7 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
       if (result.success) {
         setCraftedLoot(result.newLoot);
         // 播放合成成功音效
-        const successAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%90%88%E6%88%90%E6%88%90%E5%8A%9F%E9%9F%B3%E6%95%88.mp3');
-        successAudio.play().catch(() => {});
+        playSound('craftingSuccess');
         if (onCraftSuccess) onCraftSuccess();
       } else {
         setError(result.error || (language === 'zh' ? '合成失败，请重试' : 'Crafting failed, please retry'));
@@ -85,8 +82,7 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
       setError(language === 'zh' ? '合成失败，请重试' : 'Crafting failed, please retry');
     }
 
-    craftingAudio.pause();
-    craftingAudio.currentTime = 0;
+    stopSound(craftingAudio);
     setIsCrafting(false);
   };
 
@@ -179,8 +175,7 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
             <button
               onClick={() => {
                 // 播放收下宝物音效
-                const collectAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E6%94%B6%E4%B8%8B%E5%AE%9D%E7%89%A9%E9%9F%B3%E6%95%88.mp3');
-                collectAudio.play().catch(() => {});
+                playSound('collectTreasure');
                 setCraftedLoot(null);
                 setSelectedLoot([]);
                 onClose();

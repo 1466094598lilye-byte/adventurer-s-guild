@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Gift, Sparkles, X, Shield } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -17,6 +16,10 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
 
   const openChest = async () => {
     setIsOpening(true);
+    
+    // 播放开箱音效
+    const chestAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%AE%9D%E7%AE%B1%E9%9F%B3%E6%95%88.mp3');
+    chestAudio.play().catch(() => {});
 
     setTimeout(async () => {
       try {

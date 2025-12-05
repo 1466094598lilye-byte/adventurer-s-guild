@@ -61,6 +61,11 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
     setIsCrafting(true);
     setError('');
 
+    // 播放合成中音效
+    const craftingAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%90%88%E6%88%90%E4%B8%AD%E9%9F%B3%E6%95%88.mp3');
+    craftingAudio.loop = true;
+    craftingAudio.play().catch(() => {});
+
     try {
       const { data: result } = await base44.functions.invoke('craftLoot', {
         lootIds: selectedLoot.map(item => item.id),
@@ -77,6 +82,8 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
       setError(language === 'zh' ? '合成失败，请重试' : 'Crafting failed, please retry');
     }
 
+    craftingAudio.pause();
+    craftingAudio.currentTime = 0;
     setIsCrafting(false);
   };
 

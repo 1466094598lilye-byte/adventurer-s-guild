@@ -34,7 +34,9 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
   useEffect(() => {
     if (isOpen) {
       // 播放进入工坊音效
-      playSound('enterWorkshop');
+      (async () => {
+        await playSound('enterWorkshop');
+      })();
     } else {
       setSelectedLoot([]);
       setError('');
@@ -45,8 +47,8 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
 
   if (!isOpen) return null;
 
-  const playSelectSound = () => {
-    playSound('craftingSelect');
+  const playSelectSound = async () => {
+    await playSound('craftingSelect');
   };
 
   const toggleLootSelection = (loot) => {
@@ -65,7 +67,7 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
     setError('');
 
     // 播放合成中音效
-    const craftingAudio = playSound('craftingLoop', { loop: true });
+    const craftingAudio = await playSound('craftingLoop', { loop: true });
 
     try {
       const { data: result } = await base44.functions.invoke('craftLoot', {
@@ -76,7 +78,7 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
       if (result.success) {
         setCraftedLoot(result.newLoot);
         // 播放合成成功音效
-        playSound('craftingSuccess');
+        await playSound('craftingSuccess');
         if (onCraftSuccess) onCraftSuccess();
       } else {
         setError(result.error || (language === 'zh' ? '合成失败，请重试' : 'Crafting failed, please retry'));
@@ -176,9 +178,9 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
             </div>
 
             <button
-              onClick={() => {
+              onClick={async () => {
                 // 播放收下宝物音效
-                playSound('collectTreasure');
+                await playSound('collectTreasure');
                 setCraftedLoot(null);
                 setSelectedLoot([]);
                 onClose();

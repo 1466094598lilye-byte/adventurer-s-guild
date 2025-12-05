@@ -438,27 +438,41 @@ ${userInput.trim()}
 - **Important**: If consecutive lines have no date, use the last appearing date
 - Output only MM-DD format, no year!
 
-【Title Generation Rules - Must 100% Strictly Follow】:
-- **Format**: [Category]: <5-8 Word Epic Phrase>
-- **Category** options: Conquest, Expedition, Forging, Research, Escort, Investigation, Collection, Crafting, Diplomacy, Chronicle, Guardian, Purification, Treasure Hunt, Ritual, Negotiation
-- **5-8 words is a strict requirement**! The epic phrase must be between 5-8 words.
-- The phrase should be filled with fantasy flair, transforming mundane tasks into epic narratives
-- **Absolutely forbidden: use the word "task" or "quest" in the phrase!**
+═══════════════════════════════════════════════════════════════
+【⚠️ TITLE FORMAT - MOST CRITICAL RULE, VIOLATION BREAKS THE SYSTEM!】
+═══════════════════════════════════════════════════════════════
 
-【Title Examples】(note each phrase is 5-8 words):
-- "Run 5km" → "[Conquest]: Dawn March Through Five Miles" (6 words)
-- "Write weekly report" → "[Chronicle]: Forge Epic Weekly Adventure Scroll" (6 words)
-- "Attend meeting" → "[Diplomacy]: Convene Round Table War Council" (6 words)
-- "Prepare PPT" → "[Forging]: Craft Grand Presentation Tome" (5 words)
-- "Organize menu" → "[Chronicle]: Compile Feast Bounty Registry" (5 words)
+**You MUST generate an RPG epic-style title for EVERY task!**
 
-**Important Reminder**: The phrase must be 5-8 words! Count carefully!
+✅ **CORRECT FORMAT**: [Category]: <5-8 Word Epic Fantasy Phrase>
+   - [Category] = One of: Conquest, Expedition, Forging, Research, Escort, Investigation, Collection, Crafting, Diplomacy, Chronicle, Guardian, Purification, Treasure Hunt, Ritual, Negotiation
+   - Followed by a colon and **5-8 words** of EPIC FANTASY language
 
-【Final Check】:
-- Count task quantity before returning, ensure every independent task point is included
-- Multiple tasks on the same day must be separate task objects (do not merge)
-- **Every title must strictly follow [Category]: <5-8 Word Phrase> format!**
-- Preserve original description of each task as actionHint
+✅ **CORRECT EXAMPLES**:
+   - [Conquest]: Dawn March Through Sacred Battlegrounds ← 6 words ✓
+   - [Chronicle]: Inscribe Weekly Saga Upon Ancient Scrolls ← 7 words ✓
+   - [Forging]: Craft Legendary Presentation Arsenal ← 5 words ✓
+   - [Expedition]: Venture Into Uncharted Digital Realms ← 6 words ✓
+   - [Research]: Decipher Ancient Arcane Knowledge Tomes ← 6 words ✓
+
+❌ **WRONG EXAMPLES (ABSOLUTELY FORBIDDEN)**:
+   - "Complete project proposal" ← WRONG! No [Category]: prefix!
+   - "Play Game" ← WRONG! Just copying user input, not epic!
+   - "[Chronicle]: Write report" ← WRONG! Only 2 words, need 5-8!
+   - "Prepare the presentation for Monday" ← WRONG! This is raw input!
+
+⚠️ **BEFORE GENERATING**: Transform mundane tasks into HEROIC FANTASY language!
+   - "Play game" → [Expedition]: Embark Upon Virtual Realm Adventures
+   - "Write email" → [Diplomacy]: Dispatch Urgent Missive To Allied Forces
+   - "Buy groceries" → [Collection]: Secure Provisions From Market District
+
+═══════════════════════════════════════════════════════════════
+
+【Final Checklist】:
+□ Does EVERY title start with [Category]: ?
+□ Does EVERY title have 5-8 words of EPIC language after the colon?
+□ Did you TRANSFORM the input (not just copy it)?
+□ Is the original text preserved in actionHint field?
 
 Return task array (sorted by date):`,
       schema: {
@@ -471,15 +485,15 @@ Return task array (sorted by date):`,
               properties: {
                 title: { 
                   type: "string", 
-                  description: "Must strictly follow [Category]: <5-8 Word Epic Phrase> format! Category is action type, Phrase is 5-8 words. Absolutely cannot include the word 'task' or 'quest'!"
+                  description: "⚠️MUST be RPG title! Format: [Category]: <5-8 epic words>. Example: [Conquest]: Dawn March Through Sacred Lands. ❌NEVER copy raw input! ❌MUST transform to fantasy language!"
                 },
                 actionHint: { 
                   type: "string", 
-                  description: "Original task description, keep user input as-is, do not merge multiple tasks"
+                  description: "Original task description, keep user input as-is"
                 },
                 date: { 
                   type: "string", 
-                  description: "Format: MM-DD (only month and day, no year!)" 
+                  description: "MM-DD format only" 
                 },
                 difficulty: { type: "string", enum: ["S"] },
                 rarity: { type: "string", enum: ["Epic"] }

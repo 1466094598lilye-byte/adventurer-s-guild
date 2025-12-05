@@ -78,6 +78,13 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       setLongTermQuests(finalQuests);
       setIsLoading(false);
       console.log('=== 限时活动日程加载完成 ===');
+      
+      // 日程表加载完成后播放音效
+      if (finalQuests.length > 0) {
+        const calendarLoadAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%A4%A7%E9%A1%B9%E7%9B%AE%E5%8A%A0%E5%85%A5%E5%A7%94%E6%89%98%E6%9D%BF.mp3');
+        calendarLoadAudio.play().catch(() => {});
+      }
+      
       return finalQuests;
     } catch (error) {
       console.error('❌ 加载大项目任务失败:', error);

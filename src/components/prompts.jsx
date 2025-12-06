@@ -71,33 +71,41 @@ export function getPraisePrompt(language, quest, role) {
 - 难度：${quest.difficulty}级
 
 【核心要求 - 必须全部满足】：
-1. **深度解析任务价值**（30%）：
-   - 分析这个任务在更大的上下文中意味着什么？
-   - 它解决了什么问题？带来了什么积极影响？
-   - 它在长期目标中扮演什么角色？
+1. **先深入理解实际行动**：
+   - 仔细分析"实际行动"字段：${quest.actionHint}
+   - 这个行动具体包含哪些操作？需要什么能力？
+   - 它的难点在哪里？需要克服什么？
 
-2. **具体的事实性认可**（40%）：
-   - 尽可能提供数据、量化信息（如时间、数量、效果）
-   - 指出具体的成果或进展
-   - 说明这个行动的专业性或难度
-   - 例如："5km跑步大约消耗300-400卡路里"、"这是团队级的工作量"
+2. **具体的事实性认可**（最重要！）：
+   - 必须说出这个行动的具体价值，不能用空泛词汇
+   - ✅ 好："整理读书笔记需要提炼关键信息、建立知识框架"
+   - ❌ 坏："提升了知识深度"（什么知识？怎么提升？）
+   - ✅ 好："5km消耗约350卡路里，建立代谢基础"
+   - ❌ 坏："锻炼身体，很健康"（太笼统）
+   - 尽可能提供数据、操作细节、具体成果
 
-3. **通过事实推导品质**（30%）：
-   - 不要空洞地说"你很棒"
-   - 而是说"因为你做了X（事实），这证明了你具备Y（品质）"
-   - 品质可以是：自律、专注、效率、毅力、智慧、勇气、执行力等
+3. **禁止的空泛词汇**：
+   - ❌ 禁用："提升"、"宝贵"、"重要"、"很好"、"优秀"（不能直接说）
+   - ✅ 改用：具体的操作、具体的难度、具体的结果
+   - 如果要说品质，必须先说事实，再推导品质
 
-4. **保持角色语气**：
-   - 以上三点必须用${role.name}的独特视角和语气表达
+4. **通过具体事实推导品质**：
+   - 格式："你做了X（具体行动细节） → 这需要/证明了Y（品质）"
+   - ✅ "整理复杂信息并形成体系，这需要专注力和逻辑思维"
+   - ❌ "你的专注和自律很棒"（没有事实支撑）
+
+5. **保持角色语气**：
+   - 用${role.name}的独特视角和语气表达以上内容
    - 自然融入至少1个专属关键词
 
-5. **长度**：50字左右，一段连贯的话
+6. **长度**：50字左右，一段连贯的话
 
-【错误示例】：
-❌ "你完成了跑步，真是太棒了，继续加油！"（空洞，无事实，无分析）
+【错误示例对比】：
+❌ "你完成了读书笔记，提升了知识深度，展示了专注和自律，对长期目标很重要。"
+   → 问题：什么知识？怎么提升？为什么重要？全是空话！
 
-【正确示例】：
-✅ "你完成了5公里晨跑，这大约消耗了350卡路里热量，为一天的代谢打下了坚实基础。更重要的是，在需要自律的清晨，你选择了行动而非舒适，这种执行力正是长期目标达成的关键品质。"
+✅ "你将书中的复杂概念提炼成结构化笔记，这需要持续的注意力和信息筛选能力。这种把知识转化为可用工具的能力，正是持续成长的核心。"
+   → 具体说明了操作（提炼、结构化）、难度（注意力、筛选）、价值（转化工具）
 
 请**完全以${role.name}的身份和视角**，为这位冒险者写一段认可（50字左右）：`;
   } else {
@@ -115,33 +123,41 @@ Key Phrases: ${role.keywordsEn.join(', ')} (naturally incorporate these in your 
 - Difficulty: ${quest.difficulty}-rank
 
 【Core Requirements - Must Satisfy All】:
-1. **Deep Contextual Analysis** (30%):
-   - What does this task mean in the bigger picture?
-   - What problem does it solve? What positive impact does it create?
-   - What role does it play in long-term goals?
+1. **First, Deeply Understand the Actual Action**:
+   - Carefully analyze the "Actual Action" field: ${quest.actionHint}
+   - What specific operations does this action involve? What abilities are required?
+   - What are the challenges? What needs to be overcome?
 
-2. **Specific Factual Recognition** (40%):
-   - Provide data, quantifiable information when possible (time, amount, effect)
-   - Point out concrete results or progress
-   - Explain the professionalism or difficulty of this action
-   - E.g., "5km run burns ~300-400 calories", "this is team-level workload"
+2. **Specific Factual Recognition** (Most Important!):
+   - Must explain the specific value of this action, no vague words allowed
+   - ✅ Good: "Organizing reading notes requires extracting key information and building knowledge frameworks"
+   - ❌ Bad: "Enhanced knowledge depth" (what knowledge? how enhanced?)
+   - ✅ Good: "5km burns ~350 calories, building metabolic foundation"
+   - ❌ Bad: "Good for health" (too generic)
+   - Provide data, operation details, concrete results whenever possible
 
-3. **Derive Qualities from Facts** (30%):
-   - Don't just say "you're great"
-   - Say "because you did X (fact), this proves you have Y (quality)"
-   - Qualities: discipline, focus, efficiency, perseverance, wisdom, courage, execution power, etc.
+3. **Forbidden Vague Words**:
+   - ❌ Don't use: "enhance", "valuable", "important", "good", "excellent" (not directly)
+   - ✅ Use instead: specific operations, specific difficulties, specific results
+   - If mentioning qualities, must state facts first, then derive qualities
 
-4. **Maintain Role Voice**:
-   - Express the above three points in ${role.nameEn}'s unique perspective and tone
+4. **Derive Qualities from Specific Facts**:
+   - Format: "You did X (specific action details) → This requires/proves Y (quality)"
+   - ✅ "Organizing complex information into structured notes requires sustained focus and analytical thinking"
+   - ❌ "Your focus and discipline are great" (no factual support)
+
+5. **Maintain Role Voice**:
+   - Express the above in ${role.nameEn}'s unique perspective and tone
    - Naturally incorporate at least 1 signature phrase
 
-5. **Length**: Around 50 words, one coherent statement
+6. **Length**: Around 50 words, one coherent statement
 
-【Wrong Example】:
-❌ "You completed the run, that's amazing, keep it up!" (empty, no facts, no analysis)
+【Wrong vs. Right Examples】:
+❌ "You completed reading notes, enhanced knowledge depth, showed focus and discipline, important for long-term goals."
+   → Problems: What knowledge? How enhanced? Why important? All empty words!
 
-【Correct Example】:
-✅ "You completed a 5km morning run, burning approximately 350 calories and establishing a solid metabolic foundation for the day. More importantly, in the early hours when discipline is tested, you chose action over comfort. This execution power is the defining quality behind achieving long-term goals."
+✅ "You distilled complex concepts into structured notes, requiring sustained attention and information filtering. This ability to transform knowledge into usable tools is the core of continuous growth."
+   → Specific operations (distill, structure), difficulty (attention, filtering), value (transform to tools)
 
 Please write acknowledgment (around 50 words) **completely as ${role.nameEn}**:`;
   }

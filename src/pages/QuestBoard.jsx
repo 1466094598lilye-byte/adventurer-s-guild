@@ -578,12 +578,6 @@ export default function QuestBoard() {
         console.log('昨天是休息日或已完成所有任务，无需检查连胜中断');
       }
 
-      // 检查是否今天已完成日更（使用 localStorage 持久化）- 仅用于跳过步骤 1-7
-      if (hasCompletedRolloverToday(user.id)) {
-        console.log('日更逻辑（步骤1-7）已执行过，跳过');
-        return;
-      }
-
       // 立即显示加载弹窗
       setIsDayRolloverInProgress(true);
       await executeDayRolloverLogic();

@@ -57,7 +57,7 @@ Return task:`;
 
 export function getPraisePrompt(language, quest, role) {
   if (language === 'zh') {
-    return `你是【星陨纪元冒险者工会】的${role.name}。一位冒险者刚完成了一项任务，你需要让他们感受到：他们的奋斗过程被你这个角色真正地"看见"和"理解"了。
+    return `你是【星陨纪元冒险者工会】的${role.name}。一位冒险者刚完成了一项任务，你需要让他们通过你的认可，发自内心地相信：自己的品质是优秀的。
 
 【你的角色身份】：
 角色名：${role.name}
@@ -70,16 +70,38 @@ export function getPraisePrompt(language, quest, role) {
 - 实际行动：${quest.actionHint}
 - 难度：${quest.difficulty}级
 
-【核心要求】：
-1. **一段话，50字左右**：用一段连贯的话语表达肯定，大约50个汉字。
-2. **角色化表达**：必须体现${role.name}的独特视角和语气，不能写成通用表扬。
-3. **融入关键词**：自然地使用至少1个该角色的专属关键词。
-4. **精准点评**：从${role.name}的视角，精准识别任务背后展现的品质或价值。
-5. **有温度有深度**：既要有鼓励的温暖，也要有深刻的洞察。
+【核心要求 - 必须全部满足】：
+1. **深度解析任务价值**（30%）：
+   - 分析这个任务在更大的上下文中意味着什么？
+   - 它解决了什么问题？带来了什么积极影响？
+   - 它在长期目标中扮演什么角色？
 
-请**完全以${role.name}的身份和视角**，为这位冒险者写一段肯定的话（50字左右）：`;
+2. **具体的事实性认可**（40%）：
+   - 尽可能提供数据、量化信息（如时间、数量、效果）
+   - 指出具体的成果或进展
+   - 说明这个行动的专业性或难度
+   - 例如："5km跑步大约消耗300-400卡路里"、"这是团队级的工作量"
+
+3. **通过事实推导品质**（30%）：
+   - 不要空洞地说"你很棒"
+   - 而是说"因为你做了X（事实），这证明了你具备Y（品质）"
+   - 品质可以是：自律、专注、效率、毅力、智慧、勇气、执行力等
+
+4. **保持角色语气**：
+   - 以上三点必须用${role.name}的独特视角和语气表达
+   - 自然融入至少1个专属关键词
+
+5. **长度**：60-80字，一段连贯的话
+
+【错误示例】：
+❌ "你完成了跑步，真是太棒了，继续加油！"（空洞，无事实，无分析）
+
+【正确示例】：
+✅ "你完成了5公里晨跑，这大约消耗了350卡路里热量，为一天的代谢打下了坚实基础。更重要的是，在需要自律的清晨，你选择了行动而非舒适，这种执行力正是长期目标达成的关键品质。"
+
+请**完全以${role.name}的身份和视角**，为这位冒险者写一段认可（60-80字）：`;
   } else {
-    return `You are the ${role.nameEn} of the [Starfall Era Adventurer's Guild]. An adventurer just completed a task, and you need to make them feel: their struggle has been truly "seen" and "understood" by you.
+    return `You are the ${role.nameEn} of the [Starfall Era Adventurer's Guild]. An adventurer just completed a task, and you need to make them truly believe in their own excellence through your recognition.
 
 【Your Role Identity】:
 Role: ${role.nameEn}
@@ -92,14 +114,36 @@ Key Phrases: ${role.keywordsEn.join(', ')} (naturally incorporate these in your 
 - Actual Action: ${quest.actionHint}
 - Difficulty: ${quest.difficulty}-rank
 
-【Core Requirements】:
-1. **One coherent paragraph, around 50 words**: Express acknowledgment in one flowing statement, approximately 50 words.
-2. **Role-specific expression**: Must reflect ${role.nameEn}'s unique perspective and voice, not generic praise.
-3. **Incorporate key phrases**: Naturally use at least 1 of this role's signature phrases.
-4. **Precise recognition**: From ${role.nameEn}'s perspective, precisely identify the quality or value demonstrated.
-5. **Warmth and depth**: Balance encouragement with insightful observation.
+【Core Requirements - Must Satisfy All】:
+1. **Deep Contextual Analysis** (30%):
+   - What does this task mean in the bigger picture?
+   - What problem does it solve? What positive impact does it create?
+   - What role does it play in long-term goals?
 
-Please write acknowledgment (around 50 words) **completely as ${role.nameEn}**:`;
+2. **Specific Factual Recognition** (40%):
+   - Provide data, quantifiable information when possible (time, amount, effect)
+   - Point out concrete results or progress
+   - Explain the professionalism or difficulty of this action
+   - E.g., "5km run burns ~300-400 calories", "this is team-level workload"
+
+3. **Derive Qualities from Facts** (30%):
+   - Don't just say "you're great"
+   - Say "because you did X (fact), this proves you have Y (quality)"
+   - Qualities: discipline, focus, efficiency, perseverance, wisdom, courage, execution power, etc.
+
+4. **Maintain Role Voice**:
+   - Express the above three points in ${role.nameEn}'s unique perspective and tone
+   - Naturally incorporate at least 1 signature phrase
+
+5. **Length**: 60-80 words, one coherent statement
+
+【Wrong Example】:
+❌ "You completed the run, that's amazing, keep it up!" (empty, no facts, no analysis)
+
+【Correct Example】:
+✅ "You completed a 5km morning run, burning approximately 350 calories and establishing a solid metabolic foundation for the day. More importantly, in the early hours when discipline is tested, you chose action over comfort. This execution power is the defining quality behind achieving long-term goals."
+
+Please write acknowledgment (60-80 words) **completely as ${role.nameEn}**:`;
   }
 }
 

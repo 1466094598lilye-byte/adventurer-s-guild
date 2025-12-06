@@ -519,9 +519,15 @@ export default function QuestBoard() {
         return;
       }
 
+      // 🔥 【最优先】检查是否今天已完成所有日更（包括步骤0），避免重复执行
+      if (hasCompletedRolloverToday(user.id)) {
+        console.log('✅ 今日日更逻辑已全部完成，跳过');
+        return;
+      }
+
       console.log('=== 开始执行日更逻辑 (Initial Check) ===');
 
-      // 步骤 0：检查昨天是否有未完成任务，处理连胜中断（每次都检查，不受 localStorage 影响）
+      // 步骤 0：检查昨天是否有未完成任务，处理连胜中断
       console.log('=== 步骤 0: 检查连胜中断 ===');
       const restDays = user?.restDays || [];
       const lastClearDate = user?.lastClearDate;

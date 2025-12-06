@@ -91,7 +91,7 @@ export function getPraisePrompt(language, quest, role) {
    - 以上三点必须用${role.name}的独特视角和语气表达
    - 自然融入至少1个专属关键词
 
-5. **长度**：60-80字，一段连贯的话
+5. **长度**：50字左右，一段连贯的话
 
 【错误示例】：
 ❌ "你完成了跑步，真是太棒了，继续加油！"（空洞，无事实，无分析）
@@ -99,7 +99,7 @@ export function getPraisePrompt(language, quest, role) {
 【正确示例】：
 ✅ "你完成了5公里晨跑，这大约消耗了350卡路里热量，为一天的代谢打下了坚实基础。更重要的是，在需要自律的清晨，你选择了行动而非舒适，这种执行力正是长期目标达成的关键品质。"
 
-请**完全以${role.name}的身份和视角**，为这位冒险者写一段认可（60-80字）：`;
+请**完全以${role.name}的身份和视角**，为这位冒险者写一段认可（50字左右）：`;
   } else {
     return `You are the ${role.nameEn} of the [Starfall Era Adventurer's Guild]. An adventurer just completed a task, and you need to make them truly believe in their own excellence through your recognition.
 
@@ -135,7 +135,7 @@ Key Phrases: ${role.keywordsEn.join(', ')} (naturally incorporate these in your 
    - Express the above three points in ${role.nameEn}'s unique perspective and tone
    - Naturally incorporate at least 1 signature phrase
 
-5. **Length**: 60-80 words, one coherent statement
+5. **Length**: Around 50 words, one coherent statement
 
 【Wrong Example】:
 ❌ "You completed the run, that's amazing, keep it up!" (empty, no facts, no analysis)
@@ -143,7 +143,7 @@ Key Phrases: ${role.keywordsEn.join(', ')} (naturally incorporate these in your 
 【Correct Example】:
 ✅ "You completed a 5km morning run, burning approximately 350 calories and establishing a solid metabolic foundation for the day. More importantly, in the early hours when discipline is tested, you chose action over comfort. This execution power is the defining quality behind achieving long-term goals."
 
-Please write acknowledgment (60-80 words) **completely as ${role.nameEn}**:`;
+Please write acknowledgment (around 50 words) **completely as ${role.nameEn}**:`;
   }
 }
 

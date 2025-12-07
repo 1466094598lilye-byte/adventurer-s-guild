@@ -7,7 +7,6 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { initAudioManager } from "@/components/AudioManager";
-import { Helmet } from "react-helmet";
 
 function LayoutContent({ children }) {
   const location = useLocation();

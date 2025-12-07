@@ -586,7 +586,7 @@ export default function QuestBoard() {
 
     // 🔧 无论是否有用户都执行（游客模式下会快速返回并关闭加载状态）
     handleDayRollover();
-  }, [user, today, yesterday, queryClient, t]); // Removed streakBreakInfo from dependencies to prevent infinite loop
+  }, [user]); // Only depend on user to prevent double execution
 
   // Handle use token (called from StreakBreakDialog)
   const handleUseToken = async () => {

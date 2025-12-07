@@ -10,14 +10,11 @@ import { initAudioManager } from "@/components/AudioManager";
 
 // 立即注入 manifest（在 React 渲染之前）
 if (typeof document !== 'undefined') {
-  const existingManifest = document.querySelector('link[rel="manifest"]');
-  if (existingManifest) {
-    existingManifest.href = '/api/functions/getPwaManifest';
-  } else {
-    const link = document.createElement('link');
-    link.rel = 'manifest';
-    link.href = '/api/functions/getPwaManifest';
-    document.head.appendChild(link);
+  const m = document.querySelector('link[rel="manifest"]') || document.createElement('link');
+  m.rel = 'manifest';
+  m.href = '/functions/pwaManifest';
+  if (!document.querySelector('link[rel="manifest"]')) {
+    document.head.appendChild(m);
   }
 
   const existingTheme = document.querySelector('meta[name="theme-color"]');
@@ -68,7 +65,7 @@ function LayoutContent({ children }) {
   // PWA: Register Service Worker
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/api/functions/getServiceWorker')
+      navigator.serviceWorker.register('/functions/pwaSw')
         .then((registration) => {
           console.log('✅ Service Worker registered:', registration);
         })

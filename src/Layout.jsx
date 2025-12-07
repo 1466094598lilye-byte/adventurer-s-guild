@@ -10,39 +10,9 @@ import { initAudioManager } from "@/components/AudioManager";
 
 // 立即注入 manifest 和 theme-color（在 React 渲染之前）
 if (typeof document !== 'undefined') {
-  // Inline manifest as data URL
-  const manifestJson = {
-    id: "/",
-    name: "Adventurer's Guild",
-    short_name: "Guild",
-    description: "Turn your to-do list into epic quests",
-    start_url: "/",
-    display: "standalone",
-    background_color: "#F9FAFB",
-    theme_color: "#000000",
-    orientation: "portrait",
-    icons: [
-      {
-        src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%23FFE66D'/%3E%3Cpath d='M96 40 L100 44 L100 100 L120 120 L116 124 L100 108 L92 108 L76 124 L72 120 L92 100 L92 44 Z' fill='%23000' stroke='%23000' stroke-width='3'/%3E%3Crect x='94' y='120' width='4' height='20' fill='%238B4513'/%3E%3Ccircle cx='96' cy='145' r='8' fill='%23FFD700' stroke='%23000' stroke-width='2'/%3E%3C/svg%3E",
-        sizes: "192x192",
-        type: "image/svg+xml",
-        purpose: "any maskable"
-      },
-      {
-        src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%23FFE66D'/%3E%3Cpath d='M256 100 L266 110 L266 266 L320 320 L310 330 L266 286 L246 286 L202 330 L192 320 L246 266 L246 110 Z' fill='%23000' stroke='%23000' stroke-width='8'/%3E%3Crect x='250' y='320' width='12' height='50' fill='%238B4513'/%3E%3Ccircle cx='256' cy='385' r='20' fill='%23FFD700' stroke='%23000' stroke-width='5'/%3E%3C/svg%3E",
-        sizes: "512x512",
-        type: "image/svg+xml",
-        purpose: "any maskable"
-      }
-    ]
-  };
-
-  const manifestBlob = new Blob([JSON.stringify(manifestJson)], { type: 'application/manifest+json' });
-  const manifestURL = URL.createObjectURL(manifestBlob);
-
   const m = document.querySelector('link[rel="manifest"]') || document.createElement('link');
   m.rel = 'manifest';
-  m.href = manifestURL;
+  m.href = '/functions/manifest';
   if (!document.querySelector('link[rel="manifest"]')) {
     document.head.appendChild(m);
   }
@@ -92,48 +62,10 @@ function LayoutContent({ children }) {
     base44.auth.redirectToLogin(window.location.pathname);
   };
 
-  // PWA: Register Inline Service Worker
+  // PWA: Register Service Worker
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      const swCode = `
-const CACHE_NAME = 'guild-pwa-v1';
-const urlsToCache = [
-  '/',
-  '/index.html',
-];
-
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
-  );
-});
-
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys => 
-      Promise.all(keys.map(key => {
-        if (key !== CACHE_NAME) return caches.delete(key);
-      }))
-    )
-  );
-});
-
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).catch(() => {
-        if (event.request.mode === 'navigate') {
-          return caches.match('/');
-        }
-      });
-    })
-  );
-});`;
-
-      const blob = new Blob([swCode], { type: 'application/javascript' });
-      const swURL = URL.createObjectURL(blob);
-
-      navigator.serviceWorker.register(swURL)
+      navigator.serviceWorker.register('/functions/sw')
         .then((registration) => {
           console.log('✅ Service Worker registered:', registration);
         })

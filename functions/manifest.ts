@@ -1,0 +1,33 @@
+Deno.serve(async (req) => {
+  const manifest = {
+    id: "/",
+    name: "Adventurer's Guild",
+    short_name: "Guild",
+    description: "Turn your to-do list into epic quests",
+    start_url: "/",
+    display: "standalone",
+    background_color: "#F9FAFB",
+    theme_color: "#000000",
+    orientation: "portrait",
+    icons: [
+      {
+        src: "/functions/icon192",
+        sizes: "192x192",
+        type: "image/png"
+      },
+      {
+        src: "/functions/icon512",
+        sizes: "512x512",
+        type: "image/png"
+      }
+    ]
+  };
+
+  return new Response(JSON.stringify(manifest), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/manifest+json",
+      "Cache-Control": "public, max-age=3600"
+    }
+  });
+});

@@ -12,7 +12,7 @@ import { initAudioManager } from "@/components/AudioManager";
 if (typeof document !== 'undefined') {
   const m = document.querySelector('link[rel="manifest"]') || document.createElement('link');
   m.rel = 'manifest';
-  m.href = '/functions/app-manifest';
+  m.href = '/functions/pwamanifest';
   if (!document.querySelector('link[rel="manifest"]')) {
     document.head.appendChild(m);
   }
@@ -65,7 +65,7 @@ function LayoutContent({ children }) {
   // PWA: Register Service Worker
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/functions/pwaSw')
+      navigator.serviceWorker.register('/functions/pwasw')
         .then((registration) => {
           console.log('✅ Service Worker registered:', registration);
         })

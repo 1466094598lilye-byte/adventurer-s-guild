@@ -1,4 +1,4 @@
-Deno.serve(async (req) => {
+export async function onRequest(context) {
   const manifest = {
     name: "星陨纪元冒险者工会",
     short_name: "冒险者工会",
@@ -24,6 +24,9 @@ Deno.serve(async (req) => {
 
   return new Response(JSON.stringify(manifest), {
     status: 200,
-    headers: { "Content-Type": "application/json" }
+    headers: {
+      "Content-Type": "application/manifest+json",
+      "Cache-Control": "no-cache"
+    }
   });
-});
+}

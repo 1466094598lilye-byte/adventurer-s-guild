@@ -1,4 +1,4 @@
-Deno.serve(async (req) => {
+export async function onRequest(context) {
   const sw = `
 const CACHE_NAME = 'adventurers-guild-v1';
 const urlsToCache = [
@@ -45,6 +45,9 @@ self.addEventListener('activate', (event) => {
 
   return new Response(sw, {
     status: 200,
-    headers: { "Content-Type": "application/javascript" }
+    headers: {
+      "Content-Type": "application/javascript",
+      "Cache-Control": "no-cache"
+    }
   });
-});
+}

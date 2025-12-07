@@ -36,10 +36,9 @@ function LayoutContent({ children }) {
     console.log("📌 SW register effect executed");
 
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register(
-        "https://pub-42253c4c8dae42078b671d08c4abd8ac.r2.dev/sw.js",
-        { scope: "/" }
-      )
+      navigator.serviceWorker.register("/api/functions/proxy", {
+        scope: "/"
+      })
       .then(reg => console.log("SW registered:", reg))
       .catch(err => console.error("SW failed:", err));
     }

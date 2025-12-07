@@ -12,7 +12,7 @@ import { initAudioManager } from "@/components/AudioManager";
 if (typeof document !== 'undefined') {
   const m = document.querySelector('link[rel="manifest"]') || document.createElement('link');
   m.rel = 'manifest';
-  m.href = '/functions/manifest-json';
+  m.href = '/functions/app-manifest';
   if (!document.querySelector('link[rel="manifest"]')) {
     document.head.appendChild(m);
   }

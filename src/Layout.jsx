@@ -7,6 +7,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { initAudioManager } from "@/components/AudioManager";
+import { Helmet } from "react-helmet";
 
 function LayoutContent({ children }) {
   const location = useLocation();
@@ -53,6 +54,22 @@ function LayoutContent({ children }) {
           console.log('❌ Service Worker registration failed:', error);
         });
     }
+
+    // Inject manifest link
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = '/manifest';
+    document.head.appendChild(link);
+
+    const meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    meta.content = '#000000';
+    document.head.appendChild(meta);
+
+    return () => {
+      document.head.removeChild(link);
+      document.head.removeChild(meta);
+    };
   }, []);
 
   return (

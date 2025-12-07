@@ -1,6 +1,6 @@
 export async function onRequest(req) {
   const swCode = `
-const CACHE_NAME = 'guild-pwa-v1';
+const CACHE_NAME = 'guild-pwa-v3';
 const urlsToCache = [
   '/',
   '/index.html'

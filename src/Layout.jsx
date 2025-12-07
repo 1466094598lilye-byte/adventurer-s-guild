@@ -8,41 +8,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { initAudioManager } from "@/components/AudioManager";
 
-// 立即注入 manifest 和 theme-color（在 React 渲染之前）
-if (typeof document !== 'undefined') {
-  const m = document.querySelector('link[rel="manifest"]') || document.createElement('link');
-  m.rel = 'manifest';
-  m.href = '/functions/manifest';
-  if (!document.querySelector('link[rel="manifest"]')) {
-    document.head.appendChild(m);
-  }
-
-  const existingTheme = document.querySelector('meta[name="theme-color"]');
-  if (existingTheme) {
-    existingTheme.content = '#000000';
-  } else {
-    const meta = document.createElement('meta');
-    meta.name = 'theme-color';
-    meta.content = '#000000';
-    document.head.appendChild(meta);
-  }
-}
-
 function LayoutContent({ children }) {
   const location = useLocation();
   const { t } = useLanguage();
 
-  useEffect(() => {
-    console.log("📌 SW register effect executed");
 
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/api/functions/proxy", {
-        scope: "/"
-      })
-      .then(reg => console.log("SW registered:", reg))
-      .catch(err => console.error("SW failed:", err));
-    }
-  }, []);
 
   const { data: user } = useQuery({
     queryKey: ['user'],

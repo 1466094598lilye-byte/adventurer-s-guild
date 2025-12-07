@@ -8,6 +8,29 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { initAudioManager } from "@/components/AudioManager";
 
+// 立即注入 manifest（在 React 渲染之前）
+if (typeof document !== 'undefined') {
+  const existingManifest = document.querySelector('link[rel="manifest"]');
+  if (existingManifest) {
+    existingManifest.href = '/functions/manifest';
+  } else {
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = '/functions/manifest';
+    document.head.appendChild(link);
+  }
+
+  const existingTheme = document.querySelector('meta[name="theme-color"]');
+  if (existingTheme) {
+    existingTheme.content = '#000000';
+  } else {
+    const meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    meta.content = '#000000';
+    document.head.appendChild(meta);
+  }
+}
+
 function LayoutContent({ children }) {
   const location = useLocation();
   const { t } = useLanguage();
@@ -53,22 +76,6 @@ function LayoutContent({ children }) {
           console.log('❌ Service Worker registration failed:', error);
         });
     }
-
-    // Inject manifest link
-    const link = document.createElement('link');
-    link.rel = 'manifest';
-    link.href = '/functions/manifest';
-    document.head.appendChild(link);
-
-    const meta = document.createElement('meta');
-    meta.name = 'theme-color';
-    meta.content = '#000000';
-    document.head.appendChild(meta);
-
-    return () => {
-      document.head.removeChild(link);
-      document.head.removeChild(meta);
-    };
   }, []);
 
   return (

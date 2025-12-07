@@ -45,7 +45,7 @@ function LayoutContent({ children }) {
   // PWA: Register Service Worker
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw')
+      navigator.serviceWorker.register('/functions/sw')
         .then((registration) => {
           console.log('✅ Service Worker registered:', registration);
         })
@@ -57,7 +57,7 @@ function LayoutContent({ children }) {
     // Inject manifest link
     const link = document.createElement('link');
     link.rel = 'manifest';
-    link.href = '/manifest';
+    link.href = '/functions/manifest';
     document.head.appendChild(link);
 
     const meta = document.createElement('meta');

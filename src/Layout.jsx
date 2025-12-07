@@ -65,7 +65,7 @@ function LayoutContent({ children }) {
   // PWA: Register Service Worker
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/api/functions/pwa-worker')
+      navigator.serviceWorker.register('/api/functions/guild-cache')
         .then((registration) => {
           console.log('✅ Service Worker registered:', registration);
         })

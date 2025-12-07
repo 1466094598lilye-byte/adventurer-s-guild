@@ -10,14 +10,16 @@ export async function onRequest(context) {
     orientation: "portrait",
     icons: [
       {
-        src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23FFE66D'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='%23000'>⚔️</text></svg>",
+        src: "/functions/icon-192",
         sizes: "192x192",
-        type: "image/svg+xml"
+        type: "image/svg+xml",
+        purpose: "any maskable"
       },
       {
-        src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23FFE66D'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='%23000'>⚔️</text></svg>",
+        src: "/functions/icon-512",
         sizes: "512x512",
-        type: "image/svg+xml"
+        type: "image/svg+xml",
+        purpose: "any maskable"
       }
     ]
   };

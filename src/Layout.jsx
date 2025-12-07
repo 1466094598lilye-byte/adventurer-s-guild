@@ -26,25 +26,24 @@ if (typeof document !== 'undefined') {
     meta.content = '#000000';
     document.head.appendChild(meta);
   }
-
-  // 注册 Service Worker
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register(
-      "https://pub-42253c4c8dae42078b671d08c4abd8ac.r2.dev/sw.js",
-      { scope: "/" }
-    ).then((registration) => {
-      console.log('✅ Service Worker registered:', registration);
-    }).catch((error) => {
-      console.log('❌ Service Worker registration failed:', error);
-    });
-  }
 }
 
 function LayoutContent({ children }) {
   const location = useLocation();
   const { t } = useLanguage();
 
+  useEffect(() => {
+    console.log("📌 SW register effect executed");
 
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register(
+        "https://pub-42253c4c8dae42078b671d08c4abd8ac.r2.dev/sw.js",
+        { scope: "/" }
+      )
+      .then(reg => console.log("SW registered:", reg))
+      .catch(err => console.error("SW failed:", err));
+    }
+  }, []);
 
   const { data: user } = useQuery({
     queryKey: ['user'],

@@ -45,24 +45,18 @@ function LayoutContent({ children }) {
   // PWA: Register Service Worker
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-          .then((registration) => {
-            console.log('✅ Service Worker registered:', registration);
-          })
-          .catch((error) => {
-            console.log('❌ Service Worker registration failed:', error);
-          });
-      });
+      navigator.serviceWorker.register('/sw')
+        .then((registration) => {
+          console.log('✅ Service Worker registered:', registration);
+        })
+        .catch((error) => {
+          console.log('❌ Service Worker registration failed:', error);
+        });
     }
   }, []);
 
   return (
     <ErrorBoundary>
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#000000" />
-      </head>
       <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F9FAFB' }}>
         {/* Guest Mode Warning Banner */}
         {!user && (

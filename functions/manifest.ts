@@ -1,8 +1,8 @@
 export async function onRequest(context) {
   const manifest = {
-    name: "星陨纪元冒险者工会",
-    short_name: "冒险者工会",
-    description: "每日任务管理与冒险记录",
+    name: "Adventurer's Guild: 勇者的清单",
+    short_name: "Adventurer's Guild",
+    description: "Turn your to-do list into epic quests.",
     start_url: "/",
     display: "standalone",
     background_color: "#F9FAFB",

@@ -65,7 +65,7 @@ function LayoutContent({ children }) {
   // PWA: Register Service Worker
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/api/functions/pwa-sw')
+      navigator.serviceWorker.register('/api/functions/pwa-worker')
         .then((registration) => {
           console.log('✅ Service Worker registered:', registration);
         })

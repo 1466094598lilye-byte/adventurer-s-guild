@@ -1,6 +1,5 @@
-export async function onRequest() {
-  const sw = `
-const CACHE_NAME = 'guild-pwa-v1';
+export async function onRequest(context) {
+  const sw = `const CACHE_NAME = 'guild-pwa-v1';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -29,8 +28,7 @@ self.addEventListener('fetch', event => {
       });
     })
   );
-});
-  `;
+});`;
   
   return new Response(sw, {
     status: 200,

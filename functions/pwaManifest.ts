@@ -1,4 +1,4 @@
-export async function onRequest() {
+export async function onRequest(context) {
   const manifest = {
     id: "/",
     name: "Adventurer's Guild",

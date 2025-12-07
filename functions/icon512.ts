@@ -1,5 +1,4 @@
-Deno.serve(async (req) => {
-  // Simple PNG icon (1x1 yellow pixel as placeholder - you can replace with actual icon)
+export async function onRequest(req) {
   const pngData = new Uint8Array([
     0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
     0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
@@ -19,4 +18,4 @@ Deno.serve(async (req) => {
       "Cache-Control": "public, max-age=86400"
     }
   });
-});
+}

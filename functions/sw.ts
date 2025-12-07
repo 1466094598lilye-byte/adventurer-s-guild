@@ -1,4 +1,4 @@
-Deno.serve(async (req) => {
+export async function onRequest(req) {
   const swCode = `
 const CACHE_NAME = 'guild-pwa-v1';
 const urlsToCache = [
@@ -46,7 +46,7 @@ self.addEventListener('fetch', (event) => {
     status: 200,
     headers: {
       "Content-Type": "application/javascript",
-      "Cache-Control": "public, max-age=3600"
+      "Cache-Control": "no-store"
     }
   });
-});
+}

@@ -1,4 +1,4 @@
-Deno.serve(async (req) => {
+export async function onRequest(req) {
   const manifest = {
     id: "/",
     name: "Adventurer's Guild",
@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     status: 200,
     headers: {
       "Content-Type": "application/manifest+json",
-      "Cache-Control": "public, max-age=3600"
+      "Cache-Control": "no-store"
     }
   });
-});
+}

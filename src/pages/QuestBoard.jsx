@@ -11,6 +11,7 @@ import LongTermProjectDialog from '../components/quest/LongTermProjectDialog';
 import LongTermCalendar from '../components/quest/LongTermCalendar';
 import JointPraiseDialog from '../components/quest/JointPraiseDialog';
 import StreakBreakDialog from '../components/streak/StreakBreakDialog';
+import BootstrapModeDialog from '../components/quest/BootstrapModeDialog';
 import { format, subDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +42,9 @@ export default function QuestBoard() {
   const [streakBreakInfo, setStreakBreakInfo] = useState(null);
   const [isDayRolloverInProgress, setIsDayRolloverInProgress] = useState(false);
   const [isGeneratingBootstrap, setIsGeneratingBootstrap] = useState(false);
+  const [showBootstrapDialog, setShowBootstrapDialog] = useState(false);
+  const [bootstrapTasks, setBootstrapTasks] = useState([]);
+  const [isAddingBootstrap, setIsAddingBootstrap] = useState(false);
   const queryClient = useQueryClient();
   const { language, t } = useLanguage();
 
@@ -1275,8 +1279,34 @@ export default function QuestBoard() {
         }
       });
 
-      // 创建所有启动模式任务
-      for (const task of result.tasks) {
+      // 添加临时ID并显示弹窗
+      const tasksWithIds = result.tasks.map((task, index) => ({
+        ...task,
+        tempId: `bootstrap_${Date.now()}_${index}`
+      }));
+      
+      setBootstrapTasks(tasksWithIds);
+      setShowBootstrapDialog(true);
+    } catch (error) {
+      console.error('生成启动任务失败:', error);
+      alert(language === 'zh'
+        ? '生成失败，请重试'
+        : 'Generation failed, please try again');
+    }
+    
+    loadingAudio.pause();
+    loadingAudio.currentTime = 0;
+    setIsGeneratingBootstrap(false);
+  };
+
+  const handleConfirmBootstrapTasks = async (selectedTaskIds) => {
+    setIsAddingBootstrap(true);
+    const loadingAudio = playLoadingSound();
+    
+    try {
+      const selectedTasks = bootstrapTasks.filter(t => selectedTaskIds.includes(t.tempId));
+      
+      for (const task of selectedTasks) {
         await createQuestMutation.mutateAsync({
           title: task.title,
           actionHint: task.actionHint,
@@ -1291,19 +1321,22 @@ export default function QuestBoard() {
 
       playQuestAddedSound();
       setToast(language === 'zh' 
-        ? `✨ 已生成 ${result.tasks.length} 个小胜利任务！` 
-        : `✨ Generated ${result.tasks.length} micro-victory tasks!`);
+        ? `✨ 已添加 ${selectedTasks.length} 个小胜利任务！` 
+        : `✨ Added ${selectedTasks.length} micro-victory tasks!`);
       setTimeout(() => setToast(null), 2000);
+      
+      setShowBootstrapDialog(false);
+      setBootstrapTasks([]);
     } catch (error) {
-      console.error('生成启动任务失败:', error);
+      console.error('添加启动任务失败:', error);
       alert(language === 'zh'
-        ? '生成失败，请重试'
-        : 'Generation failed, please try again');
+        ? '添加失败，请重试'
+        : 'Failed to add tasks, please try again');
     }
     
     loadingAudio.pause();
     loadingAudio.currentTime = 0;
-    setIsGeneratingBootstrap(false);
+    setIsAddingBootstrap(false);
   };
 
   const filteredQuests = quests.filter(quest => {
@@ -1879,6 +1912,18 @@ export default function QuestBoard() {
               setShowJointPraise(false);
               setCompletedProject(null);
             }}
+          />
+        )}
+
+        {showBootstrapDialog && (
+          <BootstrapModeDialog
+            tasks={bootstrapTasks}
+            onClose={() => {
+              setShowBootstrapDialog(false);
+              setBootstrapTasks([]);
+            }}
+            onConfirm={handleConfirmBootstrapTasks}
+            isAdding={isAddingBootstrap}
           />
         )}
 

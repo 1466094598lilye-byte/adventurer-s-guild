@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/components/LanguageContext';
 import { getTaskNamingPrompt } from '@/components/prompts';
+import { getGuestData, setGuestData, addGuestEntity, updateGuestEntity, deleteGuestEntity } from '@/components/utils/guestData';
 
 export default function QuestBoard() {
   const [filter, setFilter] = useState('all');
@@ -89,9 +90,16 @@ export default function QuestBoard() {
   const { data: quests = [], isLoading } = useQuery({
     queryKey: ['quests', today],
     queryFn: async () => {
+      // 访客模式：从 localStorage 读取
+      if (!user) {
+        const guestQuests = getGuestData('quests');
+        return guestQuests.filter(q => q.date === today);
+      }
+
+      // 登录模式：从后端读取并解密
       try {
         const allQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
-        
+
         const decryptedQuests = await Promise.all(
           allQuests.map(async (quest) => {
             try {
@@ -99,7 +107,7 @@ export default function QuestBoard() {
                 encryptedTitle: quest.title,
                 encryptedActionHint: quest.actionHint
               });
-              
+
               return {
                 ...quest,
                 title: data.title,
@@ -111,7 +119,7 @@ export default function QuestBoard() {
             }
           })
         );
-        
+
         return decryptedQuests;
       } catch (error) {
         console.error('获取任务失败:', error);
@@ -647,6 +655,14 @@ export default function QuestBoard() {
       console.log('=== createQuestMutation 开始 ===');
       console.log('原始数据:', questData);
 
+      // 访客模式：直接保存到 localStorage（无需加密）
+      if (!user) {
+        const newQuest = addGuestEntity('quests', questData);
+        console.log('访客任务创建成功（localStorage）');
+        return newQuest;
+      }
+
+      // 登录模式：加密后保存到后端
       const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
         title: questData.title,
         actionHint: questData.actionHint
@@ -665,7 +681,7 @@ export default function QuestBoard() {
     },
     onSuccess: async () => {
       batchInvalidateQueries(['quests', 'user']);
-      
+
       // 只有登录用户才处理休息日取消逻辑
       if (user) {
         const currentUser = await base44.auth.me();
@@ -683,22 +699,29 @@ export default function QuestBoard() {
 
   const updateQuestMutation = useMutation({
     mutationFn: async ({ id, data }) => {
+      // 访客模式：直接更新 localStorage（无需加密）
+      if (!user) {
+        const updated = updateGuestEntity('quests', id, data);
+        return updated;
+      }
+
+      // 登录模式：加密后更新后端
       const updateData = { ...data };
-      
+
       if (data.title !== undefined || data.actionHint !== undefined || data.originalActionHint !== undefined) {
         const toEncrypt = {
           title: data.title,
           actionHint: data.actionHint,
           originalActionHint: data.originalActionHint
         };
-        
+
         const { data: encrypted } = await base44.functions.invoke('encryptQuestData', toEncrypt);
-        
+
         if (data.title !== undefined) updateData.title = encrypted.encryptedTitle;
         if (data.actionHint !== undefined) updateData.actionHint = encrypted.encryptedActionHint;
         if (data.originalActionHint !== undefined) updateData.originalActionHint = encrypted.originalActionHint;
       }
-      
+
       return base44.entities.Quest.update(id, updateData);
     },
     onSuccess: () => {
@@ -707,7 +730,15 @@ export default function QuestBoard() {
   });
 
   const deleteQuestMutation = useMutation({
-    mutationFn: (id) => base44.entities.Quest.delete(id),
+    mutationFn: (id) => {
+      // 访客模式：从 localStorage 删除
+      if (!user) {
+        return deleteGuestEntity('quests', id);
+      }
+
+      // 登录模式：从后端删除
+      return base44.entities.Quest.delete(id);
+    },
     onSuccess: () => {
       batchInvalidateQueries(['quests']);
     }
@@ -818,6 +849,9 @@ export default function QuestBoard() {
   };
 
   const checkAndAwardMilestone = async (newStreak) => {
+    // 访客模式：禁用里程碑奖励
+    if (!user) return;
+
     const milestones = [
       { days: 7, title: '新秀冒险家', tokens: 1, icon: '🌟' },
       { days: 21, title: '精英挑战者', tokens: 2, icon: '⚔️' },
@@ -1070,6 +1104,14 @@ export default function QuestBoard() {
   const handleOpenChest = async () => {
     console.log('=== 手动开启宝箱 ===');
 
+    // 访客模式：禁用开启宝箱
+    if (!user) {
+      alert(language === 'zh' 
+        ? '访客模式下无法开启宝箱（需要登录保存战利品）' 
+        : 'Cannot open chest in guest mode (login required to save loot)');
+      return;
+    }
+
     // 只有登录用户才更新连胜
     if (user) {
       const currentUser = await base44.auth.me();
@@ -1146,7 +1188,13 @@ export default function QuestBoard() {
   };
 
   const handlePlanSaved = async (plannedQuests) => {
-    if (!user) return;
+    // 访客模式：禁用规划功能
+    if (!user) {
+      alert(language === 'zh'
+        ? '访客模式下无法规划明日任务（需要登录保存数据）'
+        : 'Cannot plan tomorrow\'s quests in guest mode (login required to save data)');
+      return;
+    }
     
     try {
       await base44.auth.updateMe({
@@ -1193,7 +1241,7 @@ export default function QuestBoard() {
     return true;
   });
 
-  const isRestDay = (user?.restDays || []).includes(today);
+  const isRestDay = user ? (user?.restDays || []).includes(today) : false;
   const nextDayPlannedCount = (user?.nextDayPlannedQuests || []).length;
   const canShowPlanningButton = currentHour >= 21 && user?.lastPlannedDate !== today;
 
@@ -1314,13 +1362,23 @@ export default function QuestBoard() {
           </div>
 
           <Button
-            onClick={() => setShowLongTermDialog(true)}
+            onClick={() => {
+              if (!user) {
+                alert(language === 'zh'
+                  ? '访客模式下无法使用大项目规划（需要登录保存数据）'
+                  : 'Cannot use long-term planning in guest mode (login required to save data)');
+                return;
+              }
+              setShowLongTermDialog(true);
+            }}
+            disabled={!user}
             className="w-full py-3 font-black uppercase text-sm flex items-center justify-center gap-2"
             style={{
               backgroundColor: '#9B59B6',
               color: '#FFF',
               border: '4px solid #000',
-              boxShadow: '5px 5px 0px #000'
+              boxShadow: '5px 5px 0px #000',
+              opacity: !user ? 0.5 : 1
             }}
           >
             <Briefcase className="w-5 h-5" strokeWidth={3} />
@@ -1474,10 +1532,18 @@ export default function QuestBoard() {
             }}
           >
             <Button
-              onClick={() => setShowCalendar(true)}
-              disabled={isLoadingLongTermQuests}
+              onClick={() => {
+                if (!user) {
+                  alert(language === 'zh'
+                    ? '访客模式下无法查看日程表（需要登录）'
+                    : 'Cannot view calendar in guest mode (login required)');
+                  return;
+                }
+                setShowCalendar(true);
+              }}
+              disabled={isLoadingLongTermQuests || !user}
               className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3 text-white"
-              style={{ opacity: isLoadingLongTermQuests ? 0.6 : 1 }}
+              style={{ opacity: (isLoadingLongTermQuests || !user) ? 0.6 : 1 }}
             >
               {isLoadingLongTermQuests ? (
                 <>

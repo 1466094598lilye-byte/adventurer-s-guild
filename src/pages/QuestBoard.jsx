@@ -15,7 +15,7 @@ import { format, subDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/components/LanguageContext';
-import { getTaskNamingPrompt } from '@/components/prompts';
+import { getTaskNamingPrompt, getBootstrapModePrompt } from '@/components/prompts';
 import { getGuestData, setGuestData, addGuestEntity, updateGuestEntity, deleteGuestEntity } from '@/components/utils/guestData';
 
 export default function QuestBoard() {
@@ -40,6 +40,7 @@ export default function QuestBoard() {
   const [currentHour, setCurrentHour] = useState(new Date().getHours());
   const [streakBreakInfo, setStreakBreakInfo] = useState(null);
   const [isDayRolloverInProgress, setIsDayRolloverInProgress] = useState(false);
+  const [isGeneratingBootstrap, setIsGeneratingBootstrap] = useState(false);
   const queryClient = useQueryClient();
   const { language, t } = useLanguage();
 
@@ -1234,6 +1235,77 @@ export default function QuestBoard() {
     queryClient.refetchQueries({ queryKey: ['hasLongTermQuests'] });
   };
 
+  const handleBootstrapMode = async () => {
+    if (isGeneratingBootstrap) return;
+    
+    setIsGeneratingBootstrap(true);
+    const loadingAudio = playLoadingSound();
+    
+    try {
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: getBootstrapModePrompt(language),
+        response_json_schema: {
+          type: "object",
+          properties: {
+            tasks: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: {
+                    type: "string",
+                    description: language === 'zh'
+                      ? "必须是【启动】+正好7个汉字！例如：【启动】慢慢睁开双眼醒来"
+                      : "Must be [Initiate]: <5-8 Word Ultra-Simple Phrase>! Example: [Initiate]: Slowly Open Your Eyes Awake"
+                  },
+                  actionHint: {
+                    type: "string",
+                    description: language === 'zh'
+                      ? "用简单的语言描述这个极小的动作"
+                      : "Describe this tiny action in simple language"
+                  }
+                },
+                required: ["title", "actionHint"]
+              },
+              minItems: 5,
+              maxItems: 5
+            }
+          },
+          required: ["tasks"]
+        }
+      });
+
+      // 创建所有启动模式任务
+      for (const task of result.tasks) {
+        await createQuestMutation.mutateAsync({
+          title: task.title,
+          actionHint: task.actionHint,
+          difficulty: 'C',
+          rarity: 'Common',
+          date: today,
+          status: 'todo',
+          source: 'bootstrap',
+          tags: ['启动模式']
+        });
+      }
+
+      playQuestAddedSound();
+      setToast(language === 'zh' 
+        ? `✨ 已生成 ${result.tasks.length} 个小胜利任务！` 
+        : `✨ Generated ${result.tasks.length} micro-victory tasks!`);
+      setTimeout(() => setToast(null), 2000);
+    } catch (error) {
+      console.error('生成启动任务失败:', error);
+      alert(language === 'zh'
+        ? '生成失败，请重试'
+        : 'Generation failed, please try again');
+    }
+    
+    loadingAudio.pause();
+    loadingAudio.currentTime = 0;
+    setIsGeneratingBootstrap(false);
+  };
+
   const filteredQuests = quests.filter(quest => {
     if (filter === 'all') return true;
     if (filter === 'done') return quest.status === 'done';
@@ -1632,7 +1704,7 @@ export default function QuestBoard() {
           </div>
         )}
 
-        <div className="flex gap-3 mb-6">
+        <div className="flex gap-3 mb-4">
           {['all', 'todo', 'done'].map(f => (
             <Button
               key={f}
@@ -1650,6 +1722,41 @@ export default function QuestBoard() {
               {t(`questboard_filter_${f}`)}
             </Button>
           ))}
+        </div>
+
+        <div className="mb-6">
+          <Button
+            onClick={handleBootstrapMode}
+            disabled={isGeneratingBootstrap}
+            className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
+            style={{
+              backgroundColor: '#FFE66D',
+              color: '#000',
+              border: '4px solid #000',
+              boxShadow: '6px 6px 0px #000',
+              background: isGeneratingBootstrap 
+                ? '#E0E0E0' 
+                : 'linear-gradient(135deg, #FFE66D 0%, #FFA94D 100%)',
+              opacity: isGeneratingBootstrap ? 0.7 : 1
+            }}
+          >
+            {isGeneratingBootstrap ? (
+              <>
+                <Loader2 className="w-6 h-6 animate-spin" strokeWidth={3} />
+                {language === 'zh' ? '正在生成小胜利任务...' : 'Generating micro-victories...'}
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-6 h-6" strokeWidth={3} />
+                {language === 'zh' ? '🌱 启动模式' : '🌱 Bootstrap Mode'}
+              </>
+            )}
+          </Button>
+          <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
+            {language === 'zh' 
+              ? '💡 生成极简任务，获得最初的小胜利，打破启动困难' 
+              : '💡 Generate ultra-simple tasks for initial micro-victories'}
+          </p>
         </div>
 
         {isLoading ? (

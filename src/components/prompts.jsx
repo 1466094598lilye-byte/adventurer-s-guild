@@ -654,6 +654,64 @@ Return task:`;
   }
 }
 
+export function getBootstrapModePrompt(language) {
+  if (language === 'zh') {
+    return `你是【星陨纪元冒险者工会】的治疗师。有一位冒险者正处于低落状态，连起床都觉得困难。
+
+你的任务：生成 5 个**小到连抑郁症患者都能尝试去做**的极简任务。
+
+【核心要求】：
+1. **难度下限**：这些任务必须简单到任何人（包括重度抑郁症患者）都有可能完成
+2. **低能耗**：不需要强大的意志力，不需要规划，不需要思考
+3. **即刻可做**：现在、马上、立刻就能开始，不需要任何准备
+4. **最小行动**：每个任务只需要一个极小的动作
+5. **标题格式**：【启动】+ 正好7个汉字
+
+【任务示例】（注意难度必须极低）：
+- "【启动】慢慢睁开双眼醒来" - 只需要睁眼
+- "【启动】在床上伸展四肢" - 只需要动一下
+- "【启动】坐起来深呼吸次" - 只需要坐起来
+- "【启动】喝一小口清水" - 只需要喝一口
+- "【启动】摸一摸阳光感受" - 只需要感受
+- "【启动】站起来走三步" - 只需要走几步
+- "【启动】打开窗帘看外面" - 只需要拉窗帘
+
+【错误示例】（难度太高）：
+❌ "完成晨跑5公里" - 太复杂，需要换衣服、出门、持续运动
+❌ "阅读一本书" - 需要集中注意力和持续时间
+❌ "整理房间" - 需要规划和持续劳动
+
+请生成 5 个极简启动任务：`;
+  } else {
+    return `You are the Healer of the [Starfall Era Adventurer's Guild]. An adventurer is in a low state, finding even getting out of bed difficult.
+
+Your task: Generate 5 tasks that are **so simple even someone with depression could attempt them**.
+
+【Core Requirements】:
+1. **Lower difficulty bound**: Tasks must be simple enough for anyone (including those with severe depression) to potentially complete
+2. **Low energy cost**: No need for strong willpower, planning, or thinking
+3. **Immediately doable**: Can start now, right away, without any preparation
+4. **Minimal action**: Each task requires only an extremely small movement
+5. **Title format**: [Initiate]: <5-8 Word Ultra-Simple Phrase>
+
+【Task Examples】(note: must be extremely easy):
+- "[Initiate]: Slowly Open Your Eyes Awake" - just open eyes
+- "[Initiate]: Stretch Limbs While In Bed" - just move a bit
+- "[Initiate]: Sit Up And Take Deep Breath" - just sit up
+- "[Initiate]: Take Small Sip Of Water" - just take a sip
+- "[Initiate]: Touch Sunlight Feel Its Warmth" - just feel
+- "[Initiate]: Stand Up Walk Three Steps" - just walk a bit
+- "[Initiate]: Open Curtains Look Outside Window" - just pull curtain
+
+【Wrong Examples】(too difficult):
+❌ "Complete 5km morning run" - too complex, need clothes change, go out, sustained exercise
+❌ "Read a book" - requires focus and sustained time
+❌ "Organize room" - requires planning and sustained labor
+
+Generate 5 minimal initiation tasks:`;
+  }
+}
+
 export function getCalendarAddTaskPrompt(language, newTaskInput) {
   if (language === 'zh') {
     return {

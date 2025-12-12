@@ -58,7 +58,7 @@ function LayoutContent({ children }) {
             }}
           >
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <span className="text-2xl flex-shrink-0">⚠️</span>
+              <span className="text-2xl flex-shrink-0 animate-pulse">⚠️</span>
               <div className="flex-1 min-w-0">
                 <p className="font-black text-sm uppercase leading-tight">
                   {t('guest_mode_warning_title')}
@@ -70,15 +70,21 @@ function LayoutContent({ children }) {
             </div>
             <button
               onClick={handleLogin}
-              className="flex-shrink-0 px-4 py-2 font-black uppercase text-sm flex items-center gap-2"
+              className="flex-shrink-0 px-5 py-3 font-black uppercase text-sm flex flex-col items-center gap-1 animate-bounce-subtle"
               style={{
-                backgroundColor: '#4ECDC4',
-                border: '3px solid #000',
-                boxShadow: '3px 3px 0px #000'
+                backgroundColor: '#FF6B35',
+                color: '#FFF',
+                border: '4px solid #000',
+                boxShadow: '5px 5px 0px #000'
               }}
             >
-              <LogIn className="w-4 h-4" strokeWidth={3} />
-              {t('login_button')}
+              <div className="flex items-center gap-2">
+                <LogIn className="w-5 h-5" strokeWidth={3} />
+                <span>{t('login_button')}</span>
+              </div>
+              <span className="text-xs font-bold opacity-90">
+                {language === 'zh' ? '💾 保存进度' : '💾 Save Progress'}
+              </span>
             </button>
           </div>
         )}
@@ -134,7 +140,7 @@ function LayoutContent({ children }) {
           * {
             -webkit-tap-highlight-color: transparent;
           }
-          
+
           body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             overflow-x: hidden;
@@ -171,6 +177,19 @@ function LayoutContent({ children }) {
           ::-webkit-scrollbar-thumb {
             background: #000;
             border: 2px solid #FFE66D;
+          }
+
+          @keyframes bounce-subtle {
+            0%, 100% {
+              transform: translateY(0);
+            }
+            50% {
+              transform: translateY(-5px);
+            }
+          }
+
+          .animate-bounce-subtle {
+            animation: bounce-subtle 2s ease-in-out infinite;
           }
         `}</style>
       </div>

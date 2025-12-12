@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/components/LanguageContext';
 
 export default function BootstrapModeDialog({ tasks, onClose, onConfirm, isAdding }) {
-  const [selectedTasks, setSelectedTasks] = useState(tasks.map(t => t.tempId));
+  const [selectedTasks, setSelectedTasks] = useState([]);
   const { language } = useLanguage();
 
   const toggleTask = (tempId) => {

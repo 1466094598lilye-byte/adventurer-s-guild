@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { Check, MoreVertical, Edit, Trash2, RotateCcw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Check, MoreVertical, Edit, Trash2, RotateCcw, Clock } from 'lucide-react';
 import DifficultyBadge from './DifficultyBadge';
 import { format } from 'date-fns';
 import { useLanguage } from '@/components/LanguageContext';
@@ -8,7 +8,31 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
   const [showMenu, setShowMenu] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isGlowing, setIsGlowing] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(null);
   const { t } = useLanguage();
+
+  // 计算倒计时
+  useEffect(() => {
+    if (!quest.expiresAt || quest.status === 'done') return;
+
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const expiry = new Date(quest.expiresAt).getTime();
+      const diff = expiry - now;
+
+      if (diff <= 0) {
+        setTimeLeft(null);
+      } else {
+        const minutes = Math.floor(diff / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [quest.expiresAt, quest.status]);
   
   const isDone = quest.status === 'done';
 
@@ -82,6 +106,18 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                 >
                   ({quest.actionHint})
                 </p>
+                {timeLeft && quest.source === 'bootstrap' && (
+                  <div 
+                    className="inline-flex items-center gap-1 px-2 py-1 mt-1"
+                    style={{
+                      backgroundColor: '#FFE66D',
+                      border: '2px solid #000'
+                    }}
+                  >
+                    <Clock className="w-3 h-3" strokeWidth={3} />
+                    <span className="text-xs font-black">{timeLeft}</span>
+                  </div>
+                )}
               </div>
 
               {/* Menu Button */}

@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { useLanguage } from '@/components/LanguageContext';
 import { getLongTermParsingPrompt } from '@/components/prompts';
 import { playSound, stopSound } from '@/components/AudioManager';
+import { addGuestEntity } from '@/components/utils/guestData';
 
 export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
   const [textInput, setTextInput] = useState('');
@@ -85,90 +86,161 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
       
       const projectDescription = `${parsedQuests.length} ${language === 'zh' ? '项史诗委托' : 'epic quests'}`;
       
-      // 加密项目名称和描述
-      const { data: encryptedProject } = await base44.functions.invoke('encryptProjectData', {
-        projectName: projectName,
-        description: projectDescription
-      });
-      
-      const currentUser = await base44.auth.me();
-      
-      const project = await base44.entities.LongTermProject.create({
-        username: currentUser?.email || 'guest',
-        projectName: encryptedProject.encryptedProjectName,
-        description: encryptedProject.encryptedDescription,
-        status: 'active'
-      });
+      // 检查是否为登录用户
+      let user = null;
+      try {
+        user = await base44.auth.me();
+      } catch {
+        // 访客模式
+      }
 
-      console.log('项目创建成功，ID:', project.id);
-
+      let project;
       const currentYear = new Date().getFullYear();
-      const todayStr = format(new Date(), 'yyyy-MM-dd'); // 使用格式化的今天日期字符串
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-      for (const quest of parsedQuests) {
-        console.log('\n--- 处理任务 ---');
-        console.log('原始 quest.date:', quest.date);
-        console.log('任务标题:', quest.title);
+      if (!user) {
+        // 访客模式：保存到 localStorage（无需加密）
+        console.log('访客模式：保存到 localStorage');
         
-        if (!quest.date) {
-          console.error('❌ 任务缺少 date 字段！', quest);
-          alert(`任务 "${quest.title}" 缺少日期字段，跳过创建`);
-          continue;
-        }
+        project = addGuestEntity('longTermProjects', {
+          projectName: projectName,
+          description: projectDescription,
+          status: 'active'
+        });
 
-        let fullDate = quest.date;
-        
-        if (quest.date.length === 5 && quest.date.includes('-')) {
-          console.log('检测到 MM-DD 格式，开始转换...');
-          fullDate = `${currentYear}-${quest.date}`;
-          console.log('添加当前年份后:', fullDate);
+        console.log('✅ 访客大项目创建成功:', project);
+
+        for (const quest of parsedQuests) {
+          console.log('\n--- 处理任务 ---');
+          console.log('原始 quest.date:', quest.date);
+          console.log('任务标题:', quest.title);
           
-          // 将字符串日期转为Date对象，然后再转回字符串，确保格式一致
-          const questDateObj = new Date(fullDate + 'T00:00:00');
-          const todayDateObj = new Date(todayStr + 'T00:00:00');
-          
-          console.log('任务日期对象:', questDateObj);
-          console.log('今天日期对象:', todayDateObj);
-          console.log('任务日期 < 今天？', questDateObj < todayDateObj);
-          
-          if (questDateObj < todayDateObj) {
-            fullDate = `${currentYear + 1}-${quest.date}`;
-            console.log('⚠️ 日期已过，使用明年:', fullDate);
-          } else {
-            console.log('✅ 日期是今天或未来，使用今年:', fullDate);
+          if (!quest.date) {
+            console.error('❌ 任务缺少 date 字段！', quest);
+            alert(`任务 "${quest.title}" 缺少日期字段，跳过创建`);
+            continue;
           }
-        } else {
-          console.log('非标准 MM-DD 格式，直接使用:', fullDate);
+
+          let fullDate = quest.date;
+          
+          if (quest.date.length === 5 && quest.date.includes('-')) {
+            console.log('检测到 MM-DD 格式，开始转换...');
+            fullDate = `${currentYear}-${quest.date}`;
+            console.log('添加当前年份后:', fullDate);
+            
+            const questDateObj = new Date(fullDate + 'T00:00:00');
+            const todayDateObj = new Date(todayStr + 'T00:00:00');
+            
+            console.log('任务日期对象:', questDateObj);
+            console.log('今天日期对象:', todayDateObj);
+            console.log('任务日期 < 今天？', questDateObj < todayDateObj);
+            
+            if (questDateObj < todayDateObj) {
+              fullDate = `${currentYear + 1}-${quest.date}`;
+              console.log('⚠️ 日期已过，使用明年:', fullDate);
+            } else {
+              console.log('✅ 日期是今天或未来，使用今年:', fullDate);
+            }
+          } else {
+            console.log('非标准 MM-DD 格式，直接使用:', fullDate);
+          }
+          
+          console.log('✅ 最终日期:', fullDate);
+          console.log('今天日期:', todayStr);
+          console.log('是否是今天？', fullDate === todayStr);
+          
+          addGuestEntity('quests', {
+            title: quest.title,
+            actionHint: quest.actionHint,
+            date: fullDate,
+            difficulty: quest.difficulty,
+            rarity: quest.rarity,
+            status: 'todo',
+            source: 'longterm',
+            isLongTermProject: true,
+            longTermProjectId: project.id,
+            tags: []
+          });
+          
+          console.log('✅ 任务创建成功！');
         }
-        
-        console.log('✅ 最终日期:', fullDate);
-        console.log('今天日期:', todayStr);
-        console.log('是否是今天？', fullDate === todayStr);
-        
-        // 加密任务标题和内容
-        const { data: encryptedQuest } = await base44.functions.invoke('encryptQuestData', {
-          title: quest.title,
-          actionHint: quest.actionHint
+      } else {
+        // 登录模式：保存到后端（加密）
+        const { data: encryptedProject } = await base44.functions.invoke('encryptProjectData', {
+          projectName: projectName,
+          description: projectDescription
         });
         
-        const createdQuest = await base44.entities.Quest.create({
-          username: currentUser?.email || 'guest',
-          title: encryptedQuest.encryptedTitle,
-          actionHint: encryptedQuest.encryptedActionHint,
-          date: fullDate,
-          difficulty: quest.difficulty,
-          rarity: quest.rarity,
-          status: 'todo',
-          source: 'longterm',
-          isLongTermProject: true,
-          longTermProjectId: project.id,
-          tags: []
+        project = await base44.entities.LongTermProject.create({
+          projectName: encryptedProject.encryptedProjectName,
+          description: encryptedProject.encryptedDescription,
+          status: 'active'
         });
-        
-        console.log('✅ 任务创建成功！');
-        console.log('  - ID:', createdQuest.id);
-        console.log('  - date:', createdQuest.date);
-        console.log('  - 是否是今天的任务？', createdQuest.date === todayStr);
+
+        console.log('项目创建成功，ID:', project.id);
+
+        for (const quest of parsedQuests) {
+          console.log('\n--- 处理任务 ---');
+          console.log('原始 quest.date:', quest.date);
+          console.log('任务标题:', quest.title);
+          
+          if (!quest.date) {
+            console.error('❌ 任务缺少 date 字段！', quest);
+            alert(`任务 "${quest.title}" 缺少日期字段，跳过创建`);
+            continue;
+          }
+
+          let fullDate = quest.date;
+          
+          if (quest.date.length === 5 && quest.date.includes('-')) {
+            console.log('检测到 MM-DD 格式，开始转换...');
+            fullDate = `${currentYear}-${quest.date}`;
+            console.log('添加当前年份后:', fullDate);
+            
+            const questDateObj = new Date(fullDate + 'T00:00:00');
+            const todayDateObj = new Date(todayStr + 'T00:00:00');
+            
+            console.log('任务日期对象:', questDateObj);
+            console.log('今天日期对象:', todayDateObj);
+            console.log('任务日期 < 今天？', questDateObj < todayDateObj);
+            
+            if (questDateObj < todayDateObj) {
+              fullDate = `${currentYear + 1}-${quest.date}`;
+              console.log('⚠️ 日期已过，使用明年:', fullDate);
+            } else {
+              console.log('✅ 日期是今天或未来，使用今年:', fullDate);
+            }
+          } else {
+            console.log('非标准 MM-DD 格式，直接使用:', fullDate);
+          }
+          
+          console.log('✅ 最终日期:', fullDate);
+          console.log('今天日期:', todayStr);
+          console.log('是否是今天？', fullDate === todayStr);
+          
+          const { data: encryptedQuest } = await base44.functions.invoke('encryptQuestData', {
+            title: quest.title,
+            actionHint: quest.actionHint
+          });
+          
+          const createdQuest = await base44.entities.Quest.create({
+            title: encryptedQuest.encryptedTitle,
+            actionHint: encryptedQuest.encryptedActionHint,
+            date: fullDate,
+            difficulty: quest.difficulty,
+            rarity: quest.rarity,
+            status: 'todo',
+            source: 'longterm',
+            isLongTermProject: true,
+            longTermProjectId: project.id,
+            tags: []
+          });
+          
+          console.log('✅ 任务创建成功！');
+          console.log('  - ID:', createdQuest.id);
+          console.log('  - date:', createdQuest.date);
+          console.log('  - 是否是今天的任务？', createdQuest.date === todayStr);
+        }
       }
 
       console.log('=== 所有任务创建完成 ===');

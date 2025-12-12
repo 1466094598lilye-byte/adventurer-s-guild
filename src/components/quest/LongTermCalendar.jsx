@@ -5,6 +5,7 @@ import { format, parseISO, isSameDay, isValid } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { useLanguage } from '@/components/LanguageContext';
 import { getCalendarAddTaskPrompt } from '@/components/prompts';
+import { getGuestData, setGuestData, addGuestEntity, updateGuestEntity, deleteGuestEntity } from '@/components/utils/guestData';
 
 export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const [longTermQuests, setLongTermQuests] = useState([]);
@@ -41,8 +42,26 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
     loadingAudio.play().catch(() => {});
     
     try {
-      console.log('正在查询 isLongTermProject=true 的任务...');
-      const quests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
+      // 检查是否为登录用户
+      let user = null;
+      try {
+        user = await base44.auth.me();
+      } catch {
+        // 访客模式
+      }
+
+      let quests;
+      
+      if (!user) {
+        // 访客模式：从 localStorage 读取
+        console.log('访客模式：从 localStorage 读取');
+        const allQuests = getGuestData('quests');
+        quests = allQuests.filter(q => q.isLongTermProject === true);
+      } else {
+        // 登录模式：从后端读取
+        console.log('正在查询 isLongTermProject=true 的任务...');
+        quests = await base44.entities.Quest.filter({ isLongTermProject: true }, '-date', 500);
+      }
       console.log('查询到原始任务数量:', quests.length);
       console.log('原始任务列表:', quests);
       
@@ -54,8 +73,8 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         let decryptedTitle = q.title;
         let decryptedActionHint = q.actionHint;
 
-        // Attempt to decrypt if title or actionHint fields are present (assuming they might be encrypted)
-        if (q.title || q.actionHint) {
+        // 只有登录用户的数据需要解密
+        if (user && (q.title || q.actionHint)) {
           try {
             const { data: decrypted } = await base44.functions.invoke('decryptQuestData', {
               encryptedTitle: q.title,
@@ -65,9 +84,6 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
             decryptedActionHint = decrypted.actionHint;
           } catch (decryptError) {
             console.warn('Failed to decrypt quest data for ID:', q.id, decryptError);
-            // If decryption fails, use the original (likely encrypted) values.
-            // This might mean encrypted text is displayed, but prevents crash.
-            // A more robust solution might involve differentiating encrypted vs unencrypted at storage.
           }
         }
 
@@ -148,6 +164,14 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
     try {
       console.log('=== 开始删除所有大项目 ===');
       
+      // 检查是否为登录用户
+      let user = null;
+      try {
+        user = await base44.auth.me();
+      } catch {
+        // 访客模式
+      }
+
       // 1. 收集所有唯一的 longTermProjectId
       const projectIds = new Set();
       longTermQuests.forEach(quest => {
@@ -159,22 +183,39 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       console.log('找到的大项目ID:', Array.from(projectIds));
       console.log('需要删除的Quest数量:', longTermQuests.length);
       
-      // 2. 删除所有 Quest 任务
-      for (const quest of longTermQuests) {
-        await base44.entities.Quest.delete(quest.id);
-      }
-      console.log('✅ 所有Quest任务已删除');
-      
-      // 3. 删除所有关联的 LongTermProject
-      for (const projectId of projectIds) {
-        try {
-          await base44.entities.LongTermProject.delete(projectId);
-          console.log('✅ 删除大项目:', projectId);
-        } catch (error) {
-          console.warn('删除大项目失败:', projectId, error);
+      if (!user) {
+        // 访客模式：从 localStorage 删除
+        const allQuests = getGuestData('quests');
+        const allProjects = getGuestData('longTermProjects');
+        
+        // 删除所有长期项目任务
+        const remainingQuests = allQuests.filter(q => !q.isLongTermProject);
+        setGuestData('quests', remainingQuests);
+        
+        // 删除所有长期项目
+        const remainingProjects = allProjects.filter(p => !projectIds.has(p.id));
+        setGuestData('longTermProjects', remainingProjects);
+        
+        console.log('✅ 访客模式：所有任务和项目已从 localStorage 删除');
+      } else {
+        // 登录模式：从后端删除
+        // 2. 删除所有 Quest 任务
+        for (const quest of longTermQuests) {
+          await base44.entities.Quest.delete(quest.id);
         }
+        console.log('✅ 所有Quest任务已删除');
+        
+        // 3. 删除所有关联的 LongTermProject
+        for (const projectId of projectIds) {
+          try {
+            await base44.entities.LongTermProject.delete(projectId);
+            console.log('✅ 删除大项目:', projectId);
+          } catch (error) {
+            console.warn('删除大项目失败:', projectId, error);
+          }
+        }
+        console.log('✅ 所有LongTermProject记录已删除');
       }
-      console.log('✅ 所有LongTermProject记录已删除');
       
       // 4. 强制通知父组件更新
       if (onQuestsUpdated) {
@@ -202,7 +243,21 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
 
   const handleDeleteQuest = async (questId) => {
     try {
-      await base44.entities.Quest.delete(questId);
+      // 检查是否为登录用户
+      let user = null;
+      try {
+        user = await base44.auth.me();
+      } catch {
+        // 访客模式
+      }
+
+      if (!user) {
+        // 访客模式：从 localStorage 删除
+        deleteGuestEntity('quests', questId);
+      } else {
+        // 登录模式：从后端删除
+        await base44.entities.Quest.delete(questId);
+      }
       
       // 播放删除音效
       const deleteAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%A4%A7%E9%A1%B9%E7%9B%AE%E5%88%A0%E9%99%A4%E9%9F%B3%E6%95%88.mp3');
@@ -237,6 +292,14 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
 
   const handleEditQuest = async (quest, newActionHint) => {
     try {
+      // 检查是否为登录用户
+      let user = null;
+      try {
+        user = await base44.auth.me();
+      } catch {
+        // 访客模式
+      }
+
       const { prompt, schema } = getCalendarAddTaskPrompt(language, newActionHint);
       
       const result = await base44.integrations.Core.InvokeLLM({
@@ -244,16 +307,24 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         response_json_schema: schema
       });
       
-      // 加密后再更新
-      const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
-        title: result.title,
-        actionHint: newActionHint
-      });
-      
-      await base44.entities.Quest.update(quest.id, {
-        title: encrypted.encryptedTitle,
-        actionHint: encrypted.encryptedActionHint
-      });
+      if (!user) {
+        // 访客模式：直接更新 localStorage（无需加密）
+        updateGuestEntity('quests', quest.id, {
+          title: result.title,
+          actionHint: newActionHint
+        });
+      } else {
+        // 登录模式：加密后更新后端
+        const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
+          title: result.title,
+          actionHint: newActionHint
+        });
+        
+        await base44.entities.Quest.update(quest.id, {
+          title: encrypted.encryptedTitle,
+          actionHint: encrypted.encryptedActionHint
+        });
+      }
 
       // 重新加载并解密任务
       const updatedLongTermQuests = await loadLongTermQuests(); // Get the latest decrypted quests
@@ -299,6 +370,14 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
 
     setIsProcessing(true);
     try {
+      // 检查是否为登录用户
+      let user = null;
+      try {
+        user = await base44.auth.me();
+      } catch {
+        // 访客模式
+      }
+
       const { prompt, schema } = getCalendarAddTaskPrompt(language, newTaskInput.trim());
       
       const result = await base44.integrations.Core.InvokeLLM({
@@ -306,23 +385,38 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         response_json_schema: schema
       });
 
-      // 加密后再创建
-      const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
-        title: result.title,
-        actionHint: newTaskInput.trim()
-      });
+      if (!user) {
+        // 访客模式：直接保存到 localStorage（无需加密）
+        addGuestEntity('quests', {
+          title: result.title,
+          actionHint: newTaskInput.trim(),
+          date: addingToDate,
+          difficulty: 'S',
+          rarity: 'Epic',
+          status: 'todo',
+          source: 'longterm',
+          isLongTermProject: true,
+          tags: []
+        });
+      } else {
+        // 登录模式：加密后保存到后端
+        const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
+          title: result.title,
+          actionHint: newTaskInput.trim()
+        });
 
-      await base44.entities.Quest.create({
-        title: encrypted.encryptedTitle,
-        actionHint: encrypted.encryptedActionHint,
-        date: addingToDate,
-        difficulty: 'S',
-        rarity: 'Epic',
-        status: 'todo',
-        source: 'longterm',
-        isLongTermProject: true,
-        tags: []
-      });
+        await base44.entities.Quest.create({
+          title: encrypted.encryptedTitle,
+          actionHint: encrypted.encryptedActionHint,
+          date: addingToDate,
+          difficulty: 'S',
+          rarity: 'Epic',
+          status: 'todo',
+          source: 'longterm',
+          isLongTermProject: true,
+          tags: []
+        });
+      }
 
       // 重新加载并解密任务
       const updatedLongTermQuests = await loadLongTermQuests(); // Get the latest decrypted quests
@@ -365,6 +459,14 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
 
     setIsProcessing(true);
     try {
+      // 检查是否为登录用户
+      let user = null;
+      try {
+        user = await base44.auth.me();
+      } catch {
+        // 访客模式
+      }
+
       const { prompt, schema } = getCalendarAddTaskPrompt(language, laterTaskInput.trim());
       
       const result = await base44.integrations.Core.InvokeLLM({
@@ -372,22 +474,38 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
         response_json_schema: schema
       });
 
-      const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
-        title: result.title,
-        actionHint: laterTaskInput.trim()
-      });
+      if (!user) {
+        // 访客模式：直接保存到 localStorage（无需加密）
+        addGuestEntity('quests', {
+          title: result.title,
+          actionHint: laterTaskInput.trim(),
+          date: selectedLaterDate,
+          difficulty: 'S',
+          rarity: 'Epic',
+          status: 'todo',
+          source: 'longterm',
+          isLongTermProject: true,
+          tags: []
+        });
+      } else {
+        // 登录模式：加密后保存到后端
+        const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
+          title: result.title,
+          actionHint: laterTaskInput.trim()
+        });
 
-      await base44.entities.Quest.create({
-        title: encrypted.encryptedTitle,
-        actionHint: encrypted.encryptedActionHint,
-        date: selectedLaterDate,
-        difficulty: 'S',
-        rarity: 'Epic',
-        status: 'todo',
-        source: 'longterm',
-        isLongTermProject: true,
-        tags: []
-      });
+        await base44.entities.Quest.create({
+          title: encrypted.encryptedTitle,
+          actionHint: encrypted.encryptedActionHint,
+          date: selectedLaterDate,
+          difficulty: 'S',
+          rarity: 'Epic',
+          status: 'todo',
+          source: 'longterm',
+          isLongTermProject: true,
+          tags: []
+        });
+      }
 
       await loadLongTermQuests();
 

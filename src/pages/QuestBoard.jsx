@@ -656,6 +656,7 @@ export default function QuestBoard() {
       
       const result = await base44.entities.Quest.create({
         ...questData,
+        username: user?.email || 'guest',
         title: encrypted.encryptedTitle,
         actionHint: encrypted.encryptedActionHint
       });

@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { useLanguage } from '@/components/LanguageContext';
 import CraftingDialog from '@/components/treasure/CraftingDialog';
 import { playSound } from '@/components/AudioManager';
+import { getGuestData } from '@/components/utils/guestData';
 
 export default function TreasuresPage() {
   const { t, language } = useLanguage();
@@ -18,15 +19,32 @@ export default function TreasuresPage() {
   const itemsPerPage = 7;
   const queryClient = useQueryClient();
 
-  const { data: allLoot = [], isLoading } = useQuery({
-    queryKey: ['loot'],
-    queryFn: () => base44.entities.Loot.list('-created_date', 1000),
-    initialData: [],
-  });
-
   const { data: user } = useQuery({
     queryKey: ['user'],
-    queryFn: () => base44.auth.me(),
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch (error) {
+        return null;
+      }
+    },
+    retry: false,
+    staleTime: 10000
+  });
+
+  const { data: allLoot = [], isLoading } = useQuery({
+    queryKey: ['loot'],
+    queryFn: () => {
+      // 访客模式：从 localStorage 读取
+      if (!user) {
+        return getGuestData('loot');
+      }
+      
+      // 登录模式：从后端读取
+      return base44.entities.Loot.list('-created_date', 1000);
+    },
+    initialData: [],
+    enabled: user !== undefined
   });
 
   const legendaryLoot = allLoot.filter(l => l.rarity === 'Legendary');
@@ -148,15 +166,23 @@ export default function TreasuresPage() {
         <div className="mb-6">
           <button
             onClick={() => {
+              if (!user) {
+                alert(language === 'zh'
+                  ? '访客模式下无法合成宝物（需要登录）'
+                  : 'Cannot craft items in guest mode (login required)');
+                return;
+              }
               playSound('enterWorkshop');
               setShowCraftingDialog(true);
             }}
+            disabled={!user}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
             style={{
               backgroundColor: '#FF6B35',
               color: '#FFF',
               border: '5px solid #000',
-              boxShadow: '8px 8px 0px #000'
+              boxShadow: '8px 8px 0px #000',
+              opacity: !user ? 0.5 : 1
             }}
           >
             <Hammer className="w-7 h-7" strokeWidth={3} />
@@ -165,7 +191,7 @@ export default function TreasuresPage() {
         </div>
 
         {/* 传说宝物兑换冻结券 */}
-        {legendaryLoot.length >= 2 && (
+        {legendaryLoot.length >= 2 && user && (
           <div 
             className="mb-6 p-4"
             style={{

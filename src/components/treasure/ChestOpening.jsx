@@ -55,8 +55,6 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
             }
           }
         });
-
-        const currentUser = await base44.auth.me();
         
         const newLoot = {
           ...result,

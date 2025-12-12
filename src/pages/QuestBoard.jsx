@@ -98,15 +98,44 @@ export default function QuestBoard() {
       // 访客模式：从 localStorage 读取
       if (!user) {
         const guestQuests = getGuestData('quests');
-        return guestQuests.filter(q => q.date === today);
+        const todayQuests = guestQuests.filter(q => q.date === today);
+        
+        // 删除过期的启动模式任务
+        const now = new Date().getTime();
+        const validQuests = todayQuests.filter(q => {
+          if (q.source === 'bootstrap' && q.expiresAt && q.status === 'todo') {
+            return new Date(q.expiresAt).getTime() > now;
+          }
+          return true;
+        });
+        
+        // 如果有任务被删除，更新localStorage
+        if (validQuests.length < todayQuests.length) {
+          const allQuests = guestQuests.filter(q => q.date !== today).concat(validQuests);
+          setGuestData('quests', allQuests);
+        }
+        
+        return validQuests;
       }
 
       // 登录模式：从后端读取并解密
       try {
         const allQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
+        
+        // 删除过期的启动模式任务
+        const now = new Date().getTime();
+        const expiredQuests = allQuests.filter(q => 
+          q.source === 'bootstrap' && q.expiresAt && q.status === 'todo' && new Date(q.expiresAt).getTime() <= now
+        );
+        
+        if (expiredQuests.length > 0) {
+          await Promise.all(expiredQuests.map(q => base44.entities.Quest.delete(q.id)));
+        }
+        
+        const validQuests = allQuests.filter(q => !expiredQuests.find(eq => eq.id === q.id));
 
         const decryptedQuests = await Promise.all(
-          allQuests.map(async (quest) => {
+          validQuests.map(async (quest) => {
             try {
               const { data } = await base44.functions.invoke('decryptQuestData', {
                 encryptedTitle: quest.title,
@@ -135,6 +164,7 @@ export default function QuestBoard() {
     retryDelay: 1000,
     staleTime: 5000,
     refetchOnWindowFocus: false,
+    refetchInterval: 30000, // 每30秒检查一次过期任务
   });
 
   const { data: user } = useQuery({
@@ -1305,6 +1335,7 @@ export default function QuestBoard() {
     
     try {
       const selectedTasks = bootstrapTasks.filter(t => selectedTaskIds.includes(t.tempId));
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10分钟后
       
       for (const task of selectedTasks) {
         await createQuestMutation.mutateAsync({
@@ -1315,7 +1346,8 @@ export default function QuestBoard() {
           date: today,
           status: 'todo',
           source: 'bootstrap',
-          tags: ['启动模式']
+          tags: ['启动模式'],
+          expiresAt: expiresAt
         });
       }
 

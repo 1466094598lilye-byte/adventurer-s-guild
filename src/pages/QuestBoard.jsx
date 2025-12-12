@@ -646,21 +646,20 @@ export default function QuestBoard() {
     mutationFn: async (questData) => {
       console.log('=== createQuestMutation 开始 ===');
       console.log('原始数据:', questData);
-      
+
       const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
         title: questData.title,
         actionHint: questData.actionHint
       });
-      
+
       console.log('加密完成，准备创建任务');
-      
+
       const result = await base44.entities.Quest.create({
         ...questData,
-        username: user?.email || 'guest',
         title: encrypted.encryptedTitle,
         actionHint: encrypted.encryptedActionHint
       });
-      
+
       console.log('任务创建成功');
       return result;
     },

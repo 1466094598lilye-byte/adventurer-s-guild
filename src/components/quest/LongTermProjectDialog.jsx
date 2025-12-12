@@ -91,7 +91,10 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
         description: projectDescription
       });
       
+      const currentUser = await base44.auth.me();
+      
       const project = await base44.entities.LongTermProject.create({
+        username: currentUser?.email || 'guest',
         projectName: encryptedProject.encryptedProjectName,
         description: encryptedProject.encryptedDescription,
         status: 'active'
@@ -149,6 +152,7 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
         });
         
         const createdQuest = await base44.entities.Quest.create({
+          username: currentUser?.email || 'guest',
           title: encryptedQuest.encryptedTitle,
           actionHint: encryptedQuest.encryptedActionHint,
           date: fullDate,

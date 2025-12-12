@@ -56,8 +56,11 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
           }
         });
 
+        const currentUser = await base44.auth.me();
+        
         const newLoot = {
           ...result,
+          username: currentUser?.email || 'guest',
           rarity: rarity,
           obtainedAt: new Date().toISOString()
         };
@@ -78,6 +81,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
         const chests = await base44.entities.DailyChest.filter({ date });
         if (chests.length > 0) {
           await base44.entities.DailyChest.update(chests[0].id, {
+            username: currentUser?.email || 'guest',
             opened: true,
             lootIds: [...(chests[0].lootIds || []), savedLoot.id]
           });

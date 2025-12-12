@@ -658,7 +658,7 @@ export function getBootstrapModePrompt(language) {
   if (language === 'zh') {
     return `你是【星陨纪元冒险者工会】的治疗师。有一位冒险者正处于低落状态，连起床都觉得困难。
 
-你的任务：生成 5 个**小到连抑郁症患者都能尝试去做**的极简任务。
+你的任务：生成 3 个**小到连抑郁症患者都能尝试去做**的极简任务。
 
 【核心要求】：
 1. **难度下限**：这些任务必须简单到任何人（包括重度抑郁症患者）都有可能完成
@@ -681,11 +681,11 @@ export function getBootstrapModePrompt(language) {
 ❌ "阅读一本书" - 需要集中注意力和持续时间
 ❌ "整理房间" - 需要规划和持续劳动
 
-请生成 5 个极简启动任务：`;
+请生成 3 个极简启动任务：`;
   } else {
     return `You are the Healer of the [Starfall Era Adventurer's Guild]. An adventurer is in a low state, finding even getting out of bed difficult.
 
-Your task: Generate 5 tasks that are **so simple even someone with depression could attempt them**.
+Your task: Generate 3 tasks that are **so simple even someone with depression could attempt them**.
 
 【Core Requirements】:
 1. **Lower difficulty bound**: Tasks must be simple enough for anyone (including those with severe depression) to potentially complete
@@ -708,7 +708,7 @@ Your task: Generate 5 tasks that are **so simple even someone with depression co
 ❌ "Read a book" - requires focus and sustained time
 ❌ "Organize room" - requires planning and sustained labor
 
-Generate 5 minimal initiation tasks:`;
+Generate 3 minimal initiation tasks:`;
   }
 }
 

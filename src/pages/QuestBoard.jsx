@@ -1271,8 +1271,8 @@ export default function QuestBoard() {
                 },
                 required: ["title", "actionHint"]
               },
-              minItems: 5,
-              maxItems: 5
+              minItems: 3,
+              maxItems: 3
             }
           },
           required: ["tasks"]

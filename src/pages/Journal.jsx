@@ -5,22 +5,33 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { format, subDays } from 'date-fns';
 import StreakDisplay from '../components/profile/StreakDisplay';
 import { useLanguage } from '@/components/LanguageContext';
+import { LogIn } from 'lucide-react';
 
 export default function JournalPage() {
   const { language, t } = useLanguage();
 
   const { data: user } = useQuery({
     queryKey: ['user'],
-    queryFn: () => base44.auth.me()
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch (error) {
+        return null;
+      }
+    },
+    retry: false,
+    staleTime: 10000
   });
 
   // 固定获取最近7天的任务数据
   const { data: recentQuests = [] } = useQuery({
     queryKey: ['recentQuests'],
     queryFn: async () => {
+      if (!user) return [];
       const quests = await base44.entities.Quest.list('-date', 200);
       return quests;
-    }
+    },
+    enabled: !!user
   });
 
   // 生成最近7天的完成率数据
@@ -118,124 +129,157 @@ export default function JournalPage() {
           </h1>
         </div>
 
-        {user && (
-          <div className="mb-6">
-            <StreakDisplay 
-              currentStreak={user.streakCount || 0}
-              longestStreak={user.longestStreak || 0}
-              freezeTokens={user.freezeTokenCount || 0}
-            />
+        {!user ? (
+          <div 
+            className="p-12 text-center"
+            style={{
+              backgroundColor: '#FFF',
+              border: '5px solid #000',
+              boxShadow: '8px 8px 0px #000'
+            }}
+          >
+            <LogIn className="w-24 h-24 mx-auto mb-6" strokeWidth={3} style={{ color: '#FFE66D' }} />
+            <h2 className="text-2xl font-black uppercase mb-3">
+              {language === 'zh' ? '请登录查看冒险日志' : 'Login to View Adventure Journal'}
+            </h2>
+            <p className="font-bold text-gray-600 mb-6">
+              {language === 'zh' 
+                ? '登录后可查看您的连胜记录、完成率趋势等数据'
+                : 'Login to view your streak record, completion trend, and other data'}
+            </p>
+            <button
+              onClick={() => base44.auth.redirectToLogin(window.location.pathname)}
+              className="px-8 py-3 font-black uppercase text-lg"
+              style={{
+                backgroundColor: '#4ECDC4',
+                border: '4px solid #000',
+                boxShadow: '6px 6px 0px #000'
+              }}
+            >
+              <LogIn className="w-5 h-5 inline mr-2" strokeWidth={3} />
+              {language === 'zh' ? '立即登录' : 'Login Now'}
+            </button>
           </div>
-        )}
-
-        <div 
-          className="p-6"
-          style={{
-            backgroundColor: '#FFF',
-            border: '5px solid #000',
-            boxShadow: '8px 8px 0px #000'
-          }}
-        >
-          <h2 className="text-2xl font-black uppercase mb-4">
-            {t('journal_completion_trend')} (7{t('journal_days')})
-          </h2>
-
-          {chartData.every(d => d.totalQuests === 0 && !d.isRestDay) ? (
-            <div className="text-center py-12">
-              <p className="font-bold text-gray-600">
-                {language === 'zh' ? '暂无数据' : 'No data available'}
-              </p>
+        ) : (
+          <>
+            <div className="mb-6">
+              <StreakDisplay 
+                currentStreak={user.streakCount || 0}
+                longestStreak={user.longestStreak || 0}
+                freezeTokens={user.freezeTokenCount || 0}
+              />
             </div>
-          ) : (
-            <>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#999" />
-                  <XAxis 
-                    dataKey="date" 
-                    style={{ 
-                      fontWeight: 'bold',
-                      fontSize: '12px'
-                    }}
-                  />
-                  <YAxis 
-                    domain={[0, 100]}
-                    style={{ 
-                      fontWeight: 'bold',
-                      fontSize: '12px'
-                    }}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar 
-                    dataKey="completionRate" 
-                    fill="#4ECDC4"
-                    stroke="#000"
-                    strokeWidth={2}
-                    radius={[8, 8, 0, 0]}
-                    shape={(props) => {
-                      const { x, y, width, height, payload } = props;
-                      const color = getBarColor(payload.completionRate);
-                      return (
-                        <rect
-                          x={x}
-                          y={y}
-                          width={width}
-                          height={height}
-                          fill={color}
-                          stroke="#000"
-                          strokeWidth={2}
-                          rx={8}
-                          ry={8}
-                        />
-                      );
-                    }}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
 
-              <div 
-                className="mt-6 p-4"
-                style={{
-                  backgroundColor: '#F9FAFB',
-                  border: '3px solid #000'
-                }}
-              >
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div>
-                    <div 
-                      className="w-6 h-6 mx-auto mb-2"
-                      style={{
-                        backgroundColor: '#4ECDC4',
-                        border: '2px solid #000'
-                      }}
-                    />
-                    <p className="text-xs font-bold">{t('journal_legend_complete')}</p>
-                  </div>
-                  <div>
-                    <div 
-                      className="w-6 h-6 mx-auto mb-2"
-                      style={{
-                        backgroundColor: '#FFE66D',
-                        border: '2px solid #000'
-                      }}
-                    />
-                    <p className="text-xs font-bold">{t('journal_legend_partial')}</p>
-                  </div>
-                  <div>
-                    <div 
-                      className="w-6 h-6 mx-auto mb-2"
-                      style={{
-                        backgroundColor: '#FF6B35',
-                        border: '2px solid #000'
-                      }}
-                    />
-                    <p className="text-xs font-bold">{t('journal_legend_incomplete')}</p>
-                  </div>
+            <div 
+              className="p-6"
+              style={{
+                backgroundColor: '#FFF',
+                border: '5px solid #000',
+                boxShadow: '8px 8px 0px #000'
+              }}
+            >
+              <h2 className="text-2xl font-black uppercase mb-4">
+                {t('journal_completion_trend')} (7{t('journal_days')})
+              </h2>
+
+              {chartData.every(d => d.totalQuests === 0 && !d.isRestDay) ? (
+                <div className="text-center py-12">
+                  <p className="font-bold text-gray-600">
+                    {language === 'zh' ? '暂无数据' : 'No data available'}
+                  </p>
                 </div>
-              </div>
-            </>
-          )}
-        </div>
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#999" />
+                      <XAxis 
+                        dataKey="date" 
+                        style={{ 
+                          fontWeight: 'bold',
+                          fontSize: '12px'
+                        }}
+                      />
+                      <YAxis 
+                        domain={[0, 100]}
+                        style={{ 
+                          fontWeight: 'bold',
+                          fontSize: '12px'
+                        }}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Bar 
+                        dataKey="completionRate" 
+                        fill="#4ECDC4"
+                        stroke="#000"
+                        strokeWidth={2}
+                        radius={[8, 8, 0, 0]}
+                        shape={(props) => {
+                          const { x, y, width, height, payload } = props;
+                          const color = getBarColor(payload.completionRate);
+                          return (
+                            <rect
+                              x={x}
+                              y={y}
+                              width={width}
+                              height={height}
+                              fill={color}
+                              stroke="#000"
+                              strokeWidth={2}
+                              rx={8}
+                              ry={8}
+                            />
+                          );
+                        }}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+
+                  <div 
+                    className="mt-6 p-4"
+                    style={{
+                      backgroundColor: '#F9FAFB',
+                      border: '3px solid #000'
+                    }}
+                  >
+                    <div className="grid grid-cols-3 gap-3 text-center">
+                      <div>
+                        <div 
+                          className="w-6 h-6 mx-auto mb-2"
+                          style={{
+                            backgroundColor: '#4ECDC4',
+                            border: '2px solid #000'
+                          }}
+                        />
+                        <p className="text-xs font-bold">{t('journal_legend_complete')}</p>
+                      </div>
+                      <div>
+                        <div 
+                          className="w-6 h-6 mx-auto mb-2"
+                          style={{
+                            backgroundColor: '#FFE66D',
+                            border: '2px solid #000'
+                          }}
+                        />
+                        <p className="text-xs font-bold">{t('journal_legend_partial')}</p>
+                      </div>
+                      <div>
+                        <div 
+                          className="w-6 h-6 mx-auto mb-2"
+                          style={{
+                            backgroundColor: '#FF6B35',
+                            border: '2px solid #000'
+                          }}
+                        />
+                        <p className="text-xs font-bold">{t('journal_legend_incomplete')}</p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

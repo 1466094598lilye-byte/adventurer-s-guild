@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/components/LanguageContext';
 import { getTreasurePrompt } from '@/components/prompts';
 import { playSound } from '@/components/AudioManager';
+import { addGuestEntity, setGuestData, getGuestData } from '@/components/utils/guestData';
 
 export default function ChestOpening({ date, onClose, onLootGenerated }) {
   const { language, t } = useLanguage();
@@ -20,7 +21,76 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
 
     setTimeout(async () => {
       try {
-        const currentUser = await base44.auth.me();
+        // 检查是否为登录用户
+        let currentUser = null;
+        try {
+          currentUser = await base44.auth.me();
+        } catch {
+          // 访客模式
+        }
+
+        // 访客模式：无冻结券、无 pity 机制
+        if (!currentUser) {
+          const rarityRoll = Math.random() * 100;
+          let rarity;
+          if (rarityRoll < 70) rarity = 'Common';
+          else if (rarityRoll < 90) rarity = 'Rare';
+          else if (rarityRoll < 98) rarity = 'Epic';
+          else rarity = 'Legendary';
+
+          const { prompt } = getTreasurePrompt(language, rarity);
+
+          const result = await base44.integrations.Core.InvokeLLM({
+            prompt: prompt,
+            response_json_schema: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                flavorText: { type: "string" },
+                icon: { type: "string" }
+              }
+            }
+          });
+          
+          const newLoot = {
+            ...result,
+            rarity: rarity,
+            obtainedAt: new Date().toISOString()
+          };
+
+          // 保存到 localStorage
+          const savedLoot = addGuestEntity('loot', newLoot);
+
+          // 更新 DailyChest 状态（localStorage）
+          const chests = getGuestData('dailyChests');
+          const existingChest = chests.find(c => c.date === date);
+          
+          if (existingChest) {
+            existingChest.opened = true;
+            existingChest.lootIds = [...(existingChest.lootIds || []), savedLoot.id];
+            setGuestData('dailyChests', chests);
+          } else {
+            const newChest = {
+              id: `guest_${Date.now()}`,
+              date: date,
+              opened: true,
+              lootIds: [savedLoot.id]
+            };
+            setGuestData('dailyChests', [...chests, newChest]);
+          }
+
+          setLoot(savedLoot);
+          setGotFreezeToken(false);
+          setIsPity(false);
+          setShowLoot(true);
+          
+          playSound('chestOpen');
+          onLootGenerated(savedLoot);
+          setIsOpening(false);
+          return;
+        }
+
+        // 登录模式：完整逻辑（冻结券 + pity）
         const currentCounter = currentUser?.chestOpenCounter || 0;
         const newCounter = currentCounter + 1;
 
@@ -58,7 +128,6 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
         
         const newLoot = {
           ...result,
-          username: currentUser?.email || 'guest',
           rarity: rarity,
           obtainedAt: new Date().toISOString()
         };
@@ -79,7 +148,6 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
         const chests = await base44.entities.DailyChest.filter({ date });
         if (chests.length > 0) {
           await base44.entities.DailyChest.update(chests[0].id, {
-            username: currentUser?.email || 'guest',
             opened: true,
             lootIds: [...(chests[0].lootIds || []), savedLoot.id]
           });
@@ -90,9 +158,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
         setIsPity(hitPity);
         setShowLoot(true);
         
-        // 宝物出来时播放开箱音效
         playSound('chestOpen');
-        
         onLootGenerated(savedLoot);
       } catch (error) {
         alert(language === 'zh' ? '开箱失败，请重试' : 'Failed to open chest, please retry');

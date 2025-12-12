@@ -10,7 +10,7 @@ import { initAudioManager } from "@/components/AudioManager";
 
 function LayoutContent({ children }) {
   const location = useLocation();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
 
 

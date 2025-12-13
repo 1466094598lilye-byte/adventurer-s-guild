@@ -39,7 +39,13 @@ function LayoutContent({ children }) {
   };
 
   const handleLogin = () => {
-    base44.auth.redirectToLogin(window.location.pathname);
+    try {
+      base44.auth.redirectToLogin(window.location.pathname);
+    } catch (error) {
+      console.error('登录跳转失败:', error);
+      // 备用方案：直接导航到登录页面
+      window.location.href = '/login';
+    }
   };
 
 

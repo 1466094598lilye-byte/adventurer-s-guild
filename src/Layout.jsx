@@ -20,11 +20,17 @@ function LayoutContent({ children }) {
       try {
         return await base44.auth.me();
       } catch (error) {
+        // 游客模式下401错误是正常的，静默处理
+        if (error?.response?.status === 401) {
+          return null;
+        }
+        console.error('获取用户信息失败:', error);
         return null;
       }
     },
     retry: false,
     staleTime: 10000,
+    refetchOnWindowFocus: false,
   });
 
   const tabs = [

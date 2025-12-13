@@ -1500,22 +1500,14 @@ export default function QuestBoard() {
 
           <Button
             onClick={() => {
-              if (!user) {
-                alert(language === 'zh'
-                  ? '访客模式下无法使用大项目规划（需要登录保存数据）'
-                  : 'Cannot use long-term planning in guest mode (login required to save data)');
-                return;
-              }
               setShowLongTermDialog(true);
             }}
-            disabled={!user}
             className="w-full py-3 font-black uppercase text-sm flex items-center justify-center gap-2"
             style={{
               backgroundColor: '#9B59B6',
               color: '#FFF',
               border: '4px solid #000',
-              boxShadow: '5px 5px 0px #000',
-              opacity: !user ? 0.5 : 1
+              boxShadow: '5px 5px 0px #000'
             }}
           >
             <Briefcase className="w-5 h-5" strokeWidth={3} />

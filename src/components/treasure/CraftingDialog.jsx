@@ -14,6 +14,19 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
   const [isCrafting, setIsCrafting] = useState(false);
   const [craftedLoot, setCraftedLoot] = useState(null);
   const [error, setError] = useState('');
+  const [user, setUser] = useState(undefined);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const u = await base44.auth.me();
+        setUser(u);
+      } catch {
+        setUser(null);
+      }
+    };
+    checkUser();
+  }, []);
 
   const recipes = {
     Rare: { from: 'Common', count: 5 },
@@ -236,7 +249,23 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
             <Flame className="w-16 h-16" style={{ color: '#FF6B35' }} strokeWidth={3} />
           </div>
           <h2 className="text-3xl font-black uppercase mb-2">{t('crafting_title')}</h2>
-          <p className="font-bold text-sm" style={{ color: '#666' }}>{t('crafting_subtitle')}</p>
+          <p className="font-bold text-sm mb-4" style={{ color: '#666' }}>{t('crafting_subtitle')}</p>
+
+          {!user && (
+            <div 
+              className="p-3 animate-pulse"
+              style={{
+                backgroundColor: '#FFE66D',
+                border: '3px solid #000'
+              }}
+            >
+              <p className="font-black text-sm text-center" style={{ color: '#000' }}>
+                ⚠️ {language === 'zh' 
+                  ? '游客模式：合成的宝物在刷新页面后会丢失，建议登录保存' 
+                  : 'Guest Mode: Crafted loot will be lost on refresh, please login to save'}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Target Rarity Selection */}

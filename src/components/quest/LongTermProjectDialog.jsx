@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Loader2, ChevronDown, ChevronUp, Edit2, Calendar as CalendarIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { format } from 'date-fns';
@@ -13,7 +13,20 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
   const [parsedQuests, setParsedQuests] = useState([]);
   const [expandedIndex, setExpandedIndex] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [user, setUser] = useState(undefined);
   const { language, t } = useLanguage();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const u = await base44.auth.me();
+        setUser(u);
+      } catch {
+        setUser(null);
+      }
+    };
+    checkUser();
+  }, []);
 
   const handleParse = async () => {
     if (!textInput.trim() || isProcessing) return;
@@ -312,9 +325,25 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
         <h2 className="text-3xl font-black uppercase text-center text-white mb-2">
           {t('longterm_title')}
         </h2>
-        <p className="text-center font-bold text-white text-sm mb-6">
+        <p className="text-center font-bold text-white text-sm mb-4">
           {t('longterm_subtitle')}
         </p>
+
+        {!user && (
+          <div 
+            className="mb-4 p-3 animate-pulse"
+            style={{
+              backgroundColor: '#FFE66D',
+              border: '3px solid #000'
+            }}
+          >
+            <p className="font-black text-sm text-center" style={{ color: '#000' }}>
+              ⚠️ {language === 'zh' 
+                ? '游客模式：刷新页面后数据会丢失，建议登录保存' 
+                : 'Guest Mode: Data will be lost on refresh, please login to save'}
+            </p>
+          </div>
+        )}
 
         {parsedQuests.length === 0 ? (
           <div>

@@ -166,23 +166,15 @@ export default function TreasuresPage() {
         <div className="mb-6">
           <button
             onClick={() => {
-              if (!user) {
-                alert(language === 'zh'
-                  ? '访客模式下无法合成宝物（需要登录）'
-                  : 'Cannot craft items in guest mode (login required)');
-                return;
-              }
               playSound('enterWorkshop');
               setShowCraftingDialog(true);
             }}
-            disabled={!user}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
             style={{
               backgroundColor: '#FF6B35',
               color: '#FFF',
               border: '5px solid #000',
-              boxShadow: '8px 8px 0px #000',
-              opacity: !user ? 0.5 : 1
+              boxShadow: '8px 8px 0px #000'
             }}
           >
             <Hammer className="w-7 h-7" strokeWidth={3} />

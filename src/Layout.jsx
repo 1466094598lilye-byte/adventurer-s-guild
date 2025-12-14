@@ -45,9 +45,7 @@ function LayoutContent({ children }) {
   };
 
   const handleLogin = () => {
-    // 强制使用完整URL跳转到Base44平台登录页
-    const currentUrl = window.location.href;
-    window.location.href = `https://app.base44.com/preview/login?from_url=${encodeURIComponent(currentUrl)}`;
+    base44.auth.redirectToLogin(window.location.href);
   };
 
 

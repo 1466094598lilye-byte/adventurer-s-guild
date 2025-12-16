@@ -417,7 +417,7 @@ export default function QuestBoard() {
             // 🔥 并行调用 LLM 生成所有标题
             const llmResults = await Promise.all(
               toCreate.map(({ actionHintPlain }) =>
-                base44.integrations.Core.InvokeLLM({
+                base44.functions.invoke('callDeepSeek', {
                   prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
 
         **当前冒险者每日修炼内容：** ${actionHintPlain}
@@ -437,7 +437,7 @@ export default function QuestBoard() {
                     },
                     required: ["title"]
                   }
-                }).catch(err => {
+                }).then(res => res.data).catch(err => {
                   console.error(`LLM生成标题失败: ${actionHintPlain}`, err);
                   return null;
                 })
@@ -785,7 +785,7 @@ export default function QuestBoard() {
     setIsProcessing(true);
     const loadingAudio = playLoadingSound();
     try {
-      const result = await base44.integrations.Core.InvokeLLM({
+      const { data: result } = await base44.functions.invoke('callDeepSeek', {
         prompt: getTaskNamingPrompt(language, textInput.trim(), false),
         response_json_schema: {
           type: "object",
@@ -1276,7 +1276,7 @@ export default function QuestBoard() {
     const loadingAudio = playLoadingSound();
     
     try {
-      const result = await base44.integrations.Core.InvokeLLM({
+      const { data: result } = await base44.functions.invoke('callDeepSeek', {
         prompt: getBootstrapModePrompt(language),
         response_json_schema: {
           type: "object",

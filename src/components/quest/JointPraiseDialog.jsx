@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { X, Loader2, Star, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -40,7 +39,7 @@ export default function JointPraiseDialog({ project, onClose }) {
       const generatedPraises = [];
 
       for (const role of roles) {
-        const result = await base44.integrations.Core.InvokeLLM({
+        const { data: result } = await base44.functions.invoke('callDeepSeek', {
           prompt: `你是【星陨纪元冒险者工会】的${role.name}。一位冒险者刚刚完成了整个大项目："${decrypted.projectName}"的所有任务！这是一项跨越多天的重大成就。
 
 工会的所有高层正在联名为这位冒险者撰写一封表扬信，你需要以${role.name}的身份，写下你的那一段话。

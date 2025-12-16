@@ -898,7 +898,7 @@ export default function QuestBoard() {
     
     for (const milestone of milestones) {
       if (newStreak === milestone.days && !unlockedMilestones.includes(milestone.days)) {
-        const lootResult = await base44.integrations.Core.InvokeLLM({
+        const { data: lootResult } = await base44.functions.invoke('callDeepSeek', {
           prompt: `你是【星陨纪元冒险者工会】的宝物铸造大师。一位冒险者达成了${milestone.days}天连胜的惊人成就，获得了「${milestone.title}」称号。请为这个里程碑铸造一件独一无二的纪念战利品。
 
 里程碑：${milestone.days}天连胜
@@ -1027,7 +1027,7 @@ export default function QuestBoard() {
       let newTitle = editingQuest.title;
       
       if (contentChanged) {
-        const result = await base44.integrations.Core.InvokeLLM({
+        const { data: result } = await base44.functions.invoke('callDeepSeek', {
           prompt: getTaskNamingPrompt(language, actionHint, true),
           response_json_schema: {
             type: "object",

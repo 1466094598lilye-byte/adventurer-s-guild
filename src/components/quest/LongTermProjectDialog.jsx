@@ -39,7 +39,7 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
     try {
       const { prompt, schema } = getLongTermParsingPrompt(language, textInput.trim());
       
-      const result = await base44.integrations.Core.InvokeLLM({
+      const { data: result } = await base44.functions.invoke('callDeepSeek', {
         prompt: prompt,
         response_json_schema: schema
       });

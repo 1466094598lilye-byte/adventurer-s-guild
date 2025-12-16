@@ -23,7 +23,7 @@ export default function PraiseDialog({ quest, onClose }) {
 
       const promptText = getPraisePrompt(language, quest, selectedRole);
 
-      const result = await base44.integrations.Core.InvokeLLM({
+      const { data: result } = await base44.functions.invoke('callDeepSeek', {
         prompt: promptText,
         response_json_schema: {
           type: "object",

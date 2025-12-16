@@ -40,7 +40,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
 
           const { prompt } = getTreasurePrompt(language, rarity);
 
-          const result = await base44.integrations.Core.InvokeLLM({
+          const { data: result } = await base44.functions.invoke('callDeepSeek', {
             prompt: prompt,
             response_json_schema: {
               type: "object",
@@ -114,7 +114,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
 
         const { prompt } = getTreasurePrompt(language, rarity);
 
-        const result = await base44.integrations.Core.InvokeLLM({
+        const { data: result } = await base44.functions.invoke('callDeepSeek', {
           prompt: prompt,
           response_json_schema: {
             type: "object",

@@ -81,7 +81,7 @@ export default function EndOfDaySummaryAndPlanning({
     try {
       const promptText = getCelebrationMessagePrompt(language, currentStreak);
       
-      const result = await base44.integrations.Core.InvokeLLM({
+      const { data: result } = await base44.functions.invoke('callDeepSeek', {
         prompt: promptText,
         response_json_schema: {
           type: "object",
@@ -109,7 +109,7 @@ export default function EndOfDaySummaryAndPlanning({
     try {
       const promptText = getPlanningTaskPrompt(language, textInput.trim());
       
-      const result = await base44.integrations.Core.InvokeLLM({
+      const { data: result } = await base44.functions.invoke('callDeepSeek', {
         prompt: promptText,
         response_json_schema: {
           type: "object",
@@ -172,7 +172,7 @@ export default function EndOfDaySummaryAndPlanning({
       try {
         const promptText = getPlanningTaskPrompt(language, newActionHint.trim());
         
-        const result = await base44.integrations.Core.InvokeLLM({
+        const { data: result } = await base44.functions.invoke('callDeepSeek', {
           prompt: promptText,
           response_json_schema: {
             type: "object",

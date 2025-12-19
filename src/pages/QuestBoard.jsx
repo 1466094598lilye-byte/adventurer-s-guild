@@ -41,10 +41,10 @@ export default function QuestBoard() {
   const [currentHour, setCurrentHour] = useState(new Date().getHours());
   const [streakBreakInfo, setStreakBreakInfo] = useState(null);
   const [isDayRolloverInProgress, setIsDayRolloverInProgress] = useState(false);
-  const [isGeneratingBootstrap, setIsGeneratingBootstrap] = useState(false);
-  const [showBootstrapDialog, setShowBootstrapDialog] = useState(false);
-  const [bootstrapTasks, setBootstrapTasks] = useState([]);
-  const [isAddingBootstrap, setIsAddingBootstrap] = useState(false);
+  const [isGeneratingDeepRest, setIsGeneratingDeepRest] = useState(false);
+  const [showDeepRestDialog, setShowDeepRestDialog] = useState(false);
+  const [deepRestTasks, setDeepRestTasks] = useState([]);
+  const [isAddingDeepRest, setIsAddingDeepRest] = useState(false);
   const queryClient = useQueryClient();
   const { language, t } = useLanguage();
 
@@ -1269,10 +1269,10 @@ export default function QuestBoard() {
     queryClient.refetchQueries({ queryKey: ['hasLongTermQuests'] });
   };
 
-  const handleBootstrapMode = async () => {
-    if (isGeneratingBootstrap) return;
+  const handleDeepRestChallenge = async () => {
+    if (isGeneratingDeepRest) return;
     
-    setIsGeneratingBootstrap(true);
+    setIsGeneratingDeepRest(true);
     const loadingAudio = playLoadingSound();
     
     try {
@@ -1289,14 +1289,14 @@ export default function QuestBoard() {
                   title: {
                     type: "string",
                     description: language === 'zh'
-                      ? "必须是【启动】+正好7个汉字！例如：【启动】慢慢睁开双眼醒来"
-                      : "Must be [Initiate]: <5-8 Word Ultra-Simple Phrase>! Example: [Initiate]: Slowly Open Your Eyes Awake"
+                      ? "必须是【休息】+正好7个汉字！例如：【休息】慢慢伸展放松身心"
+                      : "Must be [Rest]: <5-8 Word Simple Phrase>! Example: [Rest]: Slowly Stretch And Relax Body"
                   },
                   actionHint: {
                     type: "string",
                     description: language === 'zh'
-                      ? "用简单的语言描述这个极小的动作"
-                      : "Describe this tiny action in simple language"
+                      ? "用简单的语言描述这个蓄力动作"
+                      : "Describe this recharge action in simple language"
                   }
                 },
                 required: ["title", "actionHint"]
@@ -1312,13 +1312,13 @@ export default function QuestBoard() {
       // 添加临时ID并显示弹窗
       const tasksWithIds = result.tasks.map((task, index) => ({
         ...task,
-        tempId: `bootstrap_${Date.now()}_${index}`
+        tempId: `deeprest_${Date.now()}_${index}`
       }));
       
-      setBootstrapTasks(tasksWithIds);
-      setShowBootstrapDialog(true);
+      setDeepRestTasks(tasksWithIds);
+      setShowDeepRestDialog(true);
     } catch (error) {
-      console.error('生成启动任务失败:', error);
+      console.error('生成深度休息任务失败:', error);
       alert(language === 'zh'
         ? '生成失败，请重试'
         : 'Generation failed, please try again');
@@ -1326,41 +1326,39 @@ export default function QuestBoard() {
     
     loadingAudio.pause();
     loadingAudio.currentTime = 0;
-    setIsGeneratingBootstrap(false);
+    setIsGeneratingDeepRest(false);
   };
 
-  const handleConfirmBootstrapTasks = async (selectedTaskIds) => {
-    setIsAddingBootstrap(true);
+  const handleConfirmDeepRestTasks = async (selectedTaskIds) => {
+    setIsAddingDeepRest(true);
     const loadingAudio = playLoadingSound();
     
     try {
-      const selectedTasks = bootstrapTasks.filter(t => selectedTaskIds.includes(t.tempId));
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10分钟后
+      const selectedTasks = deepRestTasks.filter(t => selectedTaskIds.includes(t.tempId));
       
       for (const task of selectedTasks) {
         await createQuestMutation.mutateAsync({
           title: task.title,
           actionHint: task.actionHint,
-          difficulty: 'C',
+          difficulty: 'R',
           rarity: 'Common',
           date: today,
           status: 'todo',
-          source: 'bootstrap',
-          tags: ['启动模式'],
-          expiresAt: expiresAt
+          source: 'deeprest',
+          tags: ['深度休息']
         });
       }
 
       playQuestAddedSound();
       setToast(language === 'zh' 
-        ? `✨ 已添加 ${selectedTasks.length} 个小胜利任务！` 
-        : `✨ Added ${selectedTasks.length} micro-victory tasks!`);
+        ? `✨ 已添加 ${selectedTasks.length} 个深度休息任务！` 
+        : `✨ Added ${selectedTasks.length} deep rest tasks!`);
       setTimeout(() => setToast(null), 2000);
       
-      setShowBootstrapDialog(false);
-      setBootstrapTasks([]);
+      setShowDeepRestDialog(false);
+      setDeepRestTasks([]);
     } catch (error) {
-      console.error('添加启动任务失败:', error);
+      console.error('添加深度休息任务失败:', error);
       alert(language === 'zh'
         ? '添加失败，请重试'
         : 'Failed to add tasks, please try again');
@@ -1368,7 +1366,7 @@ export default function QuestBoard() {
     
     loadingAudio.pause();
     loadingAudio.currentTime = 0;
-    setIsAddingBootstrap(false);
+    setIsAddingDeepRest(false);
   };
 
   const filteredQuests = quests.filter(quest => {
@@ -1407,7 +1405,8 @@ export default function QuestBoard() {
     C: '#FFE66D',
     B: '#FF6B35',
     A: '#C44569',
-    S: '#000'
+    S: '#000',
+    R: 'linear-gradient(135deg, #FFE66D 0%, #FFA94D 100%)'
   };
 
   return (
@@ -1784,36 +1783,36 @@ export default function QuestBoard() {
 
         <div className="mb-6">
           <Button
-            onClick={handleBootstrapMode}
-            disabled={isGeneratingBootstrap}
+            onClick={handleDeepRestChallenge}
+            disabled={isGeneratingDeepRest}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
             style={{
               backgroundColor: '#FFE66D',
               color: '#000',
               border: '4px solid #000',
               boxShadow: '6px 6px 0px #000',
-              background: isGeneratingBootstrap 
+              background: isGeneratingDeepRest 
                 ? '#E0E0E0' 
                 : 'linear-gradient(135deg, #FFE66D 0%, #FFA94D 100%)',
-              opacity: isGeneratingBootstrap ? 0.7 : 1
+              opacity: isGeneratingDeepRest ? 0.7 : 1
             }}
           >
-            {isGeneratingBootstrap ? (
+            {isGeneratingDeepRest ? (
               <>
                 <Loader2 className="w-6 h-6 animate-spin" strokeWidth={3} />
-                {language === 'zh' ? '正在生成小胜利任务...' : 'Generating micro-victories...'}
+                {language === 'zh' ? '正在生成深度休息任务...' : 'Generating deep rest tasks...'}
               </>
             ) : (
               <>
                 <Sparkles className="w-6 h-6" strokeWidth={3} />
-                {language === 'zh' ? '🌱 启动模式' : '🌱 Bootstrap Mode'}
+                {language === 'zh' ? '🧘 深度休息挑战' : '🧘 Deep Rest Challenge'}
               </>
             )}
           </Button>
           <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
             {language === 'zh' 
-              ? '💡 生成极简任务，获得最初的小胜利，打破启动困难' 
-              : '💡 Generate ultra-simple tasks for initial micro-victories'}
+              ? '💡 生成低刺激任务，回收精神能量，真正有效的休息' 
+              : '💡 Generate low-stimulation tasks to recharge mental energy'}
           </p>
         </div>
 
@@ -1940,15 +1939,15 @@ export default function QuestBoard() {
           />
         )}
 
-        {showBootstrapDialog && (
+        {showDeepRestDialog && (
           <BootstrapModeDialog
-            tasks={bootstrapTasks}
+            tasks={deepRestTasks}
             onClose={() => {
-              setShowBootstrapDialog(false);
-              setBootstrapTasks([]);
+              setShowDeepRestDialog(false);
+              setDeepRestTasks([]);
             }}
-            onConfirm={handleConfirmBootstrapTasks}
-            isAdding={isAddingBootstrap}
+            onConfirm={handleConfirmDeepRestTasks}
+            isAdding={isAddingDeepRest}
           />
         )}
 

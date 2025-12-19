@@ -2,7 +2,7 @@
 
 export function getTaskNamingPrompt(language, userInput, isEdit = false) {
   if (language === 'zh') {
-    return `你是【星陨纪元冒险者工会】的首席史诗书记官。
+    return `你是【星陨纪元冒险者协会】的首席史诗书记官。
 
 用户输入：${userInput}
 
@@ -57,7 +57,7 @@ Return task:`;
 
 export function getPraisePrompt(language, quest, role) {
   if (language === 'zh') {
-    return `你是【星陨纪元冒险者工会】的${role.name}。一位冒险者刚完成了一项任务，你需要让他们通过你的认可，发自内心地相信：自己的品质是优秀的。
+    return `你是【星陨纪元冒险者协会】的${role.name}。一位冒险者刚完成了一项任务，你需要让他们通过你的认可，发自内心地相信：自己的品质是优秀的。
 
 【你的角色身份】：
 角色名：${role.name}
@@ -398,7 +398,7 @@ export function getPraiseRoles(language) {
 export function getLongTermParsingPrompt(language, userInput) {
   if (language === 'zh') {
     return {
-      prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。冒险者粘贴了一段长期计划文本，你需要智能解析并生成任务列表。
+      prompt: `你是【星陨纪元冒险者协会】的首席史诗书记官。冒险者粘贴了一段长期计划文本，你需要智能解析并生成任务列表。
 
 用户输入：
 ${userInput.trim()}
@@ -570,7 +570,7 @@ Return task array (sorted by date):`,
 
 export function getCelebrationMessagePrompt(language, currentStreak) {
   if (language === 'zh') {
-    return `你是【星陨纪元冒险者工会】的大长老。一位冒险者刚刚完成了今日所有委托，连胜达到${currentStreak}天。
+    return `你是【星陨纪元冒险者协会】的大长老。一位冒险者刚刚完成了今日所有委托，连胜达到${currentStreak}天。
 
 请为这位冒险者撰写一段简洁有力的日终总结与祝贺（2-3句话，60-80字）：
 

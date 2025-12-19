@@ -317,7 +317,7 @@ export function getPraiseRoles(language) {
         tone: '深邃哲理，点出行动深层的意义'
       },
       { 
-        name: '工会总管', 
+        name: '协会总管', 
         perspective: '务实管理者，看重效率与价值',
         keywords: ['高效', '价值', '贡献', '资源', '妥善', '保障', '实干', '可靠'],
         tone: '务实真诚，肯定具体的努力和成果'
@@ -372,7 +372,7 @@ export function getPraiseRoles(language) {
         toneEn: 'Profound and philosophical, revealing deeper meaning'
       },
       { 
-        name: '工会总管',
+        name: '协会总管',
         nameEn: 'Guild Steward', 
         perspective: '务实管理者，看重效率与价值',
         perspectiveEn: 'Pragmatic manager, valuing efficiency and practical value',

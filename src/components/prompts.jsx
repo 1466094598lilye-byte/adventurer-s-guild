@@ -731,8 +731,8 @@ These tasks are NOT for productivity, learning, or entertainment—they're for *
 ❌ Complex planning needed (organizing entire room)
 
 Generate 3 **varied** deep rest tasks:`;
-  } else {
-    return `You are the Healer of the [Starfall Era Adventurer's Guild]. An adventurer is in a low state, finding even getting out of bed difficult.
+  }
+}
 
 Your task: Generate 3 tasks that are **so simple even someone with depression could attempt them**.
 

@@ -19,6 +19,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
     }
 
     if (!quest.created_date) {
+      console.warn('深度休息任务缺少 created_date:', quest);
       setTimeLeft('0:00');
       return;
     }
@@ -27,8 +28,16 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
       const now = new Date().getTime();
       const created = new Date(quest.created_date).getTime();
       
+      console.log('正计时更新:', { 
+        now, 
+        created, 
+        created_date: quest.created_date,
+        elapsed: now - created 
+      });
+      
       // 检查日期是否有效
       if (isNaN(created)) {
+        console.error('无效的 created_date:', quest.created_date);
         setTimeLeft('0:00');
         return;
       }

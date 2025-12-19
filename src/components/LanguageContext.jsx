@@ -44,7 +44,7 @@ export function LanguageProvider({ children }) {
       questboard_date: '年月日',
       questboard_input_placeholder: '输入今日任务，如：跑步5km',
       questboard_longterm_btn: '大项目规划',
-      questboard_longterm_hint: '用于粘贴长期计划，冒险者工会将自动分配到每日委托板',
+      questboard_longterm_hint: '用于粘贴长期计划，冒险者协会将自动分配到每日委托板',
       questboard_calendar_btn: '限时活动日程表！',
       questboard_calendar_hint: '点击查看所有大项目任务的时间安排',
       questboard_pending_title: '待确认任务',
@@ -176,7 +176,7 @@ export function LanguageProvider({ children }) {
       profile_logout: '退出登录',
       
       // Praise Dialog
-      praise_title: '工会表彰',
+      praise_title: '协会表彰',
       praise_guild_reviewing: '协会正在审阅你的委托报告...',
       praise_add_review: '记入复盘',
       

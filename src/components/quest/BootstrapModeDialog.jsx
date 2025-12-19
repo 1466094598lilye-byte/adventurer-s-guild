@@ -46,12 +46,12 @@ export default function BootstrapModeDialog({ tasks, onClose, onConfirm, isAddin
 
         <div className="text-center mb-6">
           <h2 className="text-2xl font-black uppercase mb-2">
-            {language === 'zh' ? '🌱 启动模式 🌱' : '🌱 Bootstrap Mode 🌱'}
+            {language === 'zh' ? '🧘 深度休息挑战 🧘' : '🧘 Deep Rest Challenge 🧘'}
           </h2>
           <p className="font-bold text-sm" style={{ color: '#666' }}>
             {language === 'zh' 
-              ? '选择你想要添加的小胜利任务' 
-              : 'Select micro-victory tasks to add'}
+              ? '选择你想要添加的深度休息任务' 
+              : 'Select deep rest tasks to add'}
           </p>
         </div>
 

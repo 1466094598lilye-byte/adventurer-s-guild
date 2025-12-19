@@ -32,7 +32,7 @@ export default function JointPraiseDialog({ project, onClose }) {
         { name: '首席史诗书记官', icon: '📜', color: '#9B59B6' },
         { name: '荣誉骑士团长', icon: '⚔️', color: '#FF6B35' },
         { name: '神秘智者', icon: '🔮', color: '#4ECDC4' },
-        { name: '工会总管', icon: '📋', color: '#FFE66D' },
+        { name: '协会总管', icon: '📋', color: '#FFE66D' },
         { name: '战术大师', icon: '🎯', color: '#E74C3C' }
       ];
 
@@ -40,16 +40,16 @@ export default function JointPraiseDialog({ project, onClose }) {
 
       for (const role of roles) {
         const { data: result } = await base44.functions.invoke('callDeepSeek', {
-          prompt: `你是【星陨纪元冒险者工会】的${role.name}。一位冒险者刚刚完成了整个大项目："${decrypted.projectName}"的所有任务！这是一项跨越多天的重大成就。
+          prompt: `你是【星陨纪元冒险者协会】的${role.name}。一位冒险者刚刚完成了整个大项目："${decrypted.projectName}"的所有任务！这是一项跨越多天的重大成就。
 
-工会的所有高层正在联名为这位冒险者撰写一封表扬信，你需要以${role.name}的身份，写下你的那一段话。
+协会的所有高层正在联名为这位冒险者撰写一封表扬信，你需要以${role.name}的身份，写下你的那一段话。
 
 【你的角色特点】：
 ${role.name === '大长老' ? '见证者视角，关注长期成长和坚持的价值' :
   role.name === '首席史诗书记官' ? '诗意观察者，捕捉过程中的美学和细节' :
   role.name === '荣誉骑士团长' ? '战士视角，强调勇气与突破' :
   role.name === '神秘智者' ? '哲学洞察，看透行动背后的深层智慧' :
-  role.name === '工会总管' ? '务实管理者，看重效率与实际价值' :
+  role.name === '协会总管' ? '务实管理者，看重效率与实际价值' :
   '策略分析师，关注执行力与精准度'}
 
 【核心要求】：
@@ -82,10 +82,10 @@ ${role.name === '大长老' ? '见证者视角，关注长期成长和坚持的�
       // 如果解密失败，使用加密的项目名称
       setDecryptedProject(project);
       setPraises([{
-        role: '工会全体',
+        role: '协会全体',
         icon: '🏛️',
         color: '#4ECDC4',
-        text: '恭喜你完成了整个大项目！你的坚持和努力，工会的每一位成员都看在眼里。'
+        text: '恭喜你完成了整个大项目！你的坚持和努力，协会的每一位成员都看在眼里。'
       }]);
     }
     setLoading(false);
@@ -139,7 +139,7 @@ ${role.name === '大长老' ? '见证者视角，关注长期成长和坚持的�
             </p>
           </div>
           <p className="font-black text-lg">
-            工会全体高层联名表彰
+            协会全体高层联名表彰
           </p>
         </div>
 
@@ -147,7 +147,7 @@ ${role.name === '大长老' ? '见证者视角，关注长期成长和坚持的�
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="w-12 h-12 animate-spin mb-4" />
-            <p className="font-bold text-lg">工会高层正在联名撰写表扬信...</p>
+            <p className="font-bold text-lg">协会高层正在联名撰写表扬信...</p>
           </div>
         ) : (
           <>

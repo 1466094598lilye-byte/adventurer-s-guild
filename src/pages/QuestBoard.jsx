@@ -1337,7 +1337,7 @@ export default function QuestBoard() {
       const selectedTasks = deepRestTasks.filter(t => selectedTaskIds.includes(t.tempId));
       
       for (const task of selectedTasks) {
-        await createQuestMutation.mutateAsync({
+        const createdQuest = await createQuestMutation.mutateAsync({
           title: task.title,
           actionHint: task.actionHint,
           difficulty: 'R',
@@ -1347,6 +1347,8 @@ export default function QuestBoard() {
           source: 'deeprest',
           tags: ['深度休息']
         });
+        
+        console.log('深度休息任务已创建，created_date:', createdQuest?.created_date);
       }
 
       playQuestAddedSound();

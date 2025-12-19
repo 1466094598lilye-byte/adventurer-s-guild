@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const LanguageContext = createContext();
@@ -60,11 +59,11 @@ export function LanguageProvider({ children }) {
       questboard_filter_done: '已完成',
       questboard_no_quests: '暂无委托',
       questboard_no_quests_hint: '使用文本输入添加今日任务',
-      questboard_rest_day: '今日为工会休息日',
+      questboard_rest_day: '今日为协会休息日',
       questboard_rest_day_hint: '连胜不会中断，但也不会累积',
-      questboard_set_rest: '设为工会休息日',
-      questboard_cancel_rest: '取消工会休息日',
-      questboard_planned_quests: '工会已登记明日',
+      questboard_set_rest: '设为协会休息日',
+      questboard_cancel_rest: '取消协会休息日',
+      questboard_planned_quests: '协会已登记明日',
       questboard_plan_tomorrow: '规划明日委托',
       questboard_cannot_set_rest_day_hint: '今日有任务时无法设为休息日',
       questboard_toast_freeze_token_used: '✅ 已使用冻结券保护连胜',
@@ -79,7 +78,7 @@ export function LanguageProvider({ children }) {
       questboard_toast_quest_updated: '任务已更新！',
       questboard_toast_changes_saved: '修改已保存！',
       questboard_toast_rest_canceled_success: '休息日已取消',
-      questboard_toast_rest_set_success: '已设为工会休息日',
+      questboard_toast_rest_set_success: '已设为协会休息日',
       questboard_toast_plan_saved_success: '明日 {count} 项任务已登记成功',
       questboard_toast_longterm_quests_added_success: '{count} 项史诗委托已添加到委托板',
       questboard_alert_cannot_set_rest_day_with_quests: '今日有任务时无法设为休息日',

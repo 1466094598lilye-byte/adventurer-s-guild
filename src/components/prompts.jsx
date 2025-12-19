@@ -594,7 +594,7 @@ Requirements:
 
 export function getPlanningTaskPrompt(language, userInput) {
   if (language === 'zh') {
-    return `你是【星陨纪元冒险者工会】的首席史诗书记官。
+    return `你是【星陨纪元冒险者协会】的首席史诗书记官。
 
 用户输入：${userInput}
 
@@ -656,7 +656,7 @@ Return task:`;
 
 export function getBootstrapModePrompt(language) {
   if (language === 'zh') {
-    return `你是【星陨纪元冒险者工会】的治疗师。有一位冒险者正处于低落状态，连起床都觉得困难。
+    return `你是【星陨纪元冒险者协会】的治疗师。有一位冒险者正处于低落状态，连起床都觉得困难。
 
 你的任务：生成 3 个**小到连抑郁症患者都能尝试去做**的极简任务。
 
@@ -715,7 +715,7 @@ Generate 3 minimal initiation tasks:`;
 export function getCalendarAddTaskPrompt(language, newTaskInput) {
   if (language === 'zh') {
     return {
-      prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
+      prompt: `你是【星陨纪元冒险者协会】的首席史诗书记官。
 
 **冒险者添加的大项目任务：** ${newTaskInput}
 

@@ -12,37 +12,23 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
   const { t } = useLanguage();
 
   // 计算正计时（深度休息任务）
+  const [startTime] = useState(() => {
+    // 深度休息任务的计时起点：使用当前时间作为起点
+    if (quest.source === 'deeprest' && quest.status === 'todo') {
+      return Date.now();
+    }
+    return null;
+  });
+
   useEffect(() => {
-    if (quest.source !== 'deeprest' || quest.status === 'done') {
+    if (quest.source !== 'deeprest' || quest.status === 'done' || !startTime) {
       setTimeLeft(null);
       return;
     }
 
-    if (!quest.created_date) {
-      console.warn('深度休息任务缺少 created_date:', quest);
-      setTimeLeft('0:00');
-      return;
-    }
-
     const updateTimer = () => {
-      const now = new Date().getTime();
-      const created = new Date(quest.created_date).getTime();
-      
-      console.log('正计时更新:', { 
-        now, 
-        created, 
-        created_date: quest.created_date,
-        elapsed: now - created 
-      });
-      
-      // 检查日期是否有效
-      if (isNaN(created)) {
-        console.error('无效的 created_date:', quest.created_date);
-        setTimeLeft('0:00');
-        return;
-      }
-
-      const elapsed = Math.max(0, now - created);
+      const now = Date.now();
+      const elapsed = now - startTime;
 
       // 到达一小时后停止计时
       if (elapsed >= 60 * 60 * 1000) {
@@ -58,7 +44,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [quest.source, quest.created_date, quest.status]);
+  }, [quest.source, quest.status, startTime]);
   
   const isDone = quest.status === 'done';
 

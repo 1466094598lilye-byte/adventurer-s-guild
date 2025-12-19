@@ -13,12 +13,27 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
 
   // 计算正计时（深度休息任务）
   useEffect(() => {
-    if (quest.source !== 'deeprest' || quest.status === 'done') return;
+    if (quest.source !== 'deeprest' || quest.status === 'done') {
+      setTimeLeft(null);
+      return;
+    }
+
+    if (!quest.created_date) {
+      setTimeLeft('0:00');
+      return;
+    }
 
     const updateTimer = () => {
       const now = new Date().getTime();
       const created = new Date(quest.created_date).getTime();
-      const elapsed = now - created;
+      
+      // 检查日期是否有效
+      if (isNaN(created)) {
+        setTimeLeft('0:00');
+        return;
+      }
+
+      const elapsed = Math.max(0, now - created);
 
       // 到达一小时后停止计时
       if (elapsed >= 60 * 60 * 1000) {

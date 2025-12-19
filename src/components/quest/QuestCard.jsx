@@ -11,28 +11,30 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
   const [timeLeft, setTimeLeft] = useState(null);
   const { t } = useLanguage();
 
-  // 计算倒计时
+  // 计算正计时（深度休息任务）
   useEffect(() => {
-    if (!quest.expiresAt || quest.status === 'done') return;
+    if (quest.source !== 'deeprest' || quest.status === 'done') return;
 
     const updateTimer = () => {
       const now = new Date().getTime();
-      const expiry = new Date(quest.expiresAt).getTime();
-      const diff = expiry - now;
+      const created = new Date(quest.created_date).getTime();
+      const elapsed = now - created;
 
-      if (diff <= 0) {
-        setTimeLeft(null);
-      } else {
-        const minutes = Math.floor(diff / 60000);
-        const seconds = Math.floor((diff % 60000) / 1000);
-        setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+      // 到达一小时后停止计时
+      if (elapsed >= 60 * 60 * 1000) {
+        setTimeLeft('60:00');
+        return;
       }
+
+      const minutes = Math.floor(elapsed / 60000);
+      const seconds = Math.floor((elapsed % 60000) / 1000);
+      setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`);
     };
 
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [quest.expiresAt, quest.status]);
+  }, [quest.source, quest.created_date, quest.status]);
   
   const isDone = quest.status === 'done';
 
@@ -73,6 +75,8 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
               style={{
                 background: quest.isLongTermProject && quest.difficulty === 'S' 
                   ? 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)'
+                  : quest.difficulty === 'R' 
+                  ? 'linear-gradient(135deg, #FFE66D 0%, #FFA94D 100%)'
                   : quest.difficulty === 'S' ? '#000' : quest.difficulty === 'A' ? '#C44569' : quest.difficulty === 'B' ? '#FF6B35' : '#FFE66D',
                 color: quest.isLongTermProject && quest.difficulty === 'S' ? '#FFF' : quest.difficulty === 'S' ? '#FFE66D' : '#000',
                 border: `3px solid ${quest.difficulty === 'S' && !quest.isLongTermProject ? '#FFE66D' : '#000'}`,
@@ -106,11 +110,11 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                 >
                   ({quest.actionHint})
                 </p>
-                {timeLeft && quest.source === 'bootstrap' && (
+                {timeLeft && quest.source === 'deeprest' && (
                   <div 
                     className="inline-flex items-center gap-1 px-2 py-1 mt-1"
                     style={{
-                      backgroundColor: '#FFE66D',
+                      background: 'linear-gradient(135deg, #FFE66D 0%, #FFA94D 100%)',
                       border: '2px solid #000'
                     }}
                   >

@@ -734,33 +734,6 @@ Generate 3 **varied** deep rest tasks:`;
   }
 }
 
-Your task: Generate 3 tasks that are **so simple even someone with depression could attempt them**.
-
-【Core Requirements】:
-1. **Lower difficulty bound**: Tasks must be simple enough for anyone (including those with severe depression) to potentially complete
-2. **Low energy cost**: No need for strong willpower, planning, or thinking
-3. **Immediately doable**: Can start now, right away, without any preparation
-4. **Minimal action**: Each task requires only an extremely small movement
-5. **Title format**: [Initiate]: <5-8 Word Ultra-Simple Phrase>
-
-【Task Examples】(note: must be extremely easy):
-- "[Initiate]: Slowly Open Your Eyes Awake" - just open eyes
-- "[Initiate]: Stretch Limbs While In Bed" - just move a bit
-- "[Initiate]: Sit Up And Take Deep Breath" - just sit up
-- "[Initiate]: Take Small Sip Of Water" - just take a sip
-- "[Initiate]: Touch Sunlight Feel Its Warmth" - just feel
-- "[Initiate]: Stand Up Walk Three Steps" - just walk a bit
-- "[Initiate]: Open Curtains Look Outside Window" - just pull curtain
-
-【Wrong Examples】(too difficult):
-❌ "Complete 5km morning run" - too complex, need clothes change, go out, sustained exercise
-❌ "Read a book" - requires focus and sustained time
-❌ "Organize room" - requires planning and sustained labor
-
-Generate 3 minimal initiation tasks:`;
-  }
-}
-
 export function getCalendarAddTaskPrompt(language, newTaskInput) {
   if (language === 'zh') {
     return {

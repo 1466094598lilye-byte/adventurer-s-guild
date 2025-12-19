@@ -153,7 +153,7 @@ export function LanguageProvider({ children }) {
       profile_longest_streak: '最长',
       profile_freeze_tokens: '冻结券',
       profile_freeze_tokens_hint: '可跳过一次不清空任务，保持连胜不中断',
-      profile_guild_title: '工会称号',
+      profile_guild_title: '协会称号',
       profile_no_title: '暂无称号',
       profile_title_hint: '达成连胜里程碑解锁专属称号',
       profile_settings: '⚙️ 设置',
@@ -177,7 +177,7 @@ export function LanguageProvider({ children }) {
       
       // Praise Dialog
       praise_title: '工会表彰',
-      praise_guild_reviewing: '工会正在审阅你的委托报告...',
+      praise_guild_reviewing: '协会正在审阅你的委托报告...',
       praise_add_review: '记入复盘',
       
       // Chest
@@ -199,8 +199,8 @@ export function LanguageProvider({ children }) {
       milestone_claim_button: '领取奖励',
       
       // Rest Day Dialog
-      rest_day_dialog_set_title: '设为工会休息日',
-      rest_day_dialog_cancel_title: '取消工会休息日',
+      rest_day_dialog_set_title: '设为协会休息日',
+      rest_day_dialog_cancel_title: '取消协会休息日',
       rest_day_dialog_set_hint_1: '今日不会影响连胜计数',
       rest_day_dialog_set_hint_2: '连胜不会中断，但也不会累积',
       rest_day_dialog_set_hint_3: '适合临时有事无法完成任务的日子',
@@ -246,7 +246,7 @@ export function LanguageProvider({ children }) {
       // End of Day Planning
       planning_celebration_title: '🎊 今日圆满 🎊',
       planning_planning_title: '📋 规划明日 📋',
-      planning_loading: '工会高层正在联名撰写表扬信...',
+      planning_loading: '协会高层正在联名撰写表扬信...',
       planning_tomorrow_summary: '明日委托总数',
       planning_routine_quests: '每日修炼（自动出现）',
       planning_routine_hint: '💡 这些任务每天自动出现，无需单独规划',
@@ -264,7 +264,7 @@ export function LanguageProvider({ children }) {
       longterm_title: '🎯 大项目规划 🎯',
       longterm_subtitle: '粘贴你的长期计划，冒险者工会将自动分配到每日委托板',
       longterm_placeholder: '粘贴你的长期计划...\n\n例如：\n周一：完成项目方案设计\n周二：与团队讨论方案\n周三：修改并提交方案\n12月25日：准备年终总结',
-      longterm_parsing: '工会管理员正在更新委托板...',
+      longterm_parsing: '协会管理员正在更新委托板...',
       longterm_start_parse: '开始解析',
       longterm_identified: '识别到',
       longterm_epic_quests: '项史诗委托',

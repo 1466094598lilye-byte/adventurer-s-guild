@@ -163,8 +163,7 @@ export default function QuestBoard() {
     retryDelay: 1000,
     staleTime: 5000,
     refetchOnWindowFocus: false,
-    refetchInterval: 30000, // 每30秒检查一次过期任务
-  });
+    });
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -212,14 +211,12 @@ export default function QuestBoard() {
   // 日更逻辑：检查连胜中断 + 未完成任务顺延 + 明日规划任务创建 + 每日修炼任务生成 + 清理旧任务 + 清理旧宝箱记录 + 清理旧大项目
   useEffect(() => {
     // 🔥 辅助函数1: 处理明日规划任务
-    const runNextDayPlannedQuests = async ({ today, batchInvalidateQueries, setToast, language, t }) => {
+    const runNextDayPlannedQuests = async ({ today, batchInvalidateQueries, setToast, language, t, currentUserData }) => {
       console.log('=== 步骤1: 检查明日规划任务 ===');
-      
+
       try {
-        // 🔧 重新获取最新的用户数据，避免使用过时的缓存数据
-        const freshUser = await base44.auth.me();
-        const nextDayPlanned = freshUser?.nextDayPlannedQuests || [];
-        const lastPlanned = freshUser?.lastPlannedDate;
+        const nextDayPlanned = currentUserData?.nextDayPlannedQuests || [];
+        const lastPlanned = currentUserData?.lastPlannedDate;
 
         console.log('nextDayPlanned:', nextDayPlanned);
         console.log('lastPlanned:', lastPlanned);
@@ -282,12 +279,11 @@ export default function QuestBoard() {
     };
 
     // 🔥 辅助函数2: 处理每日修炼任务
-    const runRoutineQuestsGeneration = async ({ today, batchInvalidateQueries }) => {
+    const runRoutineQuestsGeneration = async ({ today, batchInvalidateQueries, todayQuests }) => {
       console.log('=== 步骤5: 开始处理每日修炼任务 ===');
 
       try {
-        // 🔧 重新获取今日任务列表（因为前面可能已经创建了明日规划任务）
-        const todayQuestsForRoutine = await base44.entities.Quest.filter({ date: today });
+        const todayQuestsForRoutine = todayQuests;
         console.log('当前今日任务数量:', todayQuestsForRoutine.length);
         
         const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
@@ -403,11 +399,11 @@ export default function QuestBoard() {
     };
 
     // 🔥 辅助函数3: 处理昨天未完成任务
-    const runYesterdayQuestsRollover = async ({ yesterday, today, batchInvalidateQueries, setToast, t }) => {
+    const runYesterdayQuestsRollover = async ({ yesterday, today, batchInvalidateQueries, setToast, t, yesterdayQuests }) => {
       console.log('=== 步骤4: 处理昨天未完成任务 ===');
-      
+
       try {
-        const oldQuests = await base44.entities.Quest.filter({ date: yesterday, status: 'todo' });
+        const oldQuests = yesterdayQuests.filter(q => q.status === 'todo');
         
         if (oldQuests.length > 0) {
           console.log(`发现 ${oldQuests.length} 项昨日未完成任务，开始顺延...`);
@@ -555,7 +551,7 @@ export default function QuestBoard() {
     };
 
     // This function contains the actual rollover steps 1-6, independent of the streak break decision
-    const executeDayRolloverLogic = async () => {
+    const executeDayRolloverLogic = async (currentUser, currentTodayQuests) => {
       console.log('=== 执行日更逻辑 (步骤 1-6) ===');
 
       try {
@@ -577,22 +573,26 @@ export default function QuestBoard() {
           batchInvalidateQueries, 
           setToast, 
           language, 
-          t 
+          t,
+          currentUserData: currentUser
         });
 
         // 步骤2: 处理每日修炼任务（自动生成今日任务）
         await runRoutineQuestsGeneration({ 
           today, 
-          batchInvalidateQueries 
+          batchInvalidateQueries,
+          todayQuests: currentTodayQuests
         });
 
         // 步骤3: 处理昨天未完成任务（顺延到今天）
+        const yesterdayQuests = await base44.entities.Quest.filter({ date: yesterday });
         await runYesterdayQuestsRollover({ 
           yesterday, 
           today, 
           batchInvalidateQueries, 
           setToast, 
-          t 
+          t,
+          yesterdayQuests
         });
 
         console.log('✅ 核心任务执行完成');
@@ -632,9 +632,9 @@ export default function QuestBoard() {
         };
 
 
-    const handleDayRollover = async () => {
+    const handleDayRollover = async (currentUser, currentTodayQuests) => {
       // 游客模式下跳过日更逻辑
-      if (!user) {
+      if (!currentUser) {
         console.log('游客模式，跳过日更逻辑');
         return;
       }
@@ -646,7 +646,7 @@ export default function QuestBoard() {
       }
 
       // 🔥 【最优先】检查是否今天已完成所有日更（包括步骤0），避免重复执行
-      if (hasCompletedRolloverToday(user.id)) {
+      if (hasCompletedRolloverToday(currentUser.id)) {
         console.log('✅ 今日日更逻辑已全部完成，跳过');
         return;
       }
@@ -655,8 +655,8 @@ export default function QuestBoard() {
 
       // 步骤 0：检查昨天是否有未完成任务，处理连胜中断
       console.log('=== 步骤 0: 检查连胜中断 ===');
-      const restDays = user?.restDays || [];
-      const lastClearDate = user?.lastClearDate;
+      const restDays = currentUser?.restDays || [];
+      const lastClearDate = currentUser?.lastClearDate;
 
       console.log('今天日期:', today);
       console.log('昨天日期:', yesterday);
@@ -678,8 +678,8 @@ export default function QuestBoard() {
 
           if (!allDoneYesterday) {
             console.log('昨天有未完成任务，需要处理连胜中断');
-            const currentStreak = user?.streakCount || 0;
-            const freezeTokenCount = user?.freezeTokenCount || 0;
+            const currentStreak = currentUser?.streakCount || 0;
+            const freezeTokenCount = currentUser?.freezeTokenCount || 0;
 
             if (currentStreak > 0) {
               setStreakBreakInfo({
@@ -706,23 +706,23 @@ export default function QuestBoard() {
 
       // 立即显示加载弹窗
       setIsDayRolloverInProgress(true);
-      await executeDayRolloverLogic();
-      markRolloverComplete(user.id);
+      await executeDayRolloverLogic(currentUser, currentTodayQuests);
+      markRolloverComplete(currentUser.id);
       };
 
-    // 🔧 无论是否有用户都执行（游客模式下会快速返回并关闭加载状态）
-    handleDayRollover();
-  }, [user]); // Only depend on user to prevent double execution
+      // 🔧 无论是否有用户都执行（游客模式下会快速返回并关闭加载状态）
+      if (user && quests) {
+      handleDayRollover(user, quests);
+      }
+      }, [user]); // Only depend on user to prevent double execution
 
   // Handle use token (called from StreakBreakDialog)
   const handleUseToken = async () => {
     try {
-      const currentUser = await base44.auth.me();
-
       // 🔧 修复：使用冻结券时，将 lastClearDate 设置为昨天，表示"昨天已处理"
       // 这样刷新后就不会再次触发连胜中断检查
       await base44.auth.updateMe({
-        freezeTokenCount: (currentUser?.freezeTokenCount || 0) - 1,
+        freezeTokenCount: (user?.freezeTokenCount || 0) - 1,
         lastClearDate: yesterday  // 关键修复：标记昨天已处理
       });
 

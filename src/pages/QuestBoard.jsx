@@ -497,6 +497,64 @@ export default function QuestBoard() {
       }
     };
 
+    // 🔥 辅助函数6: 清理旧的大项目记录
+    const cleanOldLongTermProjects = async ({ twoYearsAgoStr, batchInvalidateQueries }) => {
+      console.log('=== 步骤6: 开始清理旧的大项目记录 ===');
+      
+      try {
+        console.log('📅 2年前日期:', twoYearsAgoStr);
+        
+        // 查询所有大项目
+        const allProjects = await base44.entities.LongTermProject.list();
+        
+        // 筛选出已完成且超过2年的项目
+        const oldProjects = allProjects.filter(project => {
+          return project.status === 'completed' && 
+                 project.completionDate && 
+                 project.completionDate < twoYearsAgoStr;
+        });
+        
+        if (oldProjects.length > 0) {
+          console.log(`🎯 找到 ${oldProjects.length} 个需要清理的旧项目`);
+          
+          let totalQuestsDeleted = 0;
+          let projectsDeleted = 0;
+          
+          // 删除关联的任务和项目本身
+          for (const project of oldProjects) {
+            try {
+              // 查询并删除关联任务
+              const allQuests = await base44.entities.Quest.list();
+              const relatedQuests = allQuests.filter(q => q.longTermProjectId === project.id);
+              
+              for (const quest of relatedQuests) {
+                try {
+                  await base44.entities.Quest.delete(quest.id);
+                  totalQuestsDeleted++;
+                } catch (error) {
+                  console.error(`删除关联任务失败 (ID: ${quest.id}):`, error);
+                }
+              }
+              
+              // 删除项目本身
+              await base44.entities.LongTermProject.delete(project.id);
+              projectsDeleted++;
+              console.log(`✅ 已清理项目: ${project.projectName} (完成于: ${project.completionDate})`);
+            } catch (error) {
+              console.error(`清理项目失败 (${project.projectName}):`, error);
+            }
+          }
+          
+          console.log(`✅ 大项目清理完成 - 删除 ${projectsDeleted} 个项目，${totalQuestsDeleted} 个关联任务`);
+          batchInvalidateQueries(['hasLongTermQuests', 'quests']);
+        } else {
+          console.log('✅ 没有需要清理的旧大项目');
+        }
+      } catch (error) {
+        console.error('清理旧大项目时出错:', error);
+      }
+    };
+
     // This function contains the actual rollover steps 1-7, independent of the streak break decision
     const executeDayRolloverLogic = async () => {
       console.log('=== 执行其他日更逻辑 (步骤 1-7) ===');

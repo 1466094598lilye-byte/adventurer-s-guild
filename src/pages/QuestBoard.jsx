@@ -695,7 +695,60 @@ export default function QuestBoard() {
               console.log('当前没有连胜（为0），无需触发连胜中断对话框');
             }
           } else {
-            console.log('昨天所有任务都完成了');
+            console.log('昨天所有任务都完成了，更新连胜数据');
+
+            // 🔥 昨天任务全部完成，更新连胜
+            let newStreak = 1;
+            const lastClearDate = currentUser?.lastClearDate;
+            const restDays = currentUser?.restDays || [];
+
+            if (lastClearDate) {
+              // 从前天开始往回找第一个工作日
+              let checkDate = new Date();
+              checkDate.setDate(checkDate.getDate() - 2); // 前天
+
+              let daysBack = 0;
+              let foundLastWorkDay = false;
+
+              while (daysBack < 365 && !foundLastWorkDay) {
+                const checkDateStr = format(checkDate, 'yyyy-MM-dd');
+
+                if (!restDays.includes(checkDateStr)) {
+                  if (checkDateStr === lastClearDate) {
+                    newStreak = (currentUser?.streakCount || 0) + 1;
+                    console.log('连续完成（跳过了休息日），连胜 +1，新连胜:', newStreak);
+                  } else {
+                    console.log('之前有中断，连胜重置为1');
+                    newStreak = 1;
+                  }
+                  foundLastWorkDay = true;
+                }
+
+                daysBack++;
+                checkDate.setDate(checkDate.getDate() - 1);
+              }
+
+              if (!foundLastWorkDay) {
+                console.log('未找到上一个工作日，连胜设为1');
+                newStreak = 1;
+              }
+            } else {
+              console.log('第一次完成所有任务，连胜设为1');
+              newStreak = 1;
+            }
+
+            const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
+            console.log('新的最长连胜:', newLongestStreak);
+
+            await base44.auth.updateMe({
+              streakCount: newStreak,
+              longestStreak: newLongestStreak,
+              lastClearDate: yesterday
+            });
+            console.log('用户连胜数据已更新');
+
+            batchInvalidateQueries(['user']);
+            await checkAndAwardMilestone(newStreak);
           }
         } else {
           console.log('昨天没有任务');
@@ -1257,69 +1310,6 @@ export default function QuestBoard() {
         ? '访客模式下无法开启宝箱（需要登录保存战利品）' 
         : 'Cannot open chest in guest mode (login required to save loot)');
       return;
-    }
-
-    // 只有登录用户才更新连胜
-    if (user) {
-      const currentUser = await base44.auth.me();
-      console.log('当前用户数据:', currentUser);
-      console.log('lastClearDate:', currentUser?.lastClearDate);
-      console.log('今日日期:', today);
-
-      if (currentUser?.lastClearDate !== today) {
-        // 计算连胜
-        let newStreak = 1;
-        const lastClearDate = currentUser?.lastClearDate;
-        const restDays = currentUser?.restDays || [];
-
-        if (lastClearDate) {
-          let checkDate = new Date();
-          checkDate.setDate(checkDate.getDate() - 1);
-
-          let daysBack = 0;
-          let foundLastWorkDay = false;
-
-          while (daysBack < 365 && !foundLastWorkDay) {
-            const checkDateStr = format(checkDate, 'yyyy-MM-dd');
-
-            if (!restDays.includes(checkDateStr)) {
-              if (checkDateStr === lastClearDate) {
-                newStreak = (currentUser?.streakCount || 0) + 1;
-                console.log('连续完成（跳过了休息日），连胜 +1，新连胜:', newStreak);
-              } else {
-                console.log('中断了，连胜重置为1');
-                newStreak = 1;
-              }
-              foundLastWorkDay = true;
-            }
-
-            daysBack++;
-            checkDate.setDate(checkDate.getDate() - 1);
-          }
-
-          if (!foundLastWorkDay) {
-            console.log('未找到上一个工作日，连胜设为1');
-            newStreak = 1;
-          }
-        } else {
-          console.log('第一次完成所有任务，连胜设为1');
-          newStreak = 1;
-        }
-
-        const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
-        console.log('新的最长连胜:', newLongestStreak);
-
-        await base44.auth.updateMe({
-          streakCount: newStreak,
-          longestStreak: newLongestStreak,
-          lastClearDate: today
-        });
-        console.log('用户连胜数据已更新');
-
-        batchInvalidateQueries(['user']);
-
-        await checkAndAwardMilestone(newStreak);
-      }
     }
 
     // 确保宝箱已创建

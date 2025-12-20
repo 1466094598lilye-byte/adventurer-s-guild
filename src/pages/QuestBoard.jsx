@@ -431,6 +431,30 @@ export default function QuestBoard() {
       }
     };
 
+    // 🔥 辅助函数4: 清理旧宝箱记录
+    const cleanOldChests = async ({ sevenDaysAgoStr }) => {
+      console.log('=== 步骤3: 开始清理旧宝箱记录 ===');
+      
+      try {
+        const allChests = await base44.entities.DailyChest.filter({ opened: true }, '-date', 200);
+        let deletedChestCount = 0;
+        
+        for (const chest of allChests) {
+          if (!chest.date) continue;
+          if (chest.date < sevenDaysAgoStr) {
+            await base44.entities.DailyChest.delete(chest.id);
+            deletedChestCount++;
+          }
+        }
+        
+        if (deletedChestCount > 0) {
+          console.log(`✅ 已清理 ${deletedChestCount} 个7天前的宝箱记录`);
+        }
+      } catch (error) {
+        console.error('清理宝箱记录时出错:', error);
+      }
+    };
+
     // This function contains the actual rollover steps 1-7, independent of the streak break decision
     const executeDayRolloverLogic = async () => {
       console.log('=== 执行其他日更逻辑 (步骤 1-7) ===');

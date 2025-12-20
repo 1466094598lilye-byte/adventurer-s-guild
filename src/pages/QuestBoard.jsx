@@ -282,6 +282,127 @@ export default function QuestBoard() {
       }
     };
 
+    // 🔥 辅助函数2: 处理每日修炼任务
+    const runRoutineQuestsGeneration = async ({ today, batchInvalidateQueries }) => {
+      console.log('=== 步骤5: 开始处理每日修炼任务 ===');
+
+      try {
+        // 🔧 重新获取今日任务列表（因为前面可能已经创建了明日规划任务）
+        const todayQuestsForRoutine = await base44.entities.Quest.filter({ date: today });
+        console.log('当前今日任务数量:', todayQuestsForRoutine.length);
+        
+        const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
+
+        if (allRoutineQuests.length > 0) {
+          // 🔥 并行解密所有每日修炼任务
+          const decryptedRoutines = await Promise.all(
+            allRoutineQuests.map(async (quest) => {
+              try {
+                const { data } = await base44.functions.invoke('decryptQuestData', {
+                  encryptedActionHint: quest.actionHint
+                });
+                return { ...quest, decryptedActionHint: data.actionHint };
+              } catch (error) {
+                console.warn(`Failed to decrypt actionHint for routine quest ${quest.id}:`, error);
+                return { ...quest, decryptedActionHint: quest.actionHint };
+              }
+            })
+          );
+
+          const uniqueRoutinesMap = new Map();
+          for (const quest of decryptedRoutines) {
+            const key = quest.decryptedActionHint;
+            if (key) {
+              const effectiveKey = quest.originalActionHint || key;
+              if (!uniqueRoutinesMap.has(effectiveKey) || 
+                  new Date(quest.created_date) > new Date(uniqueRoutinesMap.get(effectiveKey).created_date)) {
+                uniqueRoutinesMap.set(effectiveKey, quest);
+              }
+            }
+          }
+
+          // 🔧 筛选需要创建的任务
+          const toCreate = [];
+          for (const [actionHintPlain, templateQuest] of uniqueRoutinesMap) {
+            const alreadyExists = todayQuestsForRoutine.some(
+              q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === templateQuest.actionHint)
+            );
+            if (!alreadyExists) {
+              toCreate.push({ actionHintPlain, templateQuest });
+            }
+          }
+
+          console.log('需要创建的每日修炼任务数量:', toCreate.length);
+
+          if (toCreate.length > 0) {
+            // 🔥 并行调用 LLM 生成所有标题
+            const llmResults = await Promise.all(
+              toCreate.map(({ actionHintPlain }) =>
+                base44.functions.invoke('callDeepSeek', {
+                  prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
+
+        **当前冒险者每日修炼内容：** ${actionHintPlain}
+
+        请为这个每日修炼任务生成**全新的**RPG风格标题（只需要标题，不需要重新评定难度）。
+
+        要求：
+        1. 标题要有变化，不要每天都一样（但核心内容要体现任务本质）
+        2. 格式：【2字类型】+ 7字标题
+        3. 保持任务的核心特征
+
+        只返回标题。`,
+                  response_json_schema: {
+                    type: "object",
+                    properties: {
+                      title: { type: "string" }
+                    },
+                    required: ["title"]
+                  }
+                }).then(res => res.data).catch(err => {
+                  console.error(`LLM生成标题失败: ${actionHintPlain}`, err);
+                  return null;
+                })
+              )
+            );
+
+            // 🔥 并行加密并创建任务
+            await Promise.all(
+              toCreate.map(async ({ actionHintPlain, templateQuest }, index) => {
+                const result = llmResults[index];
+                if (!result) return;
+
+                try {
+                  const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
+                    title: result.title,
+                    actionHint: actionHintPlain
+                  });
+
+                  await base44.entities.Quest.create({
+                    title: encrypted.encryptedTitle,
+                    actionHint: encrypted.encryptedActionHint,
+                    difficulty: templateQuest.difficulty,
+                    rarity: templateQuest.rarity,
+                    date: today,
+                    status: 'todo',
+                    source: 'routine',
+                    isRoutine: true,
+                    originalActionHint: actionHintPlain,
+                    tags: []
+                  });
+                } catch (error) {
+                  console.error(`创建每日修炼任务失败: ${actionHintPlain}`, error);
+                }
+              })
+            );
+
+            batchInvalidateQueries(['quests']);
+          }
+        }
+      } catch (error) {
+        console.error('❌ 运行每日修炼任务步骤失败:', error);
+      }
+    };
+
     // This function contains the actual rollover steps 1-7, independent of the streak break decision
     const executeDayRolloverLogic = async () => {
       console.log('=== 执行其他日更逻辑 (步骤 1-7) ===');

@@ -10,14 +10,6 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { encryptedTitle, encryptedActionHint, encryptedOriginalActionHint } = body;
-
-    // 至少需要一个字段
-    if (!encryptedTitle && !encryptedActionHint && !encryptedOriginalActionHint) {
-      return Response.json({ 
-        error: 'At least one field is required' 
-      }, { status: 400 });
-    }
 
     // 获取加密密钥
     const encryptionKey = Deno.env.get('ENCRYPTION_KEY');
@@ -35,84 +27,71 @@ Deno.serve(async (req) => {
       ['decrypt']
     );
 
-    const result = {};
-
-    // 解密 title（如果提供）
-    if (encryptedTitle) {
+    // 辅助函数：解密单个字段
+    const decryptField = async (encryptedValue) => {
+      if (!encryptedValue) return null;
+      
       try {
-        const titleData = atob(encryptedTitle);
-        const titleIv = new Uint8Array(12);
+        const data = atob(encryptedValue);
+        const iv = new Uint8Array(12);
         for (let i = 0; i < 12; i++) {
-          titleIv[i] = titleData.charCodeAt(i);
+          iv[i] = data.charCodeAt(i);
         }
-        const titleCiphertext = new Uint8Array(titleData.length - 12);
-        for (let i = 0; i < titleData.length - 12; i++) {
-          titleCiphertext[i] = titleData.charCodeAt(i + 12);
+        const ciphertext = new Uint8Array(data.length - 12);
+        for (let i = 0; i < data.length - 12; i++) {
+          ciphertext[i] = data.charCodeAt(i + 12);
         }
         
-        const titleDecrypted = await crypto.subtle.decrypt(
-          { name: 'AES-GCM', iv: titleIv },
+        const decrypted = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv: iv },
           key,
-          titleCiphertext
+          ciphertext
         );
-        result.title = new TextDecoder().decode(titleDecrypted);
+        return new TextDecoder().decode(decrypted);
       } catch (error) {
-        console.error('Failed to decrypt title:', error);
-        result.title = encryptedTitle; // 解密失败时返回原值
+        console.error('Failed to decrypt field:', error);
+        return encryptedValue; // 解密失败时返回原值
       }
-    }
+    };
 
-    // 解密 actionHint（如果提供）
-    if (encryptedActionHint) {
-      try {
-        const actionHintData = atob(encryptedActionHint);
-        const actionHintIv = new Uint8Array(12);
-        for (let i = 0; i < 12; i++) {
-          actionHintIv[i] = actionHintData.charCodeAt(i);
-        }
-        const actionHintCiphertext = new Uint8Array(actionHintData.length - 12);
-        for (let i = 0; i < actionHintData.length - 12; i++) {
-          actionHintCiphertext[i] = actionHintData.charCodeAt(i + 12);
-        }
-        
-        const actionHintDecrypted = await crypto.subtle.decrypt(
-          { name: 'AES-GCM', iv: actionHintIv },
-          key,
-          actionHintCiphertext
-        );
-        result.actionHint = new TextDecoder().decode(actionHintDecrypted);
-      } catch (error) {
-        console.error('Failed to decrypt actionHint:', error);
-        result.actionHint = encryptedActionHint; // 解密失败时返回原值
+    // 辅助函数：解密单个任务对象
+    const decryptSingleQuest = async (quest) => {
+      const result = {};
+      
+      if (quest.encryptedTitle) {
+        result.title = await decryptField(quest.encryptedTitle);
       }
-    }
-
-    // 解密 originalActionHint（如果提供）
-    if (encryptedOriginalActionHint) {
-      try {
-        const originalData = atob(encryptedOriginalActionHint);
-        const originalIv = new Uint8Array(12);
-        for (let i = 0; i < 12; i++) {
-          originalIv[i] = originalData.charCodeAt(i);
-        }
-        const originalCiphertext = new Uint8Array(originalData.length - 12);
-        for (let i = 0; i < originalData.length - 12; i++) {
-          originalCiphertext[i] = originalData.charCodeAt(i + 12);
-        }
-        
-        const originalDecrypted = await crypto.subtle.decrypt(
-          { name: 'AES-GCM', iv: originalIv },
-          key,
-          originalCiphertext
-        );
-        result.originalActionHint = new TextDecoder().decode(originalDecrypted);
-      } catch (error) {
-        console.error('Failed to decrypt originalActionHint:', error);
-        result.originalActionHint = encryptedOriginalActionHint;
+      if (quest.encryptedActionHint) {
+        result.actionHint = await decryptField(quest.encryptedActionHint);
       }
-    }
+      if (quest.encryptedOriginalActionHint) {
+        result.originalActionHint = await decryptField(quest.encryptedOriginalActionHint);
+      }
+      
+      return result;
+    };
 
-    return Response.json(result);
+    // 检查是否为批量处理
+    if (body.encryptedQuests && Array.isArray(body.encryptedQuests)) {
+      // 批量处理：并行解密所有任务
+      const decryptedQuests = await Promise.all(
+        body.encryptedQuests.map(quest => decryptSingleQuest(quest))
+      );
+      return Response.json({ decryptedQuests });
+    } else {
+      // 单个任务处理（保持向后兼容）
+      const { encryptedTitle, encryptedActionHint, encryptedOriginalActionHint } = body;
+      
+      // 至少需要一个字段
+      if (!encryptedTitle && !encryptedActionHint && !encryptedOriginalActionHint) {
+        return Response.json({ 
+          error: 'At least one field is required' 
+        }, { status: 400 });
+      }
+      
+      const result = await decryptSingleQuest(body);
+      return Response.json(result);
+    }
 
   } catch (error) {
     console.error('Decryption error:', error);

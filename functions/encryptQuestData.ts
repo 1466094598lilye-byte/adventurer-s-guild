@@ -10,13 +10,6 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { title, actionHint } = body;
-
-    if (!title || !actionHint) {
-      return Response.json({ 
-        error: 'Missing required fields: title and actionHint' 
-      }, { status: 400 });
-    }
 
     // 获取加密密钥
     const encryptionKey = Deno.env.get('ENCRYPTION_KEY');
@@ -34,37 +27,60 @@ Deno.serve(async (req) => {
       ['encrypt']
     );
 
-    // 加密 title
-    const titleIv = crypto.getRandomValues(new Uint8Array(12));
-    const titleEncrypted = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv: titleIv },
-      key,
-      new TextEncoder().encode(title)
-    );
+    // 辅助函数：加密单个字段
+    const encryptField = async (value) => {
+      if (!value) return null;
+      
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const encrypted = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: iv },
+        key,
+        new TextEncoder().encode(value)
+      );
+      
+      return btoa(
+        String.fromCharCode(...iv) + 
+        String.fromCharCode(...new Uint8Array(encrypted))
+      );
+    };
 
-    // 加密 actionHint
-    const actionHintIv = crypto.getRandomValues(new Uint8Array(12));
-    const actionHintEncrypted = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv: actionHintIv },
-      key,
-      new TextEncoder().encode(actionHint)
-    );
+    // 辅助函数：加密单个任务对象
+    const encryptSingleQuest = async (quest) => {
+      const result = {};
+      
+      if (quest.title) {
+        result.encryptedTitle = await encryptField(quest.title);
+      }
+      if (quest.actionHint) {
+        result.encryptedActionHint = await encryptField(quest.actionHint);
+      }
+      if (quest.originalActionHint) {
+        result.originalActionHint = await encryptField(quest.originalActionHint);
+      }
+      
+      return result;
+    };
 
-    // 转换为 Base64
-    const encryptedTitle = btoa(
-      String.fromCharCode(...titleIv) + 
-      String.fromCharCode(...new Uint8Array(titleEncrypted))
-    );
-
-    const encryptedActionHint = btoa(
-      String.fromCharCode(...actionHintIv) + 
-      String.fromCharCode(...new Uint8Array(actionHintEncrypted))
-    );
-
-    return Response.json({
-      encryptedTitle,
-      encryptedActionHint
-    });
+    // 检查是否为批量处理
+    if (body.quests && Array.isArray(body.quests)) {
+      // 批量处理：并行加密所有任务
+      const encryptedQuests = await Promise.all(
+        body.quests.map(quest => encryptSingleQuest(quest))
+      );
+      return Response.json({ encryptedQuests });
+    } else {
+      // 单个任务处理（保持向后兼容）
+      const { title, actionHint, originalActionHint } = body;
+      
+      if (!title || !actionHint) {
+        return Response.json({ 
+          error: 'Missing required fields: title and actionHint' 
+        }, { status: 400 });
+      }
+      
+      const result = await encryptSingleQuest(body);
+      return Response.json(result);
+    }
 
   } catch (error) {
     console.error('Encryption error:', error);

@@ -134,27 +134,26 @@ export default function QuestBoard() {
         
         const validQuests = allQuests.filter(q => !expiredQuests.find(eq => eq.id === q.id));
 
-        const decryptedQuests = await Promise.all(
-          validQuests.map(async (quest) => {
-            try {
-              const { data } = await base44.functions.invoke('decryptQuestData', {
-                encryptedTitle: quest.title,
-                encryptedActionHint: quest.actionHint
-              });
+        // 批量解密所有任务
+        try {
+          const { data } = await base44.functions.invoke('decryptQuestData', {
+            encryptedQuests: validQuests.map(quest => ({
+              encryptedTitle: quest.title,
+              encryptedActionHint: quest.actionHint
+            }))
+          });
 
-              return {
-                ...quest,
-                title: data.title,
-                actionHint: data.actionHint
-              };
-            } catch (error) {
-              console.error('解密任务失败:', quest.id, error);
-              return quest; 
-            }
-          })
-        );
+          const decryptedQuests = validQuests.map((quest, index) => ({
+            ...quest,
+            title: data.decryptedQuests[index].title,
+            actionHint: data.decryptedQuests[index].actionHint
+          }));
 
-        return decryptedQuests;
+          return decryptedQuests;
+        } catch (error) {
+          console.error('批量解密任务失败:', error);
+          return validQuests; // 解密失败时返回加密的任务
+        }
       } catch (error) {
         console.error('获取任务失败:', error);
         return [];

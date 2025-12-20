@@ -940,19 +940,48 @@ export default function QuestBoard() {
     setIsConfirmingPending(true);
     const loadingAudio = playLoadingSound();
     try {
-      for (const quest of pendingQuests) {
-        await createQuestMutation.mutateAsync({
-          title: quest.title,
-          actionHint: quest.actionHint,
-          difficulty: quest.difficulty,
-          rarity: quest.rarity,
-          date: today,
-          status: 'todo',
-          source: 'text',
-          tags: quest.tags || []
+      // 访客模式：直接批量创建
+      if (!user) {
+        for (const quest of pendingQuests) {
+          addGuestEntity('quests', {
+            title: quest.title,
+            actionHint: quest.actionHint,
+            difficulty: quest.difficulty,
+            rarity: quest.rarity,
+            date: today,
+            status: 'todo',
+            source: 'text',
+            tags: quest.tags || []
+          });
+        }
+      } else {
+        // 登录模式：批量加密后创建
+        const { data: encryptedData } = await base44.functions.invoke('encryptQuestData', {
+          quests: pendingQuests.map(quest => ({
+            title: quest.title,
+            actionHint: quest.actionHint
+          }))
         });
+
+        // 批量创建所有任务
+        await Promise.all(
+          pendingQuests.map(async (quest, index) => {
+            const encrypted = encryptedData.encryptedQuests[index];
+            await base44.entities.Quest.create({
+              title: encrypted.encryptedTitle,
+              actionHint: encrypted.encryptedActionHint,
+              difficulty: quest.difficulty,
+              rarity: quest.rarity,
+              date: today,
+              status: 'todo',
+              source: 'text',
+              tags: quest.tags || []
+            });
+          })
+        );
       }
-      
+
+      batchInvalidateQueries(['quests', 'user']);
       setPendingQuests([]);
       setExpandedPending(null);
       playQuestAddedSound();

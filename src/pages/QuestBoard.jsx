@@ -555,333 +555,72 @@ export default function QuestBoard() {
       }
     };
 
-    // This function contains the actual rollover steps 1-7, independent of the streak break decision
+    // This function contains the actual rollover steps 1-6, independent of the streak break decision
     const executeDayRolloverLogic = async () => {
-      console.log('=== 执行其他日更逻辑 (步骤 1-7) ===');
+      console.log('=== 执行日更逻辑 (步骤 1-6) ===');
 
       try {
-        // 🔥 1. 【最高优先级】处理明日规划任务（创建为今日任务）
-        // 🔧 重新获取最新的用户数据，避免使用过时的缓存数据
-        const freshUser = await base44.auth.me();
-        const nextDayPlanned = freshUser?.nextDayPlannedQuests || [];
-        const lastPlanned = freshUser?.lastPlannedDate;
-
-        console.log('=== 步骤1: 检查明日规划任务 ===');
-        console.log('nextDayPlanned:', nextDayPlanned);
-        console.log('lastPlanned:', lastPlanned);
-        console.log('today:', today);
-        console.log('条件: nextDayPlanned.length > 0 =', nextDayPlanned.length > 0);
-        console.log('条件: lastPlanned存在 =', !!lastPlanned);
-        console.log('条件: lastPlanned < today =', lastPlanned < today);
-
-        if (nextDayPlanned.length > 0 && lastPlanned && lastPlanned < today) {
-          console.log(`✅ 发现 ${nextDayPlanned.length} 项已规划任务，开始创建...`);
-
-          const createdQuestIds = [];
-
-          try {
-            for (const plannedQuest of nextDayPlanned) {
-              console.log('正在创建任务:', plannedQuest);
-
-              const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
-                title: plannedQuest.title,
-                actionHint: plannedQuest.actionHint
-              });
-
-              const createdQuest = await base44.entities.Quest.create({
-                title: encrypted.encryptedTitle,
-                actionHint: encrypted.encryptedActionHint,
-                difficulty: plannedQuest.difficulty,
-                rarity: plannedQuest.rarity,
-                date: today,
-                status: 'todo',
-                source: 'ai',
-                tags: plannedQuest.tags || []
-              });
-
-              createdQuestIds.push(createdQuest.id);
-              console.log('任务创建成功:', createdQuest.id);
-            }
-
-            await base44.auth.updateMe({
-              nextDayPlannedQuests: [],
-              lastPlannedDate: today
-            });
-
-            console.log('✅ 明日规划任务全部创建成功，已清空规划列表');
-
-            batchInvalidateQueries(['quests', 'user']);
-            setToast(t('questboard_toast_planned_quests_loaded', { count: nextDayPlanned.length }));
-            setTimeout(() => setToast(null), 3000);
-          } catch (error) {
-            console.error('❌ 创建规划任务时出错:', error);
-            alert(language === 'zh' 
-              ? `创建规划任务失败：${error.message}，请刷新页面重试` 
-              : `Failed to create planned quests: ${error.message}, please refresh`);
-          }
-        } else {
-          console.log('❌ 没有符合条件的明日规划任务');
-        }
-
-        // 2. 清理7天前的已完成任务（排除大项目任务 + 保护每日修炼模板）
-        console.log('=== 步骤2: 开始清理旧任务 ===');
-        
+        // 计算日期常量
         const sevenDaysAgoDate = new Date();
         sevenDaysAgoDate.setDate(sevenDaysAgoDate.getDate() - 7);
         const sevenDaysAgoStr = format(sevenDaysAgoDate, 'yyyy-MM-dd');
-        
-        const doneQuests = await base44.entities.Quest.filter({ status: 'done' }, '-date', 500);
-        
-        const routineQuestsMap = new Map();
-        for (const quest of doneQuests) {
-          if (quest.isRoutine && quest.originalActionHint) {
-            const existing = routineQuestsMap.get(quest.originalActionHint);
-            if (!existing || new Date(quest.created_date) > new Date(existing.created_date)) {
-              routineQuestsMap.set(quest.originalActionHint, quest);
-            }
+
+        const twoYearsAgo = new Date();
+        twoYearsAgo.setDate(twoYearsAgo.getDate() - 730);
+        const twoYearsAgoStr = format(twoYearsAgo, 'yyyy-MM-dd');
+
+        // 🔥 核心任务：必须顺序执行，用户立即可见
+        console.log('=== 开始执行核心任务 ===');
+
+        // 步骤1: 处理明日规划任务（创建为今日任务）
+        await runNextDayPlannedQuests({ 
+          today, 
+          batchInvalidateQueries, 
+          setToast, 
+          language, 
+          t 
+        });
+
+        // 步骤2: 处理每日修炼任务（自动生成今日任务）
+        await runRoutineQuestsGeneration({ 
+          today, 
+          batchInvalidateQueries 
+        });
+
+        // 步骤3: 处理昨天未完成任务（顺延到今天）
+        await runYesterdayQuestsRollover({ 
+          yesterday, 
+          today, 
+          batchInvalidateQueries, 
+          setToast, 
+          t 
+        });
+
+        console.log('✅ 核心任务执行完成');
+
+        // 🔥 清理任务：延迟执行，不阻塞用户体验
+        console.log('=== 开始异步清理任务 ===');
+
+        setTimeout(async () => {
+          try {
+            // 步骤4: 清理旧宝箱记录
+            await cleanOldChests({ sevenDaysAgoStr });
+
+            // 步骤5: 清理旧任务
+            await cleanOldQuests({ sevenDaysAgoStr });
+
+            // 步骤6: 清理旧大项目
+            await cleanOldLongTermProjects({ 
+              twoYearsAgoStr, 
+              batchInvalidateQueries 
+            });
+
+            console.log('✅ 清理任务执行完成');
+          } catch (error) {
+            console.error('❌ 清理任务执行失败:', error);
           }
-        }
-        
-        const protectedQuestIds = new Set(
-          Array.from(routineQuestsMap.values()).map(q => q.id)
-        );
-        
-        let deletedCount = 0;
-        
-        for (const quest of doneQuests) {
-          if (quest.isLongTermProject) continue;
-          if (protectedQuestIds.has(quest.id)) continue;
-          if (!quest.date) continue;
-          
-          if (quest.date < sevenDaysAgoStr) {
-            await base44.entities.Quest.delete(quest.id);
-            deletedCount++;
-          }
-        }
-        
-        if (deletedCount > 0) {
-          console.log(`✅ 已清理 ${deletedCount} 个7天前的已完成任务`);
-        }
+        }, 100); // 延迟100ms执行清理任务
 
-        // 3. 清理7天前的已开启宝箱记录
-        console.log('=== 步骤3: 开始清理旧宝箱记录 ===');
-        
-        try {
-          const allChests = await base44.entities.DailyChest.filter({ opened: true }, '-date', 200);
-          let deletedChestCount = 0;
-          
-          for (const chest of allChests) {
-            if (!chest.date) continue;
-            if (chest.date < sevenDaysAgoStr) {
-              await base44.entities.DailyChest.delete(chest.id);
-              deletedChestCount++;
-            }
-          }
-          
-          if (deletedChestCount > 0) {
-            console.log(`✅ 已清理 ${deletedChestCount} 个7天前的宝箱记录`);
-          }
-        } catch (error) {
-          console.error('清理宝箱记录时出错:', error);
-        }
-
-        // 4. 处理昨天未完成的任务（顺延到今天）
-        console.log('=== 步骤4: 处理昨天未完成任务 ===');
-        const oldQuests = await base44.entities.Quest.filter({ date: yesterday, status: 'todo' });
-        
-        if (oldQuests.length > 0) {
-          console.log(`发现 ${oldQuests.length} 项昨日未完成任务，开始顺延...`);
-          
-          for (const quest of oldQuests) {
-            if (!quest.isRoutine) {
-              await base44.entities.Quest.update(quest.id, { date: today });
-            }
-          }
-          
-          batchInvalidateQueries(['quests']);
-          const nonRoutineCount = oldQuests.filter(q => !q.isRoutine).length;
-          if (nonRoutineCount > 0) {
-            setToast(t('questboard_toast_yesterday_quests_delayed', { count: nonRoutineCount }));
-            setTimeout(() => setToast(null), 3000);
-          }
-        }
-
-        // 5. 处理每日修炼任务（自动生成今日任务，保持原有评级）
-        console.log('=== 步骤5: 开始处理每日修炼任务 ===');
-
-        // 🔧 重新获取今日任务列表（因为前面可能已经创建了明日规划任务）
-        const todayQuestsForRoutine = await base44.entities.Quest.filter({ date: today });
-        console.log('当前今日任务数量:', todayQuestsForRoutine.length);
-        
-        const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
-
-        if (allRoutineQuests.length > 0) {
-          // 🔥 并行解密所有每日修炼任务
-          const decryptedRoutines = await Promise.all(
-            allRoutineQuests.map(async (quest) => {
-              try {
-                const { data } = await base44.functions.invoke('decryptQuestData', {
-                  encryptedActionHint: quest.actionHint
-                });
-                return { ...quest, decryptedActionHint: data.actionHint };
-              } catch (error) {
-                console.warn(`Failed to decrypt actionHint for routine quest ${quest.id}:`, error);
-                return { ...quest, decryptedActionHint: quest.actionHint };
-              }
-            })
-          );
-
-          const uniqueRoutinesMap = new Map();
-          for (const quest of decryptedRoutines) {
-            const key = quest.decryptedActionHint;
-            if (key) {
-              const effectiveKey = quest.originalActionHint || key;
-              if (!uniqueRoutinesMap.has(effectiveKey) || 
-                  new Date(quest.created_date) > new Date(uniqueRoutinesMap.get(effectiveKey).created_date)) {
-                uniqueRoutinesMap.set(effectiveKey, quest);
-              }
-            }
-          }
-
-          // 🔧 筛选需要创建的任务
-          const toCreate = [];
-          for (const [actionHintPlain, templateQuest] of uniqueRoutinesMap) {
-            const alreadyExists = todayQuestsForRoutine.some(
-              q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === templateQuest.actionHint)
-            );
-            if (!alreadyExists) {
-              toCreate.push({ actionHintPlain, templateQuest });
-            }
-          }
-
-          console.log('需要创建的每日修炼任务数量:', toCreate.length);
-
-          if (toCreate.length > 0) {
-            // 🔥 并行调用 LLM 生成所有标题
-            const llmResults = await Promise.all(
-              toCreate.map(({ actionHintPlain }) =>
-                base44.functions.invoke('callDeepSeek', {
-                  prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
-
-        **当前冒险者每日修炼内容：** ${actionHintPlain}
-
-        请为这个每日修炼任务生成**全新的**RPG风格标题（只需要标题，不需要重新评定难度）。
-
-        要求：
-        1. 标题要有变化，不要每天都一样（但核心内容要体现任务本质）
-        2. 格式：【2字类型】+ 7字标题
-        3. 保持任务的核心特征
-
-        只返回标题。`,
-                  response_json_schema: {
-                    type: "object",
-                    properties: {
-                      title: { type: "string" }
-                    },
-                    required: ["title"]
-                  }
-                }).then(res => res.data).catch(err => {
-                  console.error(`LLM生成标题失败: ${actionHintPlain}`, err);
-                  return null;
-                })
-              )
-            );
-
-            // 🔥 并行加密并创建任务
-            await Promise.all(
-              toCreate.map(async ({ actionHintPlain, templateQuest }, index) => {
-                const result = llmResults[index];
-                if (!result) return;
-
-                try {
-                  const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
-                    title: result.title,
-                    actionHint: actionHintPlain
-                  });
-
-                  await base44.entities.Quest.create({
-                    title: encrypted.encryptedTitle,
-                    actionHint: encrypted.encryptedActionHint,
-                    difficulty: templateQuest.difficulty,
-                    rarity: templateQuest.rarity,
-                    date: today,
-                    status: 'todo',
-                    source: 'routine',
-                    isRoutine: true,
-                    originalActionHint: actionHintPlain,
-                    tags: []
-                  });
-                } catch (error) {
-                  console.error(`创建每日修炼任务失败: ${actionHintPlain}`, error);
-                }
-              })
-            );
-
-            batchInvalidateQueries(['quests']);
-          }
-        }
-
-        // 6. 清理已完成超过2年的大项目及其关联任务
-        console.log('=== 步骤6: 开始清理旧的大项目记录 ===');
-        
-        try {
-          // 计算2年前的日期（730天）
-          const twoYearsAgo = new Date();
-          twoYearsAgo.setDate(twoYearsAgo.getDate() - 730);
-          const twoYearsAgoStr = format(twoYearsAgo, 'yyyy-MM-dd');
-          
-          console.log('📅 2年前日期:', twoYearsAgoStr);
-          
-          // 查询所有大项目
-          const allProjects = await base44.entities.LongTermProject.list();
-          
-          // 筛选出已完成且超过2年的项目
-          const oldProjects = allProjects.filter(project => {
-            return project.status === 'completed' && 
-                   project.completionDate && 
-                   project.completionDate < twoYearsAgoStr;
-          });
-          
-          if (oldProjects.length > 0) {
-            console.log(`🎯 找到 ${oldProjects.length} 个需要清理的旧项目`);
-            
-            let totalQuestsDeleted = 0;
-            let projectsDeleted = 0;
-            
-            // 删除关联的任务和项目本身
-            for (const project of oldProjects) {
-              try {
-                // 查询并删除关联任务 (Updated as per outline)
-                const allQuests = await base44.entities.Quest.list();
-                const relatedQuests = allQuests.filter(q => q.longTermProjectId === project.id);
-                
-                for (const quest of relatedQuests) {
-                  try {
-                    await base44.entities.Quest.delete(quest.id);
-                    totalQuestsDeleted++;
-                  } catch (error) {
-                    console.error(`删除关联任务失败 (ID: ${quest.id}):`, error);
-                  }
-                }
-                
-                // 删除项目本身
-                await base44.entities.LongTermProject.delete(project.id);
-                projectsDeleted++;
-                console.log(`✅ 已清理项目: ${project.projectName} (完成于: ${project.completionDate})`);
-              } catch (error) {
-                console.error(`清理项目失败 (${project.projectName}):`, error);
-              }
-            }
-            
-            console.log(`✅ 大项目清理完成 - 删除 ${projectsDeleted} 个项目，${totalQuestsDeleted} 个关联任务`);
-            batchInvalidateQueries(['hasLongTermQuests', 'quests']); // Invalidate relevant queries
-          } else {
-            console.log('✅ 没有需要清理的旧大项目');
-          }
-        } catch (error) {
-          console.error('清理旧大项目时出错:', error);
-        }
-        
         console.log('=== 日更逻辑执行完成 ===');
       } catch (error) {
         console.error('日更逻辑执行失败:', error);

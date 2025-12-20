@@ -92,6 +92,20 @@ export default function QuestBoard() {
     return () => clearInterval(interval);
   }, []);
 
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch (error) {
+        return null;
+      }
+    },
+    retry: false,
+    staleTime: 10000,
+    refetchOnWindowFocus: false,
+  });
+
   const { data: quests = [], isLoading } = useQuery({
     queryKey: ['quests', today],
     enabled: !!user || user === null,
@@ -166,21 +180,7 @@ export default function QuestBoard() {
     refetchOnWindowFocus: false,
     });
 
-  const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: async () => {
-      try {
-        return await base44.auth.me();
-      } catch (error) {
-        return null;
-      }
-    },
-    retry: false,
-    staleTime: 10000,
-    refetchOnWindowFocus: false,
-  });
-
-  const { data: hasAnyLongTermQuests = false, isLoading: isLoadingLongTermQuests } = useQuery({
+    const { data: hasAnyLongTermQuests = false, isLoading: isLoadingLongTermQuests } = useQuery({
     queryKey: ['hasLongTermQuests'],
     queryFn: async () => {
       console.log('=== 🔍 检查未完成的大项目任务 ===');

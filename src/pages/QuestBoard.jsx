@@ -403,6 +403,34 @@ export default function QuestBoard() {
       }
     };
 
+    // 🔥 辅助函数3: 处理昨天未完成任务
+    const runYesterdayQuestsRollover = async ({ yesterday, today, batchInvalidateQueries, setToast, t }) => {
+      console.log('=== 步骤4: 处理昨天未完成任务 ===');
+      
+      try {
+        const oldQuests = await base44.entities.Quest.filter({ date: yesterday, status: 'todo' });
+        
+        if (oldQuests.length > 0) {
+          console.log(`发现 ${oldQuests.length} 项昨日未完成任务，开始顺延...`);
+          
+          for (const quest of oldQuests) {
+            if (!quest.isRoutine) {
+              await base44.entities.Quest.update(quest.id, { date: today });
+            }
+          }
+          
+          batchInvalidateQueries(['quests']);
+          const nonRoutineCount = oldQuests.filter(q => !q.isRoutine).length;
+          if (nonRoutineCount > 0) {
+            setToast(t('questboard_toast_yesterday_quests_delayed', { count: nonRoutineCount }));
+            setTimeout(() => setToast(null), 3000);
+          }
+        }
+      } catch (error) {
+        console.error('❌ 运行昨日任务顺延步骤失败:', error);
+      }
+    };
+
     // This function contains the actual rollover steps 1-7, independent of the streak break decision
     const executeDayRolloverLogic = async () => {
       console.log('=== 执行其他日更逻辑 (步骤 1-7) ===');

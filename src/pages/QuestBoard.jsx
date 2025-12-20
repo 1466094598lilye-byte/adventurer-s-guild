@@ -455,6 +455,48 @@ export default function QuestBoard() {
       }
     };
 
+    // 🔥 辅助函数5: 清理旧任务
+    const cleanOldQuests = async ({ sevenDaysAgoStr }) => {
+      console.log('=== 步骤2: 开始清理旧任务 ===');
+      
+      try {
+        const doneQuests = await base44.entities.Quest.filter({ status: 'done' }, '-date', 500);
+        
+        const routineQuestsMap = new Map();
+        for (const quest of doneQuests) {
+          if (quest.isRoutine && quest.originalActionHint) {
+            const existing = routineQuestsMap.get(quest.originalActionHint);
+            if (!existing || new Date(quest.created_date) > new Date(existing.created_date)) {
+              routineQuestsMap.set(quest.originalActionHint, quest);
+            }
+          }
+        }
+        
+        const protectedQuestIds = new Set(
+          Array.from(routineQuestsMap.values()).map(q => q.id)
+        );
+        
+        let deletedCount = 0;
+        
+        for (const quest of doneQuests) {
+          if (quest.isLongTermProject) continue;
+          if (protectedQuestIds.has(quest.id)) continue;
+          if (!quest.date) continue;
+          
+          if (quest.date < sevenDaysAgoStr) {
+            await base44.entities.Quest.delete(quest.id);
+            deletedCount++;
+          }
+        }
+        
+        if (deletedCount > 0) {
+          console.log(`✅ 已清理 ${deletedCount} 个7天前的已完成任务`);
+        }
+      } catch (error) {
+        console.error('清理旧任务时出错:', error);
+      }
+    };
+
     // This function contains the actual rollover steps 1-7, independent of the streak break decision
     const executeDayRolloverLogic = async () => {
       console.log('=== 执行其他日更逻辑 (步骤 1-7) ===');

@@ -598,6 +598,9 @@ export default function QuestBoard() {
 
         console.log('✅ 核心任务执行完成');
 
+        // 🔧 核心任务完成后立即关闭加载弹窗
+        setIsDayRolloverInProgress(false);
+
         // 🔥 清理任务：延迟执行，不阻塞用户体验
         console.log('=== 开始异步清理任务 ===');
 
@@ -622,13 +625,12 @@ export default function QuestBoard() {
         }, 100); // 延迟100ms执行清理任务
 
         console.log('=== 日更逻辑执行完成 ===');
-      } catch (error) {
-        console.error('日更逻辑执行失败:', error);
-      } finally {
-        // 🔧 无论成功失败，都关闭加载状态
+        } catch (error) {
+        console.error('❌ 日更逻辑执行失败:', error);
+        // 发生错误时也要关闭加载状态
         setIsDayRolloverInProgress(false);
-      }
-    };
+        }
+        };
 
 
     const handleDayRollover = async () => {

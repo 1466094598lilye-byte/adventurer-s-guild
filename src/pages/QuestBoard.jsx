@@ -232,6 +232,13 @@ export default function QuestBoard() {
         if (nextDayPlanned.length > 0 && lastPlanned && lastPlanned < today) {
           console.log(`✅ 发现 ${nextDayPlanned.length} 项已规划任务，开始创建...`);
 
+          // 🔧 【关键】立即清空规划列表，防止并发重复创建
+          await base44.auth.updateMe({
+            nextDayPlannedQuests: [],
+            lastPlannedDate: today
+          });
+          console.log('✅ 已清空规划列表（防止并发重复）');
+
           const createdQuestIds = [];
 
           try {
@@ -256,14 +263,9 @@ export default function QuestBoard() {
 
               createdQuestIds.push(createdQuest.id);
               console.log('任务创建成功:', createdQuest.id);
-            }
+              }
 
-            await base44.auth.updateMe({
-              nextDayPlannedQuests: [],
-              lastPlannedDate: today
-            });
-
-            console.log('✅ 明日规划任务全部创建成功，已清空规划列表');
+              console.log('✅ 明日规划任务全部创建成功');
 
             batchInvalidateQueries(['quests', 'user']);
             setToast(t('questboard_toast_planned_quests_loaded', { count: nextDayPlanned.length }));

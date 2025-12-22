@@ -48,6 +48,9 @@ export default function QuestBoard() {
   const queryClient = useQueryClient();
   const { language, t } = useLanguage();
 
+  // 🔧 防止并发执行的 ref
+  const isRolloverRunningRef = useRef(false);
+  
   // 检查 localStorage 是否今天已完成日更
   const getRolloverKey = (userId) => `dayRollover_${userId}_${today}`;
   const hasCompletedRolloverToday = (userId) => {
@@ -601,6 +604,13 @@ export default function QuestBoard() {
         // 🔧 核心任务完成后立即关闭加载弹窗
         setIsDayRolloverInProgress(false);
 
+        // 🔧 标记日更完成（服务端 + 本地）
+        await base44.auth.updateMe({
+          lastRolloverCompletedDate: today
+        });
+        markRolloverComplete(currentUser.id);
+        console.log('✅ 日更完成标记已保存（服务端 + 本地）');
+
         // 🔥 清理任务：延迟执行，不阻塞用户体验
         console.log('=== 开始异步清理任务 ===');
 
@@ -627,8 +637,9 @@ export default function QuestBoard() {
         console.log('=== 日更逻辑执行完成 ===');
         } catch (error) {
         console.error('❌ 日更逻辑执行失败:', error);
-        // 发生错误时也要关闭加载状态
+        // 发生错误时也要关闭加载状态和并发锁
         setIsDayRolloverInProgress(false);
+        isRolloverRunningRef.current = false;
         }
         };
 
@@ -646,11 +657,26 @@ export default function QuestBoard() {
         return;
       }
 
-      // 🔥 【最优先】检查是否今天已完成所有日更（包括步骤0），避免重复执行
-      if (hasCompletedRolloverToday(currentUser.id)) {
-        console.log('✅ 今日日更逻辑已全部完成，跳过');
+      // 🔧 【防止并发】如果日更逻辑正在执行中，直接跳过
+      if (isRolloverRunningRef.current) {
+        console.log('⚠️ 日更逻辑正在执行中，跳过重复调用');
         return;
       }
+
+      // 🔥 【跨设备防重复】检查服务端标记，如果今天已完成就跳过
+      if (currentUser.lastRolloverCompletedDate === today) {
+        console.log('✅ 服务端标记显示今日日更已完成（可能在其他设备），跳过');
+        return;
+      }
+
+      // 🔥 【本地防重复】检查 localStorage，如果今天已完成就跳过
+      if (hasCompletedRolloverToday(currentUser.id)) {
+        console.log('✅ 本地标记显示今日日更已完成，跳过');
+        return;
+      }
+
+      // 🔧 标记开始执行
+      isRolloverRunningRef.current = true;
 
       console.log('=== 开始执行日更逻辑 (Initial Check) ===');
 
@@ -761,7 +787,9 @@ export default function QuestBoard() {
       // 立即显示加载弹窗
       setIsDayRolloverInProgress(true);
       await executeDayRolloverLogic(currentUser, currentTodayQuests);
-      markRolloverComplete(currentUser.id);
+
+      // 🔧 执行完成后释放并发锁
+      isRolloverRunningRef.current = false;
       };
 
       // 🔧 无论是否有用户都执行（游客模式下会快速返回并关闭加载状态）

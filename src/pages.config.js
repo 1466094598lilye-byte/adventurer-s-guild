@@ -1,15 +1,17 @@
-import QuestBoard from './pages/QuestBoard';
+import Home from './pages/Home';
 import Journal from './pages/Journal';
-import Treasures from './pages/Treasures';
 import Profile from './pages/Profile';
+import QuestBoard from './pages/QuestBoard';
+import Treasures from './pages/Treasures';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "QuestBoard": QuestBoard,
+    "Home": Home,
     "Journal": Journal,
-    "Treasures": Treasures,
     "Profile": Profile,
+    "QuestBoard": QuestBoard,
+    "Treasures": Treasures,
 }
 
 export const pagesConfig = {

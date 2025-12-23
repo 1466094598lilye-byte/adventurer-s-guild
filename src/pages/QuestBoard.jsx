@@ -431,6 +431,7 @@ export default function QuestBoard() {
         }
       } catch (error) {
         console.error('❌ 运行昨日任务顺延步骤失败:', error);
+        throw error;
       }
     };
 

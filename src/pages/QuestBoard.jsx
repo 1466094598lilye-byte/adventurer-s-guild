@@ -275,6 +275,7 @@ export default function QuestBoard() {
             alert(language === 'zh' 
               ? `创建规划任务失败：${error.message}，请刷新页面重试` 
               : `Failed to create planned quests: ${error.message}, please refresh`);
+            throw error;
           }
         } else {
           console.log('❌ 没有符合条件的明日规划任务');

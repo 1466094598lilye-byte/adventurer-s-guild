@@ -402,6 +402,7 @@ export default function QuestBoard() {
         }
       } catch (error) {
         console.error('❌ 运行每日修炼任务步骤失败:', error);
+        throw error;
       }
     };
 

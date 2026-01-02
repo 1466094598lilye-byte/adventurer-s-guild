@@ -1595,6 +1595,26 @@ export default function QuestBoard() {
           }}
         >
           <div className="flex gap-3 mb-3">
+            <Button
+              onClick={() => {
+                if (canOpenChest) {
+                  handleOpenChest();
+                } else {
+                  setToast(language === 'zh' ? '完成今日所有委托后开启' : 'Complete all quests to unlock');
+                  setTimeout(() => setToast(null), 2000);
+                }
+              }}
+              className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
+              style={{
+                backgroundColor: canOpenChest ? '#4ECDC4' : '#E0E0E0',
+                border: '4px solid #000',
+                boxShadow: '5px 5px 0px #000',
+                opacity: canOpenChest ? 1 : 0.6
+              }}
+            >
+              <span className="text-3xl">📦</span>
+            </Button>
+
             <Input
               type="text"
               placeholder={t('questboard_input_placeholder')}
@@ -1827,75 +1847,55 @@ export default function QuestBoard() {
           </div>
         )}
 
-        <div className="mb-6 space-y-3">
-          <Button
-            onClick={handleOpenChest}
-            disabled={!canOpenChest}
-            className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
+        {/* 规划明日委托按钮 */}
+        {user && (nextDayPlannedCount > 0 || canShowPlanningButton) && (
+          <div 
+            className="mb-6 p-4"
             style={{
-              backgroundColor: canOpenChest ? '#FFE66D' : '#E0E0E0',
-              color: canOpenChest ? '#000' : '#999',
+              backgroundColor: '#C44569',
               border: '4px solid #000',
-              boxShadow: '6px 6px 0px #000',
-              opacity: canOpenChest ? 1 : 0.6
+              boxShadow: '6px 6px 0px #000'
             }}
           >
-            📦 {canOpenChest 
-              ? (language === 'zh' ? '开启今日宝箱' : 'Open Daily Chest')
-              : (language === 'zh' ? '今日宝箱（完成所有委托后开启）' : 'Daily Chest (Complete all quests to unlock)')
-            }
-          </Button>
+            {nextDayPlannedCount > 0 && (
+              <Button
+                onClick={handleOpenPlanning}
+                className="w-full py-3 font-black uppercase flex items-center justify-center gap-2 mb-3"
+                style={{
+                  backgroundColor: '#FFE66D',
+                  border: '3px solid #000',
+                  boxShadow: '4px 4px 0px #000'
+                }}
+              >
+                <CalendarIcon className="w-5 h-5" strokeWidth={3} />
+                {t('questboard_planned_quests')} {nextDayPlannedCount} {t('common_items')}{language === 'zh' ? '委托' : ' quests'}
+              </Button>
+            )}
 
-          {/* 规划明日委托按钮 - 移到宝箱按钮下方 */}
-          {user && (nextDayPlannedCount > 0 || canShowPlanningButton) && (
-            <div 
-              className="p-4"
-              style={{
-                backgroundColor: '#C44569',
-                border: '4px solid #000',
-                boxShadow: '6px 6px 0px #000'
-              }}
-            >
-              {nextDayPlannedCount > 0 && (
-                <Button
-                  onClick={handleOpenPlanning}
-                  className="w-full py-3 font-black uppercase flex items-center justify-center gap-2 mb-3"
-                  style={{
-                    backgroundColor: '#FFE66D',
-                    border: '3px solid #000',
-                    boxShadow: '4px 4px 0px #000'
-                  }}
-                >
-                  <CalendarIcon className="w-5 h-5" strokeWidth={3} />
-                  {t('questboard_planned_quests')} {nextDayPlannedCount} {t('common_items')}{language === 'zh' ? '委托' : ' quests'}
-                </Button>
-              )}
+            {canShowPlanningButton && (
+              <Button
+                onClick={handleOpenPlanning}
+                className="w-full py-3 font-black uppercase flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: '#FFE66D',
+                  border: '3px solid #000',
+                  boxShadow: '4px 4px 0px #000'
+                }}
+              >
+                <CalendarIcon className="w-5 h-5" strokeWidth={3} />
+                {t('questboard_plan_tomorrow')}
+              </Button>
+            )}
 
-              {canShowPlanningButton && (
-                <Button
-                  onClick={handleOpenPlanning}
-                  className="w-full py-3 font-black uppercase flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: '#FFE66D',
-                    border: '3px solid #000',
-                    boxShadow: '4px 4px 0px #000'
-                  }}
-                >
-                  <CalendarIcon className="w-5 h-5" strokeWidth={3} />
-                  {t('questboard_plan_tomorrow')}
-                </Button>
-              )}
-
-              {!canShowPlanningButton && nextDayPlannedCount === 0 && user?.lastPlannedDate !== today && (
-                <p className="text-center text-xs font-bold text-white mt-2">
-                  💡 {language === 'zh' 
-                    ? '晚上9点后可规划明日任务（或完成今日所有任务后自动弹出）' 
-                    : 'Plan tomorrow\'s quests after 9 PM (or automatically after completing all today\'s quests)'}
-                </p>
-              )}
-            </div>
-          )}
-        </div>
+            {!canShowPlanningButton && nextDayPlannedCount === 0 && user?.lastPlannedDate !== today && (
+              <p className="text-center text-xs font-bold text-white mt-2">
+                💡 {language === 'zh' 
+                  ? '晚上9点后可规划明日任务（或完成今日所有任务后自动弹出）' 
+                  : 'Plan tomorrow\'s quests after 9 PM (or automatically after completing all today\'s quests)'}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="flex gap-3 mb-4">
           {['all', 'todo', 'done'].map(f => (

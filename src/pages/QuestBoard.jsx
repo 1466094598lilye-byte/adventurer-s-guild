@@ -1599,6 +1599,9 @@ export default function QuestBoard() {
               onClick={() => {
                 if (canOpenChest) {
                   handleOpenChest();
+                } else if (todayChest?.opened) {
+                  setToast(language === 'zh' ? '今天已经开过宝箱了，明天再来' : 'Chest already opened today, come back tomorrow');
+                  setTimeout(() => setToast(null), 2000);
                 } else {
                   setToast(language === 'zh' ? '完成今日所有委托后开启' : 'Complete all quests to unlock');
                   setTimeout(() => setToast(null), 2000);

@@ -1593,7 +1593,7 @@ export default function QuestBoard() {
             boxShadow: '6px 6px 0px #000'
           }}
         >
-          <div className="flex gap-3 mb-3 items-center">
+          <div className="flex gap-3 mb-3">
             <Button
               onClick={() => {
                 if (canOpenChest) {
@@ -1606,7 +1606,7 @@ export default function QuestBoard() {
                   setTimeout(() => setToast(null), 2000);
                 }
               }}
-              className="flex-shrink-0 w-20 h-20 flex items-center justify-center font-black"
+              className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
               style={{
                 backgroundColor: canOpenChest ? '#4ECDC4' : '#E0E0E0',
                 border: '4px solid #000',
@@ -1614,7 +1614,7 @@ export default function QuestBoard() {
                 opacity: canOpenChest ? 1 : 0.6
               }}
             >
-              <Gift className="w-[60px] h-[60px]" strokeWidth={3} style={{ color: '#FFF' }} />
+              <Gift className="w-8 h-8" strokeWidth={3} style={{ color: '#FFF' }} />
             </Button>
 
             <Input
@@ -1639,7 +1639,7 @@ export default function QuestBoard() {
             <Button
               onClick={handleTextSubmit}
               disabled={isProcessing || !textInput.trim()}
-              className="flex-shrink-0 w-20 h-20 flex items-center justify-center font-black"
+              className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
               style={{
                 backgroundColor: '#C44569',
                 border: '4px solid #000',
@@ -1648,9 +1648,9 @@ export default function QuestBoard() {
               }}
             >
               {isProcessing ? (
-                <Loader2 className="w-[60px] h-[60px] animate-spin" style={{ color: '#FFF' }} />
+                <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#FFF' }} />
               ) : (
-                <Sparkles className="w-[60px] h-[60px]" strokeWidth={3} style={{ color: '#FFF', fill: 'none' }} />
+                <Sparkles className="w-8 h-8" strokeWidth={3} style={{ color: '#FFF', fill: 'none' }} />
               )}
             </Button>
           </div>

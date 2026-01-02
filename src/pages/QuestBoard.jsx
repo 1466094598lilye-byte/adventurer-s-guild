@@ -234,8 +234,7 @@ export default function QuestBoard() {
 
           // 🔧 【关键】立即清空规划列表，防止并发重复创建
           await base44.auth.updateMe({
-            nextDayPlannedQuests: [],
-            lastPlannedDate: today
+            nextDayPlannedQuests: []
           });
           console.log('✅ 已清空规划列表（防止并发重复）');
 

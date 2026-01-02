@@ -1593,7 +1593,7 @@ export default function QuestBoard() {
             boxShadow: '6px 6px 0px #000'
           }}
         >
-          <div className="flex gap-3 mb-3">
+          <div className="flex gap-3 mb-3 items-center">
             <Button
               onClick={() => {
                 if (canOpenChest) {
@@ -1606,7 +1606,7 @@ export default function QuestBoard() {
                   setTimeout(() => setToast(null), 2000);
                 }
               }}
-              className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
+              className="flex-shrink-0 w-20 h-20 flex items-center justify-center font-black"
               style={{
                 backgroundColor: canOpenChest ? '#4ECDC4' : '#E0E0E0',
                 border: '4px solid #000',
@@ -1639,7 +1639,7 @@ export default function QuestBoard() {
             <Button
               onClick={handleTextSubmit}
               disabled={isProcessing || !textInput.trim()}
-              className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
+              className="flex-shrink-0 w-20 h-20 flex items-center justify-center font-black"
               style={{
                 backgroundColor: '#C44569',
                 border: '4px solid #000',

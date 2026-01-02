@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Filter, Loader2, Sparkles, Coffee, Briefcase, ChevronDown, ChevronUp, Check, Plus, Calendar as CalendarIcon } from 'lucide-react';
+import { Filter, Loader2, Sparkles, Coffee, Briefcase, ChevronDown, ChevronUp, Check, Plus, Calendar as CalendarIcon, Gift } from 'lucide-react';
 import QuestCard from '../components/quest/QuestCard';
 import PraiseDialog from '../components/quest/PraiseDialog';
 import ChestOpening from '../components/treasure/ChestOpening';
@@ -1612,7 +1612,7 @@ export default function QuestBoard() {
                 opacity: canOpenChest ? 1 : 0.6
               }}
             >
-              <span className="text-3xl">📦</span>
+              <Gift className="w-8 h-8" strokeWidth={3} style={{ color: '#FFF' }} />
             </Button>
 
             <Input

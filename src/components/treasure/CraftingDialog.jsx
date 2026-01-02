@@ -85,7 +85,8 @@ export default function CraftingDialog({ isOpen, onClose, userLoot, onCraftSucce
     try {
       const { data: result } = await base44.functions.invoke('craftLoot', {
         lootIds: selectedLoot.map(item => item.id),
-        targetRarity: targetRarity
+        targetRarity: targetRarity,
+        language: language
       });
 
       if (result.success) {

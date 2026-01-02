@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { lootIds, targetRarity } = await req.json();
+    const { lootIds, targetRarity, language } = await req.json();
 
     // Validate input
     if (!lootIds || !Array.isArray(lootIds) || !targetRarity) {
@@ -74,12 +74,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Get user's language preference
-    const browserLang = req.headers.get('accept-language') || '';
-    const language = browserLang.toLowerCase().includes('zh') ? 'zh' : 'en';
+    // Use language from frontend or fallback to browser language
+    const userLanguage = language || (() => {
+      const browserLang = req.headers.get('accept-language') || '';
+      return browserLang.toLowerCase().includes('zh') ? 'zh' : 'en';
+    })();
 
     // Generate new loot with LLM
-    const { prompt, nameRange, descRange } = generatePrompt(targetRarity, language);
+    const { prompt, nameRange, descRange } = generatePrompt(targetRarity, userLanguage);
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt: prompt,

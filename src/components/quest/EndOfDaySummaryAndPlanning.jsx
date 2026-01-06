@@ -54,24 +54,21 @@ export default function EndOfDaySummaryAndPlanning({
 
   const loadRoutineQuests = async () => {
     try {
-      // 获取所有isRoutine为true的Quest实体，作为每日修炼任务模板
-      const routineTemplates = await base44.entities.Quest.filter({ 
-        isRoutine: true
-      }, '-updated_date', 100);
+      const today = format(new Date(), 'yyyy-MM-dd');
+      
+      // 只获取今天已经生成的例行任务
+      const todayRoutineQuests = await base44.entities.Quest.filter({ 
+        isRoutine: true,
+        date: today,
+        source: 'routine'
+      }, '-created_date', 100);
       
       // 解密
-      const decryptedTemplates = await decryptQuests(routineTemplates);
+      const decryptedQuests = await decryptQuests(todayRoutineQuests);
       
-      // 基于唯一ID去重（使用Map确保每个ID只出现一次）
-      const uniqueTemplatesMap = new Map();
-      decryptedTemplates.forEach(template => {
-        uniqueTemplatesMap.set(template.id, template);
-      });
-      
-      const uniqueTemplates = Array.from(uniqueTemplatesMap.values());
-      setRoutineQuests(uniqueTemplates);
+      setRoutineQuests(decryptedQuests);
     } catch (error) {
-      console.error('加载每日修炼任务模板失败:', error);
+      console.error('加载每日修炼任务失败:', error);
     }
   };
 

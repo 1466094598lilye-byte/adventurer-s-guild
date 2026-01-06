@@ -291,9 +291,11 @@ export default function QuestBoard() {
      * @param {string} params.today - 今天的日期 (YYYY-MM-DD)
      * @param {Function} params.batchInvalidateQueries - 批量刷新查询的函数
      * @param {Array} params.todayQuests - 今日已有的任务列表
+     * @param {Function} params.setToast - 设置 Toast 提示的函数
+     * @param {Function} params.t - 翻译函数
      * @returns {Promise<Object>} 返回操作统计 { updated: number, deleted: number, created: number }
      */
-    const runRoutineQuestsGeneration = async ({ today, batchInvalidateQueries, todayQuests }) => {
+    const runRoutineQuestsGeneration = async ({ today, batchInvalidateQueries, todayQuests, setToast, t }) => {
       console.log('=== 步骤5: 开始处理每日修炼任务 ===');
 
       // 初始化操作计数器
@@ -564,18 +566,52 @@ export default function QuestBoard() {
               })
             );
 
-          batchInvalidateQueries(['quests']);
           createdCount = toCreate.length;
-        }
-      } catch (error) {
-        console.error('❌ 运行每日修炼任务步骤失败:', error);
-        throw error;
-      }
+          }
+          } catch (error) {
+          console.error('❌ 运行每日修炼任务步骤失败:', error);
+          throw error;
+          }
 
-      // 返回操作统计
-      console.log(`✅ 每日修炼任务处理完成 - 更新: ${updatedCount}, 删除: ${deletedCount}, 创建: ${createdCount}`);
-      return { updated: updatedCount, deleted: deletedCount, created: createdCount };
-    };
+          // ========================================
+          // 步骤 5.5: 更新缓存和 UI 提示
+          // ========================================
+          console.log('步骤 5.5: 刷新缓存和显示提示...');
+
+          // 统一刷新查询缓存
+          batchInvalidateQueries(['quests']);
+
+          // 如果有更新、删除或创建操作，显示 Toast 提示
+          if (updatedCount > 0 || deletedCount > 0 || createdCount > 0) {
+          const messages = [];
+          if (updatedCount > 0) {
+          messages.push(language === 'zh' 
+            ? `更新 ${updatedCount} 项` 
+            : `Updated ${updatedCount}`);
+          }
+          if (deletedCount > 0) {
+          messages.push(language === 'zh' 
+            ? `删除 ${deletedCount} 项` 
+            : `Deleted ${deletedCount}`);
+          }
+          if (createdCount > 0) {
+          messages.push(language === 'zh' 
+            ? `新增 ${createdCount} 项` 
+            : `Created ${createdCount}`);
+          }
+
+          const toastMessage = language === 'zh'
+          ? `✅ 每日修炼任务已同步：${messages.join('、')}`
+          : `✅ Daily routine quests synced: ${messages.join(', ')}`;
+
+          setToast(toastMessage);
+          setTimeout(() => setToast(null), 3000);
+          }
+
+          // 返回操作统计
+          console.log(`✅ 每日修炼任务处理完成 - 更新: ${updatedCount}, 删除: ${deletedCount}, 创建: ${createdCount}`);
+          return { updated: updatedCount, deleted: deletedCount, created: createdCount };
+          };
 
     // 🔥 辅助函数3: 处理昨天未完成任务
     const runYesterdayQuestsRollover = async ({ yesterday, today, batchInvalidateQueries, setToast, t, yesterdayQuests }) => {
@@ -761,7 +797,9 @@ export default function QuestBoard() {
         await runRoutineQuestsGeneration({ 
           today, 
           batchInvalidateQueries,
-          todayQuests: currentTodayQuests
+          todayQuests: currentTodayQuests,
+          setToast,
+          t
         });
 
         // 步骤3: 处理昨天未完成任务（顺延到今天）

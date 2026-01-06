@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
         return new TextDecoder().decode(decrypted);
       } catch (error) {
         console.error('Failed to decrypt field:', error);
-        return encryptedValue; // 解密失败时返回原值
+        return null; // 解密失败时返回 null，便于前端识别
       }
     };
 

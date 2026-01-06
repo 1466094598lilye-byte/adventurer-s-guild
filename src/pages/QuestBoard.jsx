@@ -355,20 +355,20 @@ export default function QuestBoard() {
         const todayQuestsForRoutine = todayQuests;
         console.log('当前今日任务数量:', todayQuestsForRoutine.length);
 
-          // 🔧 筛选需要创建的任务
-          const toCreate = [];
-          for (const [actionHintPlain, templateQuest] of uniqueRoutinesMap) {
-            const alreadyExists = todayQuestsForRoutine.some(
-              q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === templateQuest.actionHint)
-            );
-            if (!alreadyExists) {
-              toCreate.push({ actionHintPlain, templateQuest });
-            }
+        // 🔧 筛选需要创建的任务
+        const toCreate = [];
+        for (const [actionHintPlain, templateQuest] of activeTemplatesMap) {
+          const alreadyExists = todayQuestsForRoutine.some(
+            q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === templateQuest.actionHint)
+          );
+          if (!alreadyExists) {
+            toCreate.push({ actionHintPlain, templateQuest });
           }
+        }
 
-          console.log('需要创建的每日修炼任务数量:', toCreate.length);
+        console.log('需要创建的每日修炼任务数量:', toCreate.length);
 
-          if (toCreate.length > 0) {
+        if (toCreate.length > 0) {
             // 🔥 并行调用 LLM 生成所有标题
             const llmResults = await Promise.all(
               toCreate.map(({ actionHintPlain }) =>

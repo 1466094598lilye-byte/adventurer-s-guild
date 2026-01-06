@@ -60,12 +60,25 @@ Deno.serve(async (req) => {
     const questIdsToDelete = questsToDelete.map(q => q.id);
     console.log('Quest IDs to delete:', questIdsToDelete);
 
-    // TODO: Delete old versions
+    // Delete old versions using service role
+    if (questIdsToDelete.length > 0) {
+      console.log(`Deleting ${questIdsToDelete.length} old routine quest versions...`);
+      
+      for (const questId of questIdsToDelete) {
+        await base44.asServiceRole.entities.Quest.delete(questId);
+      }
+      
+      console.log('Cleanup completed successfully');
+    } else {
+      console.log('No old quests to delete');
+    }
 
     return Response.json({ 
       success: true,
-      message: `Found ${routineQuests.length} routine quests`,
-      foundCount: routineQuests.length
+      message: `Cleanup completed. Deleted ${questIdsToDelete.length} old routine quest versions.`,
+      totalRoutineQuests: routineQuests.length,
+      groupsFound: groupCount,
+      deletedCount: questIdsToDelete.length
     });
   } catch (error) {
     console.error('Cleanup error:', error);

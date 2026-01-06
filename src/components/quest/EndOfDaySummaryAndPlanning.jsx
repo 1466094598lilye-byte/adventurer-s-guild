@@ -62,14 +62,10 @@ export default function EndOfDaySummaryAndPlanning({
       // 解密
       const decryptedTemplates = await decryptQuests(routineTemplates);
       
-      // 去重：同一个originalActionHint只保留最新的一个（以updated_date为准）
+      // 基于唯一ID去重（使用Map确保每个ID只出现一次）
       const uniqueTemplatesMap = new Map();
       decryptedTemplates.forEach(template => {
-        const key = template.originalActionHint || template.actionHint;
-        if (!uniqueTemplatesMap.has(key) || 
-            new Date(template.updated_date) > new Date(uniqueTemplatesMap.get(key).updated_date)) {
-          uniqueTemplatesMap.set(key, template);
-        }
+        uniqueTemplatesMap.set(template.id, template);
       });
       
       const uniqueTemplates = Array.from(uniqueTemplatesMap.values());

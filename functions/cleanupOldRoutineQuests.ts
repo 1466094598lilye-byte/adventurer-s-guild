@@ -18,7 +18,21 @@ Deno.serve(async (req) => {
     
     console.log(`Found ${routineQuests.length} routine quests`);
 
-    // TODO: Group by originalActionHint
+    // Group by originalActionHint
+    console.log('Grouping quests by originalActionHint...');
+    const groupedQuests = {};
+    
+    for (const quest of routineQuests) {
+      const key = quest.originalActionHint || 'no_hint';
+      if (!groupedQuests[key]) {
+        groupedQuests[key] = [];
+      }
+      groupedQuests[key].push(quest);
+    }
+    
+    const groupCount = Object.keys(groupedQuests).length;
+    console.log(`Grouped into ${groupCount} unique originalActionHint groups`);
+
     // TODO: Identify latest template in each group
     // TODO: Delete old versions
 

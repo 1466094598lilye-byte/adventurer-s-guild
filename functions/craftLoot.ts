@@ -157,6 +157,11 @@ function generatePrompt(rarity, language) {
 
 稀有度：${rarity}（${config.context}）
 
+⚠️ **核心要求 - 必须生成全新的独特物品**：
+1. **绝对禁止**复用示例中的名称或描述
+2. 每次必须创造**完全不同**的新物品
+3. 发挥想象力，创造独特的幻想道具
+
 **重要提示**：这是通过合成低级材料铸造而成的宝物，请在描述中体现"熔炼"、"升华"、"铸造"、"淬炼"等合成相关的概念。
 
 要求：
@@ -164,10 +169,10 @@ function generatePrompt(rarity, language) {
 2. 简介：${config.descLength}，必须包含合成相关的背景故事（如：由XXX材料熔炼而成、经过淬炼升华、在铸造工坊锻造等）
 3. 选择合适的emoji作为图标
 
-示例：
+格式参考示例（仅供格式参考，**不要复用这些内容**）：
 "${config.nameExample}" / "${config.descExample}"
 
-请生成（必须在描述中体现合成/铸造过程）：`,
+**重要提醒**：请生成与示例完全不同的全新道具，发挥创造力！必须在描述中体现合成/铸造过程。`,
       nameRange: config.nameLength,
       descRange: config.descLength
     };
@@ -203,6 +208,11 @@ function generatePrompt(rarity, language) {
 
 Rarity: ${rarity} (${config.context})
 
+⚠️ **Core Requirement - Must Generate Completely Unique Item**:
+1. **Absolutely forbidden** to reuse names or descriptions from examples
+2. Must create **entirely different** new items each time
+3. Use your imagination to create unique fantasy treasures
+
 **Important**: This treasure was forged through crafting/smelting lower-tier materials. The description MUST reflect crafting concepts like "forged from", "smelted", "tempered", "ascended through crafting", etc.
 
 Requirements:
@@ -210,10 +220,10 @@ Requirements:
 2. Description: ${config.descLength}, MUST include crafting backstory (e.g., forged from XXX materials, tempered in the forge, ascended through smelting, etc.)
 3. Choose appropriate emoji as icon
 
-Example:
+Format Reference Example (**Do NOT reuse these contents**):
 "${config.nameExample}" / "${config.descExample}"
 
-Generate (MUST include crafting/forging process in description):`,
+**Important**: Generate completely new items different from examples. Be creative! MUST include crafting/forging process in description.`,
       nameRange: config.nameLength,
       descRange: config.descLength
     };

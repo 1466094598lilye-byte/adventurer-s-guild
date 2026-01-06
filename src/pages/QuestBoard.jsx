@@ -429,19 +429,18 @@ export default function QuestBoard() {
               })
             );
 
-            batchInvalidateQueries(['quests']);
-            createdCount = toCreate.length;
-            }
-            }
-            } catch (error) {
-            console.error('❌ 运行每日修炼任务步骤失败:', error);
-            throw error;
-            }
+          batchInvalidateQueries(['quests']);
+          createdCount = toCreate.length;
+        }
+      } catch (error) {
+        console.error('❌ 运行每日修炼任务步骤失败:', error);
+        throw error;
+      }
 
-            // 返回操作统计
-            console.log(`✅ 每日修炼任务处理完成 - 更新: ${updatedCount}, 删除: ${deletedCount}, 创建: ${createdCount}`);
-            return { updated: updatedCount, deleted: deletedCount, created: createdCount };
-            };
+      // 返回操作统计
+      console.log(`✅ 每日修炼任务处理完成 - 更新: ${updatedCount}, 删除: ${deletedCount}, 创建: ${createdCount}`);
+      return { updated: updatedCount, deleted: deletedCount, created: createdCount };
+    };
 
     // 🔥 辅助函数3: 处理昨天未完成任务
     const runYesterdayQuestsRollover = async ({ yesterday, today, batchInvalidateQueries, setToast, t, yesterdayQuests }) => {

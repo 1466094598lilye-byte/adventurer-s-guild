@@ -285,8 +285,21 @@ export default function QuestBoard() {
     };
 
     // 🔥 辅助函数2: 处理每日修炼任务
+    /**
+     * 处理每日修炼任务的生成、更新和删除
+     * @param {Object} params - 参数对象
+     * @param {string} params.today - 今天的日期 (YYYY-MM-DD)
+     * @param {Function} params.batchInvalidateQueries - 批量刷新查询的函数
+     * @param {Array} params.todayQuests - 今日已有的任务列表
+     * @returns {Promise<Object>} 返回操作统计 { updated: number, deleted: number, created: number }
+     */
     const runRoutineQuestsGeneration = async ({ today, batchInvalidateQueries, todayQuests }) => {
       console.log('=== 步骤5: 开始处理每日修炼任务 ===');
+
+      // 初始化操作计数器
+      let updatedCount = 0;
+      let deletedCount = 0;
+      let createdCount = 0;
 
       try {
         const todayQuestsForRoutine = todayQuests;
@@ -397,13 +410,18 @@ export default function QuestBoard() {
             );
 
             batchInvalidateQueries(['quests']);
-          }
-        }
-      } catch (error) {
-        console.error('❌ 运行每日修炼任务步骤失败:', error);
-        throw error;
-      }
-    };
+            createdCount = toCreate.length;
+            }
+            }
+            } catch (error) {
+            console.error('❌ 运行每日修炼任务步骤失败:', error);
+            throw error;
+            }
+
+            // 返回操作统计
+            console.log(`✅ 每日修炼任务处理完成 - 更新: ${updatedCount}, 删除: ${deletedCount}, 创建: ${createdCount}`);
+            return { updated: updatedCount, deleted: deletedCount, created: createdCount };
+            };
 
     // 🔥 辅助函数3: 处理昨天未完成任务
     const runYesterdayQuestsRollover = async ({ yesterday, today, batchInvalidateQueries, setToast, t, yesterdayQuests }) => {

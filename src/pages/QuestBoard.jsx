@@ -302,38 +302,58 @@ export default function QuestBoard() {
       let createdCount = 0;
 
       try {
+        // ========================================
+        // 步骤 5.1: 获取所有活跃的例行任务模板
+        // ========================================
+        console.log('步骤 5.1: 获取并解密所有活跃的例行任务模板...');
+
+        // 获取所有标记为 isRoutine: true 的任务（这些是模板）
+        const allRoutineTemplates = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
+        console.log(`找到 ${allRoutineTemplates.length} 个例行任务模板`);
+
+        // 并行解密所有模板的 actionHint
+        const decryptedTemplates = await Promise.all(
+          allRoutineTemplates.map(async (template) => {
+            try {
+              const { data } = await base44.functions.invoke('decryptQuestData', {
+                encryptedActionHint: template.actionHint
+              });
+              return { 
+                ...template, 
+                decryptedActionHint: data.actionHint 
+              };
+            } catch (error) {
+              console.warn(`解密模板失败 (ID: ${template.id}):`, error);
+              // 解密失败时使用原始加密值（fallback）
+              return { 
+                ...template, 
+                decryptedActionHint: template.actionHint 
+              };
+            }
+          })
+        );
+
+        // 构建活跃模板 Map: originalActionHint -> 最新的模板
+        // 如果同一个 originalActionHint 有多个模板，保留最新创建的那个
+        const activeTemplatesMap = new Map();
+        for (const template of decryptedTemplates) {
+          const key = template.decryptedActionHint;
+          if (!key) continue;
+
+          // 使用 originalActionHint 作为唯一标识（如果没有则用 decryptedActionHint）
+          const templateKey = template.originalActionHint || key;
+
+          // 如果该键已存在，比较创建时间，保留最新的
+          if (!activeTemplatesMap.has(templateKey) || 
+              new Date(template.created_date) > new Date(activeTemplatesMap.get(templateKey).created_date)) {
+            activeTemplatesMap.set(templateKey, template);
+          }
+        }
+
+        console.log(`整理后得到 ${activeTemplatesMap.size} 个唯一的活跃模板`);
+
         const todayQuestsForRoutine = todayQuests;
         console.log('当前今日任务数量:', todayQuestsForRoutine.length);
-        
-        const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
-
-        if (allRoutineQuests.length > 0) {
-          // 🔥 并行解密所有每日修炼任务
-          const decryptedRoutines = await Promise.all(
-            allRoutineQuests.map(async (quest) => {
-              try {
-                const { data } = await base44.functions.invoke('decryptQuestData', {
-                  encryptedActionHint: quest.actionHint
-                });
-                return { ...quest, decryptedActionHint: data.actionHint };
-              } catch (error) {
-                console.warn(`Failed to decrypt actionHint for routine quest ${quest.id}:`, error);
-                return { ...quest, decryptedActionHint: quest.actionHint };
-              }
-            })
-          );
-
-          const uniqueRoutinesMap = new Map();
-          for (const quest of decryptedRoutines) {
-            const key = quest.decryptedActionHint;
-            if (key) {
-              const effectiveKey = quest.originalActionHint || key;
-              if (!uniqueRoutinesMap.has(effectiveKey) || 
-                  new Date(quest.created_date) > new Date(uniqueRoutinesMap.get(effectiveKey).created_date)) {
-                uniqueRoutinesMap.set(effectiveKey, quest);
-              }
-            }
-          }
 
           // 🔧 筛选需要创建的任务
           const toCreate = [];

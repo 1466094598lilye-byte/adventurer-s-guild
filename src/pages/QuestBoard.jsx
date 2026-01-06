@@ -352,6 +352,89 @@ export default function QuestBoard() {
 
         console.log(`整理后得到 ${activeTemplatesMap.size} 个唯一的活跃模板`);
 
+        // ========================================
+        // 步骤 5.2: 识别并更新今日已存在的过时例行任务
+        // ========================================
+        console.log('步骤 5.2: 检查并更新过时的例行任务...');
+        
+        const todayRoutineQuests = todayQuests.filter(q => q.isRoutine && q.source === 'routine');
+        console.log(`找到 ${todayRoutineQuests.length} 个今日例行任务`);
+
+        for (const todayQuest of todayRoutineQuests) {
+          const questKey = todayQuest.originalActionHint;
+          if (!questKey) {
+            console.warn(`任务 ${todayQuest.id} 缺少 originalActionHint，跳过`);
+            continue;
+          }
+
+          // 检查此任务对应的模板是否还存在
+          const template = activeTemplatesMap.get(questKey);
+          if (!template) {
+            // 模板不存在，稍后在步骤 5.3 中会删除此任务
+            continue;
+          }
+
+          // 比较任务内容是否与模板一致
+          const questActionHint = todayQuest.actionHint; // 已解密
+          const templateActionHint = template.decryptedActionHint;
+
+          // 如果 actionHint 不同，说明模板被修改了，需要更新今日任务
+          if (questActionHint !== templateActionHint) {
+            console.log(`任务 ${todayQuest.id} 内容已过时，准备更新...`);
+            console.log(`  旧内容: ${questActionHint}`);
+            console.log(`  新内容: ${templateActionHint}`);
+
+            try {
+              // 重新生成标题（因为内容变了）
+              const { data: newTitleResult } = await base44.functions.invoke('callDeepSeek', {
+                prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
+
+**当前冒险者每日修炼内容：** ${templateActionHint}
+
+请为这个每日修炼任务生成**全新的**RPG风格标题（只需要标题，不需要重新评定难度）。
+
+要求：
+1. 标题要有变化，不要每天都一样（但核心内容要体现任务本质）
+2. 格式：【2字类型】+ 7字标题
+3. 保持任务的核心特征
+
+只返回标题。`,
+                response_json_schema: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" }
+                  },
+                  required: ["title"]
+                }
+              });
+
+              // 加密新内容
+              const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
+                title: newTitleResult.title,
+                actionHint: templateActionHint
+              });
+
+              // 更新任务
+              await base44.entities.Quest.update(todayQuest.id, {
+                title: encrypted.encryptedTitle,
+                actionHint: encrypted.encryptedActionHint,
+                difficulty: template.difficulty,
+                rarity: template.rarity,
+                originalActionHint: templateActionHint
+              });
+
+              updatedCount++;
+              console.log(`✅ 任务 ${todayQuest.id} 已更新`);
+            } catch (error) {
+              console.error(`更新任务 ${todayQuest.id} 失败:`, error);
+            }
+          } else {
+            console.log(`任务 ${todayQuest.id} 内容与模板一致，无需更新`);
+          }
+        }
+
+        console.log(`步骤 5.2 完成 - 更新了 ${updatedCount} 个过时任务`);
+
         const todayQuestsForRoutine = todayQuests;
         console.log('当前今日任务数量:', todayQuestsForRoutine.length);
 

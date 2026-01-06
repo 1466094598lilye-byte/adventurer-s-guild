@@ -203,25 +203,30 @@ export function getTreasurePrompt(language, rarity) {
 
 稀有度：${rarity}（${config.context}）
 
+⚠️ **核心要求 - 必须生成全新的独特物品**：
+1. **绝对禁止**复用示例中的名称或描述
+2. 每次必须创造**完全不同**的新物品
+3. 发挥想象力，创造独特的幻想道具
+
 要求：
 1. 名称：${config.nameLength}，${rarity === 'Legendary' ? '要有史诗感和传奇色彩' : rarity === 'Epic' ? '要有力量感和华丽感' : rarity === 'Rare' ? '要有些神秘和特别' : '简洁朴素'}
 2. 简介：${config.descLength}，RPG风味，${rarity === 'Legendary' ? '详细描述其传说来历、神话力量、历史影响，展现其改变命运的至高地位' : rarity === 'Epic' ? '详细描述其史诗来历、强大能力、象征意义，展现其英雄级价值' : rarity === 'Rare' ? '描述其特殊之处、神秘背景、实用价值' : '简单描述其平凡用途和见证意义'}
 3. 选择合适的emoji作为图标
 
-示例：
-- Common (${rarityConfig.Common.nameLength} / ${rarityConfig.Common.descLength}): 
+参考示例（仅供格式参考，**不要复用这些内容**）：
+- Common 格式示例 (${rarityConfig.Common.nameLength} / ${rarityConfig.Common.descLength}): 
   "${rarityConfig.Common.nameExample}" / "${rarityConfig.Common.descExample}"
 
-- Rare (${rarityConfig.Rare.nameLength} / ${rarityConfig.Rare.descLength}):
+- Rare 格式示例 (${rarityConfig.Rare.nameLength} / ${rarityConfig.Rare.descLength}):
   "${rarityConfig.Rare.nameExample}" / "${rarityConfig.Rare.descExample}"
 
-- Epic (${rarityConfig.Epic.nameLength} / ${rarityConfig.Epic.descLength}):
+- Epic 格式示例 (${rarityConfig.Epic.nameLength} / ${rarityConfig.Epic.descLength}):
   "${rarityConfig.Epic.nameExample}" / "${rarityConfig.Epic.descExample}"
 
-- Legendary (${rarityConfig.Legendary.nameLength} / ${rarityConfig.Legendary.descLength}):
+- Legendary 格式示例 (${rarityConfig.Legendary.nameLength} / ${rarityConfig.Legendary.descLength}):
   "${rarityConfig.Legendary.nameExample}" / "${rarityConfig.Legendary.descExample}"
 
-请生成：`,
+**重要提醒**：请生成与示例完全不同的全新道具，发挥创造力！`,
       nameRange: config.nameLength,
       descRange: config.descLength
     };
@@ -264,25 +269,30 @@ export function getTreasurePrompt(language, rarity) {
 
 Rarity: ${rarity} (${config.context})
 
+⚠️ **Core Requirement - Must Generate Completely Unique Item**:
+1. **Absolutely forbidden** to reuse names or descriptions from examples
+2. Must create **entirely different** new items each time
+3. Use your imagination to create unique fantasy treasures
+
 Requirements:
 1. Name: ${config.nameLength}, ${rarity === 'Legendary' ? 'epic and legendary feel' : rarity === 'Epic' ? 'powerful and magnificent feel' : rarity === 'Rare' ? 'mysterious and special' : 'simple and plain'}
 2. Description: ${config.descLength}, RPG flavor, ${rarity === 'Legendary' ? 'detail its legendary origin, mythic powers, historical impact, showing its supreme status in changing destiny' : rarity === 'Epic' ? 'detail its epic origin, powerful abilities, symbolic meaning, showing its heroic-level value' : rarity === 'Rare' ? 'describe its special features, mysterious background, practical value' : 'simply describe its mundane purpose and witnessing significance'}
 3. Choose appropriate emoji as icon
 
-Examples:
-- Common (${rarityConfig.Common.nameLength} / ${rarityConfig.Common.descLength}): 
+Format Reference Examples (**Do NOT reuse these contents**):
+- Common format example (${rarityConfig.Common.nameLength} / ${rarityConfig.Common.descLength}): 
   "${rarityConfig.Common.nameExample}" / "${rarityConfig.Common.descExample}"
 
-- Rare (${rarityConfig.Rare.nameLength} / ${rarityConfig.Rare.descLength}):
+- Rare format example (${rarityConfig.Rare.nameLength} / ${rarityConfig.Rare.descLength}):
   "${rarityConfig.Rare.nameExample}" / "${rarityConfig.Rare.descExample}"
 
-- Epic (${rarityConfig.Epic.nameLength} / ${rarityConfig.Epic.descLength}):
+- Epic format example (${rarityConfig.Epic.nameLength} / ${rarityConfig.Epic.descLength}):
   "${rarityConfig.Epic.nameExample}" / "${rarityConfig.Epic.descExample}"
 
-- Legendary (${rarityConfig.Legendary.nameLength} / ${rarityConfig.Legendary.descLength}):
+- Legendary format example (${rarityConfig.Legendary.nameLength} / ${rarityConfig.Legendary.descLength}):
   "${rarityConfig.Legendary.nameExample}" / "${rarityConfig.Legendary.descExample}"
 
-Generate:`,
+**Important**: Generate completely new items different from examples. Be creative!`,
       nameRange: config.nameLength,
       descRange: config.descLength
     };

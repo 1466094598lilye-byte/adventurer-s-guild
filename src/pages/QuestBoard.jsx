@@ -435,6 +435,38 @@ export default function QuestBoard() {
 
         console.log(`步骤 5.2 完成 - 更新了 ${updatedCount} 个过时任务`);
 
+        // ========================================
+        // 步骤 5.3: 识别并删除废弃的例行任务
+        // ========================================
+        console.log('步骤 5.3: 检查并删除废弃的例行任务...');
+
+        for (const todayQuest of todayRoutineQuests) {
+          const questKey = todayQuest.originalActionHint;
+          if (!questKey) {
+            console.warn(`任务 ${todayQuest.id} 缺少 originalActionHint，跳过`);
+            continue;
+          }
+
+          // 检查此任务对应的模板是否还存在于活跃模板列表中
+          const templateExists = activeTemplatesMap.has(questKey);
+
+          if (!templateExists) {
+            console.log(`任务 ${todayQuest.id} 的模板已不存在，准备删除...`);
+            console.log(`  任务内容: ${todayQuest.actionHint}`);
+            console.log(`  原始标识: ${questKey}`);
+
+            try {
+              await base44.entities.Quest.delete(todayQuest.id);
+              deletedCount++;
+              console.log(`✅ 已删除废弃任务 ${todayQuest.id}`);
+            } catch (error) {
+              console.error(`删除任务 ${todayQuest.id} 失败:`, error);
+            }
+          }
+        }
+
+        console.log(`步骤 5.3 完成 - 删除了 ${deletedCount} 个废弃任务`);
+
         const todayQuestsForRoutine = todayQuests;
         console.log('当前今日任务数量:', todayQuestsForRoutine.length);
 

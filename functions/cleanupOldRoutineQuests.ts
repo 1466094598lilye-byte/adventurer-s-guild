@@ -33,7 +33,29 @@ Deno.serve(async (req) => {
     const groupCount = Object.keys(groupedQuests).length;
     console.log(`Grouped into ${groupCount} unique originalActionHint groups`);
 
-    // TODO: Identify latest template in each group
+    // Identify latest template in each group and collect old quests to delete
+    console.log('Identifying latest templates and marking old versions for deletion...');
+    const questsToDelete = [];
+    
+    for (const [hint, quests] of Object.entries(groupedQuests)) {
+      if (quests.length <= 1) {
+        // Only one quest in this group, no cleanup needed
+        continue;
+      }
+      
+      // Sort by created_date descending (newest first)
+      quests.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+      
+      // Keep the first one (newest), mark the rest for deletion
+      const latestQuest = quests[0];
+      const oldQuests = quests.slice(1);
+      
+      console.log(`Group "${hint}": Keeping quest ${latestQuest.id}, marking ${oldQuests.length} old versions for deletion`);
+      questsToDelete.push(...oldQuests);
+    }
+    
+    console.log(`Total quests to delete: ${questsToDelete.length}`);
+
     // TODO: Delete old versions
 
     return Response.json({ 

@@ -167,10 +167,19 @@ export default function QuestBoard() {
             actionHint: data.decryptedQuests[index].actionHint
           }));
 
-          return decryptedQuests;
+          // 过滤掉解密失败的任务（title 或 actionHint 为 null）
+          const successfullyDecryptedQuests = decryptedQuests.filter(quest => 
+            quest.title !== null && quest.actionHint !== null
+          );
+
+          if (successfullyDecryptedQuests.length < decryptedQuests.length) {
+            console.warn(`过滤掉 ${decryptedQuests.length - successfullyDecryptedQuests.length} 个解密失败的任务`);
+          }
+
+          return successfullyDecryptedQuests;
         } catch (error) {
           console.error('批量解密任务失败:', error);
-          return validQuests; // 解密失败时返回加密的任务
+          return []; // 解密失败时返回空数组，不显示加密数据
         }
       } catch (error) {
         console.error('获取任务失败:', error);

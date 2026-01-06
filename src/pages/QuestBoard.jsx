@@ -467,14 +467,34 @@ export default function QuestBoard() {
 
         console.log(`步骤 5.3 完成 - 删除了 ${deletedCount} 个废弃任务`);
 
-        const todayQuestsForRoutine = todayQuests;
-        console.log('当前今日任务数量:', todayQuestsForRoutine.length);
+        // ========================================
+        // 步骤 5.4: 生成今日缺失的例行任务
+        // ========================================
+        console.log('步骤 5.4: 检查并生成缺失的例行任务...');
 
-        // 🔧 筛选需要创建的任务
+        // 重新获取今日任务列表（因为可能有任务被更新或删除）
+        const refreshedTodayQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
+        console.log(`重新获取今日任务，当前数量: ${refreshedTodayQuests.length}`);
+
+        // 解密今日任务以便比对
+        const { data: decryptedRefreshedData } = await base44.functions.invoke('decryptQuestData', {
+          encryptedQuests: refreshedTodayQuests.map(quest => ({
+            encryptedTitle: quest.title,
+            encryptedActionHint: quest.actionHint
+          }))
+        });
+
+        const decryptedRefreshedQuests = refreshedTodayQuests.map((quest, index) => ({
+          ...quest,
+          title: decryptedRefreshedData.decryptedQuests[index].title,
+          actionHint: decryptedRefreshedData.decryptedQuests[index].actionHint
+        }));
+
+        // 筛选需要创建的任务
         const toCreate = [];
         for (const [actionHintPlain, templateQuest] of activeTemplatesMap) {
-          const alreadyExists = todayQuestsForRoutine.some(
-            q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === templateQuest.actionHint)
+          const alreadyExists = decryptedRefreshedQuests.some(
+            q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === actionHintPlain)
           );
           if (!alreadyExists) {
             toCreate.push({ actionHintPlain, templateQuest });

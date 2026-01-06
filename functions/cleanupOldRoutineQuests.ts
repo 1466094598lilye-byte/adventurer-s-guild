@@ -56,6 +56,10 @@ Deno.serve(async (req) => {
     
     console.log(`Total quests to delete: ${questsToDelete.length}`);
 
+    // Collect IDs of quests to delete
+    const questIdsToDelete = questsToDelete.map(q => q.id);
+    console.log('Quest IDs to delete:', questIdsToDelete);
+
     // TODO: Delete old versions
 
     return Response.json({ 

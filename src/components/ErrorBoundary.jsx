@@ -8,6 +8,10 @@ class ErrorBoundary extends React.Component {
   }
 
   static getDerivedStateFromError(error) {
+    // Ignore WebSocket errors - they're expected and handled gracefully
+    if (error.message?.includes('WebSocket') || error.message?.includes('websocket')) {
+      return { hasError: false, error: null };
+    }
     return { hasError: true, error };
   }
 

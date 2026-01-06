@@ -59,8 +59,7 @@ export default function EndOfDaySummaryAndPlanning({
       // 只获取今天已经生成的例行任务
       const todayRoutineQuests = await base44.entities.Quest.filter({ 
         isRoutine: true,
-        date: today,
-        source: 'routine'
+        date: today
       }, '-created_date', 100);
       
       // 解密

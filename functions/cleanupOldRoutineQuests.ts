@@ -61,14 +61,29 @@ Deno.serve(async (req) => {
     console.log('Quest IDs to delete:', questIdsToDelete);
 
     // Delete old versions using service role
+    let deletedCount = 0;
+    let failedCount = 0;
+    const failedIds = [];
+    
     if (questIdsToDelete.length > 0) {
       console.log(`Deleting ${questIdsToDelete.length} old routine quest versions...`);
       
       for (const questId of questIdsToDelete) {
-        await base44.asServiceRole.entities.Quest.delete(questId);
+        try {
+          await base44.asServiceRole.entities.Quest.delete(questId);
+          deletedCount++;
+          console.log(`✓ Deleted quest ${questId}`);
+        } catch (error) {
+          failedCount++;
+          failedIds.push(questId);
+          console.error(`✗ Failed to delete quest ${questId}:`, error.message);
+        }
       }
       
-      console.log('Cleanup completed successfully');
+      console.log(`Cleanup summary: ${deletedCount} deleted, ${failedCount} failed`);
+      if (failedCount > 0) {
+        console.error('Failed quest IDs:', failedIds);
+      }
     } else {
       console.log('No old quests to delete');
     }

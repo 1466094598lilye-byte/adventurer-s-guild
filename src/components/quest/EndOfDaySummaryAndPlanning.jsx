@@ -3,6 +3,7 @@ import { X, Loader2, Sparkles, ChevronDown, ChevronUp, Plus, Repeat } from 'luci
 import { base44 } from '@/api/base44Client';
 import { useLanguage } from '@/components/LanguageContext';
 import { getCelebrationMessagePrompt, getPlanningTaskPrompt } from '@/components/prompts';
+import { format } from 'date-fns';
 
 export default function EndOfDaySummaryAndPlanning({ 
   showCelebration, 
@@ -53,25 +54,19 @@ export default function EndOfDaySummaryAndPlanning({
 
   const loadRoutineQuests = async () => {
     try {
-      const allRoutineQuests = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
+      const today = format(new Date(), 'yyyy-MM-dd');
+      
+      // 只获取今天已经生成的例行任务
+      const todayRoutineQuests = await base44.entities.Quest.filter({ 
+        isRoutine: true,
+        date: today,
+        source: 'routine'
+      }, '-created_date', 100);
       
       // 解密
-      const decryptedQuests = await decryptQuests(allRoutineQuests);
+      const decryptedQuests = await decryptQuests(todayRoutineQuests);
       
-      const uniqueRoutinesMap = new Map();
-      decryptedQuests.forEach(quest => {
-        const key = quest.originalActionHint;
-        if (key && !uniqueRoutinesMap.has(key)) {
-          uniqueRoutinesMap.set(key, {
-            title: quest.title,
-            actionHint: quest.actionHint,
-            difficulty: quest.difficulty,
-            rarity: quest.rarity
-          });
-        }
-      });
-      
-      setRoutineQuests(Array.from(uniqueRoutinesMap.values()));
+      setRoutineQuests(decryptedQuests);
     } catch (error) {
       console.error('加载每日修炼任务失败:', error);
     }

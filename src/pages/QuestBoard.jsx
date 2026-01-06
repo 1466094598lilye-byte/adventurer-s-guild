@@ -335,10 +335,10 @@ export default function QuestBoard() {
               };
             } catch (error) {
               console.warn(`解密模板失败 (ID: ${template.id}):`, error);
-              // 解密失败时使用原始加密值（fallback）
+              // 解密失败时返回 null
               return { 
                 ...template, 
-                decryptedActionHint: template.actionHint 
+                decryptedActionHint: null 
               };
             }
           })
@@ -349,7 +349,13 @@ export default function QuestBoard() {
         const activeTemplatesMap = new Map();
         for (const template of decryptedTemplates) {
           const key = template.decryptedActionHint;
-          if (!key) continue;
+          // 跳过解密失败（null）或空的模板
+          if (!key) {
+            if (key === null) {
+              console.warn(`跳过解密失败的模板 (ID: ${template.id})`);
+            }
+            continue;
+          }
 
           // 使用 originalActionHint 作为唯一标识（如果没有则用 decryptedActionHint）
           const templateKey = template.originalActionHint || key;

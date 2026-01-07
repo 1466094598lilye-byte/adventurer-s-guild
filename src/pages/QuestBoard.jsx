@@ -95,6 +95,56 @@ export default function QuestBoard() {
     return () => clearInterval(interval);
   }, []);
 
+  // 🧹 自动清理旧数据（每次打开任务板时执行）
+  useEffect(() => {
+    // 只有登录用户才执行清理
+    if (!user) return;
+
+    // 防重复：一天只执行一次
+    const cleanupKey = `dataCleanup_${user.id}_${today}`;
+    const hasCleanedToday = localStorage.getItem(cleanupKey) === 'done';
+    
+    if (hasCleanedToday) {
+      console.log('✅ 今日已清理过数据，跳过');
+      return;
+    }
+
+    // 异步静默清理，不阻塞UI
+    const cleanupData = async () => {
+      try {
+        console.log('🧹 开始自动清理旧数据...');
+
+        // 并行调用两个清理函数
+        const [chestsResult, questsResult] = await Promise.allSettled([
+          base44.functions.invoke('cleanOldDailyChests', {}),
+          base44.functions.invoke('cleanOldCompletedQuests', {})
+        ]);
+
+        if (chestsResult.status === 'fulfilled') {
+          console.log('✅ 宝箱清理完成:', chestsResult.value.data);
+        } else {
+          console.warn('⚠️ 宝箱清理失败:', chestsResult.reason);
+        }
+
+        if (questsResult.status === 'fulfilled') {
+          console.log('✅ 任务清理完成:', questsResult.value.data);
+        } else {
+          console.warn('⚠️ 任务清理失败:', questsResult.reason);
+        }
+
+        // 标记今日已清理
+        localStorage.setItem(cleanupKey, 'done');
+        console.log('✅ 数据清理完成');
+      } catch (error) {
+        console.error('❌ 数据清理出错:', error);
+      }
+    };
+
+    // 延迟3秒执行，避免影响页面加载
+    const timer = setTimeout(cleanupData, 3000);
+    return () => clearTimeout(timer);
+  }, [user, today]);
+
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: async () => {

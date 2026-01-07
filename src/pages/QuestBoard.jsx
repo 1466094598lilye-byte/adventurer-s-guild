@@ -166,20 +166,6 @@ export default function QuestBoard() {
     return () => clearTimeout(timer);
   }, [user, today]);
 
-  const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: async () => {
-      try {
-        return await base44.auth.me();
-      } catch (error) {
-        return null;
-      }
-    },
-    retry: false,
-    staleTime: 10000,
-    refetchOnWindowFocus: false,
-  });
-
   const { data: quests = [], isLoading } = useQuery({
     queryKey: ['quests', today],
     enabled: !!user || user === null,

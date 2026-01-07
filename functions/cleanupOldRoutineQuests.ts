@@ -28,6 +28,11 @@ Deno.serve(async (req) => {
       });
       
       console.log(`✅ Found ${routineQuests.length} routine quests`);
+    } catch (error) {
+      console.error('❌ Error fetching quests:', error.message);
+      console.error('❌ Error stack:', error.stack);
+      throw error;
+    }
 
     // Group by originalActionHint
     console.log('Grouping quests by originalActionHint...');

@@ -6,9 +6,13 @@ Deno.serve(async (req) => {
 
     // 定时任务运行：直接使用 service role，无需用户认证
     console.log('Starting cleanup: Querying all routine quests...');
-    const routineQuests = await base44.asServiceRole.entities.Quest.filter({ 
-      isRoutine: true 
-    }, '-created_date', 10000); // Large limit to get all routine quests
+    
+    // 先获取所有Quest
+    const allQuests = await base44.asServiceRole.entities.Quest.list('-created_date', 10000);
+    console.log(`Total quests in database: ${allQuests.length}`);
+    
+    // 在内存中过滤出 isRoutine 的任务
+    const routineQuests = allQuests.filter(q => q.isRoutine === true);
     
     console.log(`Found ${routineQuests.length} routine quests`);
 

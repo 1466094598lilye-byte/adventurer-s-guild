@@ -4,11 +4,12 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // 定时任务运行：直接使用 service role，无需用户认证
-    console.log('Starting cleanup: Querying all routine quests...');
+    // 定时任务运行：测试不同的查询方法
+    console.log('🔍 Testing different query methods...');
     
-    // 先获取所有Quest
-    const allQuests = await base44.asServiceRole.entities.Quest.list('-created_date', 10000);
+    // 方法1: 尝试用 service role 的 filter 而不是 list
+    console.log('Method 1: service role filter with empty query');
+    const allQuests = await base44.asServiceRole.entities.Quest.filter({}, '-created_date', 10000);
     console.log(`✅ Total quests fetched: ${allQuests.length}`);
     
     // 检查前几条数据

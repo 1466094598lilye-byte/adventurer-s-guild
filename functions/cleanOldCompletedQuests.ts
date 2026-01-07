@@ -73,20 +73,21 @@ Deno.serve(async (req) => {
       
       console.log(`🛡️ 保护 ${routineTemplateIds.size} 个 routine 模板不被删除`);
       
-      // 🔥 步骤2: 过滤出需要删除的任务（已完成、超过48小时、非大项目、非 routine 模板）
+      // 🔥 步骤2: 过滤出需要删除的任务（已完成、超过7天、非大项目、非 routine 模板）
       oldQuests = allQuests.filter(quest => {
         // 必须是已完成状态
         if (quest.status !== 'done') {
           return false;
         }
         
-        // 必须有更新时间
-        if (!quest.updated_date) {
+        // 必须有任务日期
+        if (!quest.date) {
           return false;
         }
         
-        // 检查是否超过7天
-        if (quest.updated_date >= cutoffTime) {
+        // 检查任务日期是否超过7天（使用 date 字段而不是 updated_date）
+        const questDate = new Date(quest.date + 'T00:00:00Z');
+        if (questDate >= sevenDaysAgo) {
           return false;
         }
         
@@ -109,7 +110,7 @@ Deno.serve(async (req) => {
         console.log('');
         console.log('📋 需要删除的Quest列表：');
         oldQuests.forEach((quest, index) => {
-          console.log(`  ${index + 1}. ${quest.title || quest.actionHint || '未命名'} (更新于: ${quest.updated_date}, ID: ${quest.id})`);
+          console.log(`  ${index + 1}. ${quest.title || quest.actionHint || '未命名'} (任务日期: ${quest.date}, ID: ${quest.id})`);
         });
       } else {
         console.log('✅ 没有找到需要删除的Quest！');
@@ -148,7 +149,7 @@ Deno.serve(async (req) => {
           id: quest.id,
           title: quest.title,
           actionHint: quest.actionHint,
-          updated_date: quest.updated_date
+          date: quest.date
         });
         console.log(`✅ 删除Quest: ${quest.title || quest.actionHint || '未命名'} (ID: ${quest.id})`);
       } catch (error) {

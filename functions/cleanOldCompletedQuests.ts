@@ -1,9 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
- * 清理超过48小时且标记为已完成的Quest记录
+ * 清理超过7天且标记为已完成的Quest记录
  * 
- * 安全机制：只删除当前用户自己创建的Quest
+ * 安全机制：
+ * - 只删除当前用户自己创建的Quest
+ * - 保护每个routine任务的最新已完成版本作为模板
+ * - 保护所有长期项目任务
+ * 
  * 建议：每天运行一次
  */
 Deno.serve(async (req) => {
@@ -28,15 +32,15 @@ Deno.serve(async (req) => {
     
     console.log('✅ 用户认证通过:', user.email);
     
-    // 计算"48小时前"的时间
+    // 计算"7天前"的时间
     const now = new Date();
-    const fortyEightHoursAgo = new Date(now);
-    fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     
-    const cutoffTime = fortyEightHoursAgo.toISOString();
+    const cutoffTime = sevenDaysAgo.toISOString();
     
     console.log('📅 当前时间:', now.toISOString());
-    console.log('📅 48小时前:', cutoffTime);
+    console.log('📅 7天前:', cutoffTime);
     console.log('🔍 将删除所有 status=done 且 updated_date < ' + cutoffTime + ' 的Quest');
     
     // 查询需要删除的Quest（使用用户身份查询，自动遵守RLS）
@@ -81,7 +85,7 @@ Deno.serve(async (req) => {
           return false;
         }
         
-        // 检查是否超过48小时
+        // 检查是否超过7天
         if (quest.updated_date >= cutoffTime) {
           return false;
         }

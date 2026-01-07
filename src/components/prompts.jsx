@@ -163,7 +163,7 @@ Please write acknowledgment (around 50 words) **completely as ${role.nameEn}**:`
   }
 }
 
-export function getTreasurePrompt(language, rarity) {
+export function getTreasurePrompt(language, rarity, randomSeed = Math.floor(Math.random() * 100000)) {
   if (language === 'zh') {
     const rarityConfig = {
       'Common': {
@@ -202,11 +202,13 @@ export function getTreasurePrompt(language, rarity) {
       prompt: `生成一个RPG风格的战利品道具。
 
 稀有度：${rarity}（${config.context}）
+🎲 创意随机种子：${randomSeed}
 
 ⚠️ **核心要求 - 必须生成全新的独特物品**：
-1. **绝对禁止**复用示例中的名称或描述
-2. 每次必须创造**完全不同**的新物品
-3. 发挥想象力，创造独特的幻想道具
+1. **使用随机种子${randomSeed}作为创意灵感来源**，确保每次生成都不同
+2. **绝对禁止**复用示例中的名称或描述
+3. 每次必须创造**完全不同**的新物品
+4. 发挥想象力，创造独特的幻想道具
 
 要求：
 1. 名称：${config.nameLength}，${rarity === 'Legendary' ? '要有史诗感和传奇色彩' : rarity === 'Epic' ? '要有力量感和华丽感' : rarity === 'Rare' ? '要有些神秘和特别' : '简洁朴素'}
@@ -268,11 +270,13 @@ export function getTreasurePrompt(language, rarity) {
       prompt: `Generate an RPG-style treasure item.
 
 Rarity: ${rarity} (${config.context})
+🎲 Creative Random Seed: ${randomSeed}
 
 ⚠️ **Core Requirement - Must Generate Completely Unique Item**:
-1. **Absolutely forbidden** to reuse names or descriptions from examples
-2. Must create **entirely different** new items each time
-3. Use your imagination to create unique fantasy treasures
+1. **Use random seed ${randomSeed} as creative inspiration source** to ensure each generation is different
+2. **Absolutely forbidden** to reuse names or descriptions from examples
+3. Must create **entirely different** new items each time
+4. Use your imagination to create unique fantasy treasures
 
 Requirements:
 1. Name: ${config.nameLength}, ${rarity === 'Legendary' ? 'epic and legendary feel' : rarity === 'Epic' ? 'powerful and magnificent feel' : rarity === 'Rare' ? 'mysterious and special' : 'simple and plain'}

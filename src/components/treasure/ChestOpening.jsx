@@ -38,7 +38,8 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
           else if (rarityRoll < 98) rarity = 'Epic';
           else rarity = 'Legendary';
 
-          const { prompt } = getTreasurePrompt(language, rarity);
+          const randomSeed = Math.floor(Math.random() * 100000) + Date.now() % 100000;
+          const { prompt } = getTreasurePrompt(language, rarity, randomSeed);
 
           const { data: result } = await base44.functions.invoke('callDeepSeek', {
             prompt: prompt,
@@ -112,7 +113,8 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
         else if (rarityRoll < 98) rarity = 'Epic';
         else rarity = 'Legendary';
 
-        const { prompt } = getTreasurePrompt(language, rarity);
+        const randomSeed = Math.floor(Math.random() * 100000) + Date.now() % 100000;
+        const { prompt } = getTreasurePrompt(language, rarity, randomSeed);
 
         const { data: result } = await base44.functions.invoke('callDeepSeek', {
           prompt: prompt,

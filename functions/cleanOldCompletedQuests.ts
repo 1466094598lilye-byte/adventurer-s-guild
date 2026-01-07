@@ -49,10 +49,35 @@ Deno.serve(async (req) => {
       
       console.log('✅ 查询到用户的所有Quest数量:', allQuests.length);
       
-      // 在内存中过滤出已完成且超过48小时的Quest
-      oldQuests = allQuests.filter(quest => {
-        // 必须是已完成状态
-        if (quest.status !== 'done') {
+      // 第1步：找出所有已完成的任务
+      const doneQuests = allQuests.filter(q => q.status === 'done');
+      console.log(`✅ 已完成任务总数: ${doneQuests.length}`);
+      
+      // 第2步：保护每日修炼任务的最新版本
+      const routineQuestsMap = new Map();
+      for (const quest of doneQuests) {
+        if (quest.isRoutine && quest.originalActionHint) {
+          const existing = routineQuestsMap.get(quest.originalActionHint);
+          if (!existing || new Date(quest.created_date) > new Date(existing.created_date)) {
+            routineQuestsMap.set(quest.originalActionHint, quest);
+          }
+        }
+      }
+      
+      const protectedQuestIds = new Set(
+        Array.from(routineQuestsMap.values()).map(q => q.id)
+      );
+      console.log(`🛡️ 保护 ${protectedQuestIds.size} 个每日修炼任务的最新版本`);
+      
+      // 第3步：过滤出需要删除的任务（排除保护的routine quests和大项目任务）
+      oldQuests = doneQuests.filter(quest => {
+        // 保护大项目任务
+        if (quest.isLongTermProject) {
+          return false;
+        }
+        
+        // 保护每日修炼任务的最新版本
+        if (protectedQuestIds.has(quest.id)) {
           return false;
         }
         

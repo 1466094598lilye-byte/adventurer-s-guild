@@ -74,6 +74,8 @@ Deno.serve(async (req) => {
       console.log(`🛡️ 保护 ${routineTemplateIds.size} 个 routine 模板不被删除`);
       
       // 🔥 步骤2: 过滤出需要删除的任务（已完成、超过7天、非大项目、非 routine 模板）
+      console.log('\n🔍 开始过滤待删除任务...');
+      
       oldQuests = allQuests.filter(quest => {
         // 必须是已完成状态
         if (quest.status !== 'done') {
@@ -82,6 +84,7 @@ Deno.serve(async (req) => {
         
         // 必须有任务日期
         if (!quest.date) {
+          console.log(`⚠️ 任务 ${quest.id} 没有date字段`);
           return false;
         }
         
@@ -93,14 +96,17 @@ Deno.serve(async (req) => {
         
         // 保护大项目任务
         if (quest.isLongTermProject) {
+          console.log(`🛡️ 保护大项目任务: ${quest.title || quest.actionHint} (${quest.date})`);
           return false;
         }
         
         // 保护 routine 模板（每个 originalActionHint 最新的已完成任务）
         if (routineTemplateIds.has(quest.id)) {
+          console.log(`🛡️ 保护routine模板: ${quest.title || quest.actionHint} (${quest.date})`);
           return false;
         }
         
+        console.log(`✓ 待删除: ${quest.title || quest.actionHint} (${quest.date}, isRoutine=${quest.isRoutine})`);
         return true;
       });
       

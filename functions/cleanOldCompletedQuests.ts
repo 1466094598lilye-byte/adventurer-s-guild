@@ -1,0 +1,153 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+
+/**
+ * 清理超过48小时且标记为已完成的Quest记录
+ * 
+ * 安全机制：只删除当前用户自己创建的Quest
+ * 建议：每天运行一次
+ */
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    console.log('=== 开始清理已完成的Quest记录 ===');
+    console.log('执行时间:', new Date().toISOString());
+    
+    // 验证用户身份
+    let user;
+    try {
+      user = await base44.auth.me();
+    } catch (error) {
+      console.error('用户认证失败:', error.message);
+      return Response.json({
+        success: false,
+        error: 'Unauthorized: Authentication required',
+        message: '需要登录才能执行清理操作'
+      }, { status: 401 });
+    }
+    
+    console.log('✅ 用户认证通过:', user.email);
+    
+    // 计算"48小时前"的时间
+    const now = new Date();
+    const fortyEightHoursAgo = new Date(now);
+    fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
+    
+    const cutoffTime = fortyEightHoursAgo.toISOString();
+    
+    console.log('📅 当前时间:', now.toISOString());
+    console.log('📅 48小时前:', cutoffTime);
+    console.log('🔍 将删除所有 status=done 且 updated_date < ' + cutoffTime + ' 的Quest');
+    
+    // 查询需要删除的Quest（使用用户身份查询，自动遵守RLS）
+    console.log('');
+    console.log('📊 查询符合条件的Quest记录...');
+    
+    let oldQuests = [];
+    try {
+      const allQuests = await base44.entities.Quest.list();
+      
+      console.log('✅ 查询到用户的所有Quest数量:', allQuests.length);
+      
+      // 在内存中过滤出已完成且超过48小时的Quest
+      oldQuests = allQuests.filter(quest => {
+        // 必须是已完成状态
+        if (quest.status !== 'done') {
+          return false;
+        }
+        
+        // 必须有更新时间
+        if (!quest.updated_date) {
+          return false;
+        }
+        
+        // 检查是否超过48小时
+        return quest.updated_date < cutoffTime;
+      });
+      
+      console.log('🎯 符合删除条件的Quest数量:', oldQuests.length);
+      
+      if (oldQuests.length > 0) {
+        console.log('');
+        console.log('📋 需要删除的Quest列表：');
+        oldQuests.forEach((quest, index) => {
+          console.log(`  ${index + 1}. ${quest.title || quest.actionHint || '未命名'} (更新于: ${quest.updated_date}, ID: ${quest.id})`);
+        });
+      } else {
+        console.log('✅ 没有找到需要删除的Quest！');
+        
+        return Response.json({
+          success: true,
+          message: '没有找到需要删除的已完成Quest',
+          executedBy: user.email,
+          executedAt: now.toISOString(),
+          cutoffTime: cutoffTime,
+          stats: {
+            questsFound: 0,
+            questsDeleted: 0
+          }
+        });
+      }
+      
+    } catch (error) {
+      console.error('❌ 查询Quest失败:', error.message);
+      throw new Error('查询Quest记录失败: ' + error.message);
+    }
+    
+    // 删除旧的已完成Quest
+    console.log('');
+    console.log('📊 删除已完成的Quest记录...');
+    
+    let questsDeleted = 0;
+    const deletedQuests = [];
+    const failedQuests = [];
+    
+    for (const quest of oldQuests) {
+      try {
+        await base44.entities.Quest.delete(quest.id);
+        questsDeleted++;
+        deletedQuests.push({
+          id: quest.id,
+          title: quest.title,
+          actionHint: quest.actionHint,
+          updated_date: quest.updated_date
+        });
+        console.log(`✅ 删除Quest: ${quest.title || quest.actionHint || '未命名'} (ID: ${quest.id})`);
+      } catch (error) {
+        console.error(`❌ 删除Quest失败:`, error.message);
+        failedQuests.push({
+          id: quest.id,
+          title: quest.title,
+          error: error.message
+        });
+      }
+    }
+    
+    console.log('');
+    console.log('=== 清理完成 ===');
+    console.log(`📊 Quest删除成功: ${questsDeleted}/${oldQuests.length}`);
+    
+    return Response.json({
+      success: true,
+      message: `成功删除 ${questsDeleted} 条已完成的Quest记录`,
+      executedBy: user.email,
+      executedAt: now.toISOString(),
+      cutoffTime: cutoffTime,
+      deletedQuests,
+      failedQuests: failedQuests.length > 0 ? failedQuests : undefined,
+      stats: {
+        questsFound: oldQuests.length,
+        questsDeleted
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ 清理操作执行失败:', error);
+    return Response.json({
+      success: false,
+      error: error.message || 'Unknown error occurred',
+      message: '清理操作执行过程中发生错误',
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
+  }
+});

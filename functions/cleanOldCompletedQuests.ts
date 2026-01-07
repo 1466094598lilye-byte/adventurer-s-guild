@@ -159,11 +159,6 @@ Deno.serve(async (req) => {
       console.log('\n🔍 开始过滤待删除任务...');
       
       oldQuests = allQuests.filter(quest => {
-        // 必须是已完成状态
-        if (quest.status !== 'done') {
-          return false;
-        }
-        
         // 必须有任务日期
         if (!quest.date) {
           console.log(`⚠️ 任务 ${quest.id} 没有date字段`);
@@ -182,14 +177,26 @@ Deno.serve(async (req) => {
           return false;
         }
         
-        // 保护 routine 模板（每个 originalActionHint 最新的已完成任务）
-        if (routineTemplateIds.has(quest.id)) {
-          console.log(`🛡️ 保护routine模板: ${quest.title || quest.actionHint} (${quest.date})`);
-          return false;
+        // 🔥 新逻辑：删除条件
+        // 1. 已完成的任务（done）- 需要保护 routine 模板
+        if (quest.status === 'done') {
+          // 保护 routine 模板（每个 originalActionHint 最新的已完成任务）
+          if (routineTemplateIds.has(quest.id)) {
+            console.log(`🛡️ 保护routine模板: ${quest.title || quest.actionHint} (${quest.date})`);
+            return false;
+          }
+          console.log(`✓ 待删除（已完成）: ${quest.title || quest.actionHint} (${quest.date})`);
+          return true;
         }
         
-        console.log(`✓ 待删除: ${quest.title || quest.actionHint} (${quest.date}, isRoutine=${quest.isRoutine})`);
-        return true;
+        // 2. routine 任务（无论完成与否）- 旧的 routine 都可以删除
+        if (quest.isRoutine) {
+          console.log(`✓ 待删除（旧routine）: ${quest.title || quest.actionHint} (${quest.date}, status=${quest.status})`);
+          return true;
+        }
+        
+        // 其他未完成的非 routine 任务不删除
+        return false;
       });
       
       console.log('🎯 符合删除条件的Quest数量:', oldQuests.length);

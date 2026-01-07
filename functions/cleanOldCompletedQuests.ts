@@ -49,7 +49,27 @@ Deno.serve(async (req) => {
       
       console.log('✅ 查询到用户的所有Quest数量:', allQuests.length);
       
-      // 在内存中过滤出已完成且超过48小时的Quest
+      // 🔥 步骤1: 识别需要保护的 routine 模板（每个 originalActionHint 最新的已完成任务）
+      const routineTemplateIds = new Set();
+      const routineQuestsMap = new Map();
+      
+      for (const quest of allQuests) {
+        if (quest.isRoutine && quest.originalActionHint && quest.status === 'done') {
+          const existing = routineQuestsMap.get(quest.originalActionHint);
+          if (!existing || new Date(quest.created_date) > new Date(existing.created_date)) {
+            routineQuestsMap.set(quest.originalActionHint, quest);
+          }
+        }
+      }
+      
+      // 将最新的 routine 模板 ID 加入保护集合
+      for (const template of routineQuestsMap.values()) {
+        routineTemplateIds.add(template.id);
+      }
+      
+      console.log(`🛡️ 保护 ${routineTemplateIds.size} 个 routine 模板不被删除`);
+      
+      // 🔥 步骤2: 过滤出需要删除的任务（已完成、超过48小时、非大项目、非 routine 模板）
       oldQuests = allQuests.filter(quest => {
         // 必须是已完成状态
         if (quest.status !== 'done') {
@@ -62,7 +82,21 @@ Deno.serve(async (req) => {
         }
         
         // 检查是否超过48小时
-        return quest.updated_date < cutoffTime;
+        if (quest.updated_date >= cutoffTime) {
+          return false;
+        }
+        
+        // 保护大项目任务
+        if (quest.isLongTermProject) {
+          return false;
+        }
+        
+        // 保护 routine 模板（每个 originalActionHint 最新的已完成任务）
+        if (routineTemplateIds.has(quest.id)) {
+          return false;
+        }
+        
+        return true;
       });
       
       console.log('🎯 符合删除条件的Quest数量:', oldQuests.length);

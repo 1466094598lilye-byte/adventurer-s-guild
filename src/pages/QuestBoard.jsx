@@ -1471,6 +1471,49 @@ export default function QuestBoard() {
         newTitle = result.title;
       }
 
+      // 🔥 如果内容改变且是 routine 任务，废弃旧模板
+      if (contentChanged && isRoutine && editingQuest.isRoutine && editingQuest.originalActionHint) {
+        console.log('=== 检测到 routine 任务内容修改，废弃旧模板 ===');
+        console.log('旧 originalActionHint:', editingQuest.originalActionHint);
+        console.log('新 actionHint:', actionHint);
+        
+        // 只在登录模式下执行（访客模式无需处理模板）
+        if (user) {
+          try {
+            // 找到所有旧模板的 routine 任务
+            const allQuests = await base44.entities.Quest.filter({ 
+              isRoutine: true
+            }, '-created_date', 200);
+            
+            // 解密以便比对 originalActionHint
+            const { data: decryptData } = await base44.functions.invoke('decryptQuestData', {
+              encryptedQuests: allQuests.map(q => ({
+                encryptedActionHint: q.actionHint
+              }))
+            });
+            
+            const oldRoutineQuests = allQuests.filter((q, index) => {
+              const decryptedActionHint = decryptData.decryptedQuests[index].actionHint;
+              return decryptedActionHint === editingQuest.originalActionHint && q.id !== editingQuest.id;
+            });
+            
+            console.log(`找到 ${oldRoutineQuests.length} 个旧模板任务，准备废弃`);
+            
+            // 将这些旧模板标记为非 routine
+            for (const oldQuest of oldRoutineQuests) {
+              await base44.entities.Quest.update(oldQuest.id, {
+                isRoutine: false,
+                originalActionHint: null
+              });
+              console.log(`✅ 已废弃旧模板: ${oldQuest.id}`);
+            }
+          } catch (error) {
+            console.error('废弃旧模板失败:', error);
+            // 不阻塞主流程，继续执行
+          }
+        }
+      }
+
       const updateData = {
         title: newTitle,
         actionHint: actionHint,

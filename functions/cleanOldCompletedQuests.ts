@@ -57,10 +57,16 @@ Deno.serve(async (req) => {
       if (allQuests.length > 0) {
         try {
           const { data: decryptedQuests } = await base44.asServiceRole.functions.invoke('decryptQuestData', {
-            quests: allQuests
+            encryptedQuests: allQuests
           });
-          allQuests = decryptedQuests || allQuests;
-          console.log('✅ Quest数据解密成功');
+          if (decryptedQuests && Array.isArray(decryptedQuests)) {
+            // 合并解密后的字段到原始Quest对象
+            allQuests = allQuests.map((quest, index) => ({
+              ...quest,
+              ...decryptedQuests[index]
+            }));
+            console.log('✅ Quest数据解密成功');
+          }
         } catch (error) {
           console.error('⚠️ Quest解密失败，使用原始数据:', error.message);
         }

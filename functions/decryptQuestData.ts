@@ -67,6 +67,9 @@ Deno.serve(async (req) => {
       if (quest.encryptedOriginalActionHint) {
         result.originalActionHint = await decryptField(quest.encryptedOriginalActionHint);
       }
+      if (quest.encryptedDate) {
+        result.date = await decryptField(quest.encryptedDate);
+      }
       
       return result;
     };

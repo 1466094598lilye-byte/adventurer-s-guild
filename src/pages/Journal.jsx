@@ -29,9 +29,24 @@ export default function JournalPage() {
     queryFn: async () => {
       if (!user) return [];
       const quests = await base44.entities.Quest.list('-date', 200);
+      
+      // 解密所有Quest数据
+      if (quests.length > 0) {
+        try {
+          const { data: decryptedQuests } = await base44.functions.invoke('decryptQuestData', {
+            quests: quests
+          });
+          return decryptedQuests || [];
+        } catch (error) {
+          console.error('解密Quest数据失败:', error);
+          return quests;
+        }
+      }
+      
       return quests;
     },
-    enabled: !!user
+    enabled: !!user,
+    staleTime: 0
   });
 
   // 生成最近7天的完成率数据

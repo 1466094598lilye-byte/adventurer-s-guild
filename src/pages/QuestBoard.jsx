@@ -95,6 +95,20 @@ export default function QuestBoard() {
     return () => clearInterval(interval);
   }, []);
 
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch (error) {
+        return null;
+      }
+    },
+    retry: false,
+    staleTime: 10000,
+    refetchOnWindowFocus: false,
+  });
+
   // 🧹 自动清理旧数据（每次打开任务板时执行）
   useEffect(() => {
     // 只有登录用户才执行清理

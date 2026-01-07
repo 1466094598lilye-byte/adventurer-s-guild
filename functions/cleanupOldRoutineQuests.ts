@@ -7,14 +7,27 @@ Deno.serve(async (req) => {
     // 定时任务运行：直接使用 service role，无需用户认证
     console.log('Starting cleanup: Querying all routine quests...');
     
-    // 先获取所有Quest
-    const allQuests = await base44.asServiceRole.entities.Quest.list('-created_date', 10000);
-    console.log(`Total quests in database: ${allQuests.length}`);
-    
-    // 在内存中过滤出 isRoutine 的任务
-    const routineQuests = allQuests.filter(q => q.isRoutine === true);
-    
-    console.log(`Found ${routineQuests.length} routine quests`);
+    try {
+      // 先获取所有Quest
+      const allQuests = await base44.asServiceRole.entities.Quest.list('-created_date', 10000);
+      console.log(`✅ Total quests fetched: ${allQuests.length}`);
+      
+      // 检查前几条数据
+      if (allQuests.length > 0) {
+        console.log(`📝 Sample quest keys: ${Object.keys(allQuests[0]).join(', ')}`);
+        console.log(`📝 First quest isRoutine: ${allQuests[0].isRoutine}, type: ${typeof allQuests[0].isRoutine}`);
+      }
+      
+      // 在内存中过滤出 isRoutine 的任务
+      const routineQuests = allQuests.filter(q => {
+        const result = q.isRoutine === true;
+        if (result) {
+          console.log(`✓ Found routine quest: ${q.id}, isRoutine=${q.isRoutine}`);
+        }
+        return result;
+      });
+      
+      console.log(`✅ Found ${routineQuests.length} routine quests`);
 
     // Group by originalActionHint
     console.log('Grouping quests by originalActionHint...');

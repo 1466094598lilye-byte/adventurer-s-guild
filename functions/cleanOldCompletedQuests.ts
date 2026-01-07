@@ -56,16 +56,29 @@ Deno.serve(async (req) => {
       // 🔓 解密所有Quest数据
       if (allQuests.length > 0) {
         try {
-          const { data: decryptedQuests } = await base44.asServiceRole.functions.invoke('decryptQuestData', {
+          console.log('🔐 开始解密Quest数据，样本:', {
+            hasEncryptedDate: !!allQuests[0].encryptedDate,
+            hasEncryptedTitle: !!allQuests[0].encryptedTitle,
+            rawDate: allQuests[0].date
+          });
+          
+          const { data: decryptResponse } = await base44.asServiceRole.functions.invoke('decryptQuestData', {
             encryptedQuests: allQuests
           });
-          if (decryptedQuests && Array.isArray(decryptedQuests)) {
+          
+          console.log('🔓 解密响应:', {
+            hasDecryptedQuests: !!decryptResponse?.decryptedQuests,
+            length: decryptResponse?.decryptedQuests?.length,
+            sampleDecrypted: decryptResponse?.decryptedQuests?.[0]
+          });
+          
+          if (decryptResponse?.decryptedQuests && Array.isArray(decryptResponse.decryptedQuests)) {
             // 合并解密后的字段到原始Quest对象
             allQuests = allQuests.map((quest, index) => ({
               ...quest,
-              ...decryptedQuests[index]
+              ...decryptResponse.decryptedQuests[index]
             }));
-            console.log('✅ Quest数据解密成功');
+            console.log('✅ Quest数据解密成功，样本日期:', allQuests[0].date);
           }
         } catch (error) {
           console.error('⚠️ Quest解密失败，使用原始数据:', error.message);

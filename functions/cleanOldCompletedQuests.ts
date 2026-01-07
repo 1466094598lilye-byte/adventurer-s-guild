@@ -53,6 +53,28 @@ Deno.serve(async (req) => {
       
       console.log('✅ 查询到用户的所有Quest数量:', allQuests.length);
       
+      // 🔍 诊断日志：统计任务状态
+      const statusCounts = {
+        done: allQuests.filter(q => q.status === 'done').length,
+        todo: allQuests.filter(q => q.status === 'todo').length,
+        skipped: allQuests.filter(q => q.status === 'skipped').length
+      };
+      console.log(`📊 任务状态统计: done=${statusCounts.done}, todo=${statusCounts.todo}, skipped=${statusCounts.skipped}`);
+      
+      // 🔍 诊断日志：统计日期范围
+      const doneQuests = allQuests.filter(q => q.status === 'done' && q.date);
+      if (doneQuests.length > 0) {
+        const dates = doneQuests.map(q => q.date).sort();
+        console.log(`📅 已完成任务日期范围: ${dates[0]} ~ ${dates[dates.length - 1]}`);
+        console.log(`🕐 7天前的日期: ${sevenDaysAgo.toISOString().split('T')[0]}`);
+        
+        const oldDoneQuests = doneQuests.filter(q => {
+          const questDate = new Date(q.date + 'T00:00:00Z');
+          return questDate < sevenDaysAgo;
+        });
+        console.log(`🗓️ 超过7天的已完成任务数量: ${oldDoneQuests.length}`);
+      }
+      
       // 🔥 步骤1: 识别需要保护的 routine 模板（每个 originalActionHint 最新的已完成任务）
       const routineTemplateIds = new Set();
       const routineQuestsMap = new Map();

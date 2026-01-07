@@ -1,4 +1,3 @@
-import Home from './pages/Home';
 import Journal from './pages/Journal';
 import Profile from './pages/Profile';
 import QuestBoard from './pages/QuestBoard';
@@ -7,7 +6,6 @@ import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Home": Home,
     "Journal": Journal,
     "Profile": Profile,
     "QuestBoard": QuestBoard,

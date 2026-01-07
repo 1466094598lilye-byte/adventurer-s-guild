@@ -1,5 +1,31 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+// 辅助函数：解密单个字段
+async function decryptField(encryptedValue, key) {
+  if (!encryptedValue) return null;
+  
+  try {
+    const data = atob(encryptedValue);
+    const iv = new Uint8Array(12);
+    for (let i = 0; i < 12; i++) {
+      iv[i] = data.charCodeAt(i);
+    }
+    const ciphertext = new Uint8Array(data.length - 12);
+    for (let i = 0; i < data.length - 12; i++) {
+      ciphertext[i] = data.charCodeAt(i + 12);
+    }
+    
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: iv },
+      key,
+      ciphertext
+    );
+    return new TextDecoder().decode(decrypted);
+  } catch (error) {
+    return null;
+  }
+}
+
 /**
  * 清理超过7天且标记为已完成的Quest记录
  * 

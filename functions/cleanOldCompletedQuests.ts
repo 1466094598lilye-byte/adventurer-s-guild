@@ -49,9 +49,24 @@ Deno.serve(async (req) => {
     
     let oldQuests = [];
     try {
-      const allQuests = await base44.entities.Quest.list();
+      let allQuests = await base44.entities.Quest.list();
       
-      console.log('✅ 查询到用户的所有Quest数量:', allQuests.length);
+      console.log('✅ 查询到用户的所有Quest数量（加密状态）:', allQuests.length);
+      
+      // 🔓 解密所有Quest数据
+      if (allQuests.length > 0) {
+        try {
+          const { data: decryptedQuests } = await base44.asServiceRole.functions.invoke('decryptQuestData', {
+            quests: allQuests
+          });
+          allQuests = decryptedQuests || allQuests;
+          console.log('✅ Quest数据解密成功');
+        } catch (error) {
+          console.error('⚠️ Quest解密失败，使用原始数据:', error.message);
+        }
+      }
+      
+      console.log('✅ 当前处理的Quest数量:', allQuests.length);
       
       // 🔍 诊断日志：统计任务状态
       const statusCounts = {

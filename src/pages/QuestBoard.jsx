@@ -114,10 +114,11 @@ export default function QuestBoard() {
       try {
         console.log('🧹 开始自动清理旧数据...');
 
-        // 并行调用两个清理函数
-        const [chestsResult, questsResult] = await Promise.allSettled([
+        // 并行调用三个清理函数
+        const [chestsResult, questsResult, projectsResult] = await Promise.allSettled([
           base44.functions.invoke('cleanOldDailyChests', {}),
-          base44.functions.invoke('cleanOldCompletedQuests', {})
+          base44.functions.invoke('cleanOldCompletedQuests', {}),
+          base44.functions.invoke('cleanOldProjects', {})
         ]);
 
         if (chestsResult.status === 'fulfilled') {
@@ -130,6 +131,12 @@ export default function QuestBoard() {
           console.log('✅ 任务清理完成:', questsResult.value.data);
         } else {
           console.warn('⚠️ 任务清理失败:', questsResult.reason);
+        }
+
+        if (projectsResult.status === 'fulfilled') {
+          console.log('✅ 大项目清理完成:', projectsResult.value.data);
+        } else {
+          console.warn('⚠️ 大项目清理失败:', projectsResult.reason);
         }
 
         // 标记今日已清理

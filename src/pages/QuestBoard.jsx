@@ -154,49 +154,41 @@ export default function QuestBoard() {
 
         const validQuests = allQuests.filter(q => !expiredQuests.find(eq => eq.id === q.id));
 
-        // 🔥 智能解密策略：尝试解密所有任务，失败则保留原文
-        // 这样可以兼容历史加密数据和新的明文 routine 数据
-        console.log(`今日任务总数: ${validQuests.length}`);
+        // 🔥 分离 routine（明文）和非 routine（需解密）任务
+        const routineQuests = validQuests.filter(q => q.isRoutine);
+        const nonRoutineQuests = validQuests.filter(q => !q.isRoutine);
 
-        const decryptedQuests = [];
+        console.log(`今日任务：${routineQuests.length} 个 routine（明文），${nonRoutineQuests.length} 个非 routine（需解密）`);
 
-        for (const quest of validQuests) {
-          // 如果任务明确标记为 routine，直接使用明文（新版逻辑）
-          if (quest.isRoutine) {
-            console.log(`✓ Routine 任务（明文）: ${quest.title}`);
-            decryptedQuests.push(quest);
-            continue;
-          }
+        // Routine 任务：直接使用明文
+        let decryptedNonRoutineQuests = [];
 
-          // 非 routine 任务：尝试解密
+        // 非 routine 任务：批量解密
+        if (nonRoutineQuests.length > 0) {
           try {
             const { data } = await base44.functions.invoke('decryptQuestData', {
-              encryptedQuests: [{
+              encryptedQuests: nonRoutineQuests.map(quest => ({
                 encryptedTitle: quest.title,
                 encryptedActionHint: quest.actionHint
-              }]
+              }))
             });
 
-            const decrypted = data.decryptedQuests[0];
+            decryptedNonRoutineQuests = nonRoutineQuests.map((quest, index) => ({
+              ...quest,
+              title: data.decryptedQuests[index].title || quest.title,
+              actionHint: data.decryptedQuests[index].actionHint || quest.actionHint
+            }));
 
-            // 解密成功且有效
-            if (decrypted.title && decrypted.actionHint) {
-              console.log(`✓ 解密成功: ${decrypted.title}`);
-              decryptedQuests.push({
-                ...quest,
-                title: decrypted.title,
-                actionHint: decrypted.actionHint
-              });
-            } else {
-              console.warn(`⚠️ 解密返回空值，跳过任务: ${quest.id}`);
-            }
+            console.log(`✅ 成功解密 ${decryptedNonRoutineQuests.length} 个非 routine 任务`);
           } catch (error) {
-            console.error(`❌ 解密失败，跳过任务 ${quest.id}:`, error.message);
+            console.error('❌ 批量解密失败:', error);
+            // 解密失败时，保留原始数据（可能显示为乱码，但至少不会丢失任务）
+            decryptedNonRoutineQuests = nonRoutineQuests;
           }
         }
 
-        console.log(`✅ 最终返回 ${decryptedQuests.length}/${validQuests.length} 个任务`);
-        return decryptedQuests;
+        // 合并 routine（明文）和非 routine（解密后）任务
+        return [...routineQuests, ...decryptedNonRoutineQuests];
       } catch (error) {
         console.error('获取任务失败:', error);
         return [];

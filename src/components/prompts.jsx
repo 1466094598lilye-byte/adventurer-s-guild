@@ -171,7 +171,8 @@ export function getTreasurePrompt(language, rarity, randomSeed = Math.floor(Math
         nameLength: '4-8个汉字',
         descLength: '15-25个汉字',
         nameExample: '风化的石板',
-        descExample: '记录着冒险者日常足迹的普通石板，虽平凡却见证时光流转。'
+        descExample: '记录着冒险者日常足迹的普通石板，虽平凡却见证时光流转。',
+        themes: ['工具', '饰品', '食物', '布料', '木器', '陶器', '铁器', '植物', '石器', '皮革', '骨器', '羽毛', '贝壳', '矿石', '书页', '墨水', '绳索', '袋囊', '水具', '火具']
       },
       'Rare': {
         context: '稀有 - 有些特别',
@@ -198,17 +199,22 @@ export function getTreasurePrompt(language, rarity, randomSeed = Math.floor(Math
 
     const config = rarityConfig[rarity];
 
+    const themeHint = rarity === 'Common' && config.themes 
+      ? `\n\n💡 **主题建议**（从以下类型中随机选择一个作为创意方向）：\n${config.themes.join('、')}\n请根据随机种子 ${randomSeed} 选择不同的主题方向，确保多样性！` 
+      : '';
+
     return {
       prompt: `生成一个RPG风格的战利品道具。
 
 稀有度：${rarity}（${config.context}）
-🎲 创意随机种子：${randomSeed}
+🎲 创意随机种子：${randomSeed}${themeHint}
 
 ⚠️ **核心要求 - 必须生成全新的独特物品**：
 1. **使用随机种子${randomSeed}作为创意灵感来源**，确保每次生成都不同
 2. **绝对禁止**复用示例中的名称或描述
 3. 每次必须创造**完全不同**的新物品
 4. 发挥想象力，创造独特的幻想道具
+${rarity === 'Common' ? '5. **强制多样性**：严禁总是生成工具类物品！必须尝试不同类型（食物、饰品、布料、陶器等）' : ''}
 
 要求：
 1. 名称：${config.nameLength}，${rarity === 'Legendary' ? '要有史诗感和传奇色彩' : rarity === 'Epic' ? '要有力量感和华丽感' : rarity === 'Rare' ? '要有些神秘和特别' : '简洁朴素'}

@@ -141,48 +141,61 @@ export default function QuestBoard() {
       // 登录模式：从后端读取并解密
       try {
         const allQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
-        
+
         // 删除过期的启动模式任务
         const now = new Date().getTime();
         const expiredQuests = allQuests.filter(q => 
           q.source === 'bootstrap' && q.expiresAt && q.status === 'todo' && new Date(q.expiresAt).getTime() <= now
         );
-        
+
         if (expiredQuests.length > 0) {
           await Promise.all(expiredQuests.map(q => base44.entities.Quest.delete(q.id)));
         }
-        
+
         const validQuests = allQuests.filter(q => !expiredQuests.find(eq => eq.id === q.id));
 
-        // 批量解密所有任务
-        try {
-          const { data } = await base44.functions.invoke('decryptQuestData', {
-            encryptedQuests: validQuests.map(quest => ({
-              encryptedTitle: quest.title,
-              encryptedActionHint: quest.actionHint
-            }))
-          });
+        // 分离 routine 任务和非 routine 任务
+        const routineQuests = validQuests.filter(q => q.isRoutine);
+        const nonRoutineQuests = validQuests.filter(q => !q.isRoutine);
 
-          const decryptedQuests = validQuests.map((quest, index) => ({
-            ...quest,
-            title: data.decryptedQuests[index].title,
-            actionHint: data.decryptedQuests[index].actionHint
-          }));
+        console.log(`今日任务：${routineQuests.length} 个 routine，${nonRoutineQuests.length} 个非 routine`);
 
-          // 过滤掉解密失败的任务（title 或 actionHint 为 null）
-          const successfullyDecryptedQuests = decryptedQuests.filter(quest => 
-            quest.title !== null && quest.actionHint !== null
-          );
+        // Routine 任务不需要解密，直接使用
+        let decryptedNonRoutineQuests = [];
 
-          if (successfullyDecryptedQuests.length < decryptedQuests.length) {
-            console.warn(`过滤掉 ${decryptedQuests.length - successfullyDecryptedQuests.length} 个解密失败的任务`);
+        // 只解密非 routine 任务
+        if (nonRoutineQuests.length > 0) {
+          try {
+            const { data } = await base44.functions.invoke('decryptQuestData', {
+              encryptedQuests: nonRoutineQuests.map(quest => ({
+                encryptedTitle: quest.title,
+                encryptedActionHint: quest.actionHint
+              }))
+            });
+
+            decryptedNonRoutineQuests = nonRoutineQuests.map((quest, index) => ({
+              ...quest,
+              title: data.decryptedQuests[index].title,
+              actionHint: data.decryptedQuests[index].actionHint
+            }));
+
+            // 过滤掉解密失败的任务（title 或 actionHint 为 null）
+            const beforeFilter = decryptedNonRoutineQuests.length;
+            decryptedNonRoutineQuests = decryptedNonRoutineQuests.filter(quest => 
+              quest.title !== null && quest.actionHint !== null
+            );
+
+            if (decryptedNonRoutineQuests.length < beforeFilter) {
+              console.warn(`过滤掉 ${beforeFilter - decryptedNonRoutineQuests.length} 个解密失败的非 routine 任务`);
+            }
+          } catch (error) {
+            console.error('解密非 routine 任务失败:', error);
+            // 解密失败时，非 routine 任务为空数组
           }
-
-          return successfullyDecryptedQuests;
-        } catch (error) {
-          console.error('批量解密任务失败:', error);
-          return []; // 解密失败时返回空数组，不显示加密数据
         }
+
+        // 合并 routine 任务（已明文）和解密后的非 routine 任务
+        return [...routineQuests, ...decryptedNonRoutineQuests];
       } catch (error) {
         console.error('获取任务失败:', error);
         return [];
@@ -318,49 +331,24 @@ export default function QuestBoard() {
         // ========================================
         // 步骤 5.1: 获取所有活跃的例行任务模板
         // ========================================
-        console.log('步骤 5.1: 获取并解密所有活跃的例行任务模板...');
+        console.log('步骤 5.1: 获取所有活跃的例行任务模板（已明文存储）...');
 
         // 获取所有标记为 isRoutine: true 的任务（这些是模板）
         const allRoutineTemplates = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 100);
         console.log(`找到 ${allRoutineTemplates.length} 个例行任务模板`);
 
-        // 并行解密所有模板的 actionHint
-        const decryptedTemplates = await Promise.all(
-          allRoutineTemplates.map(async (template) => {
-            try {
-              const { data } = await base44.functions.invoke('decryptQuestData', {
-                encryptedActionHint: template.actionHint
-              });
-              return { 
-                ...template, 
-                decryptedActionHint: data.actionHint 
-              };
-            } catch (error) {
-              console.warn(`解密模板失败 (ID: ${template.id}):`, error);
-              // 解密失败时返回 null
-              return { 
-                ...template, 
-                decryptedActionHint: null 
-              };
-            }
-          })
-        );
-
-        // 构建活跃模板 Map: originalActionHint -> 最新的模板
-        // 如果同一个 originalActionHint 有多个模板，保留最新创建的那个
+        // Routine 任务现在以明文存储，不需要解密
+        // 直接构建活跃模板 Map: originalActionHint -> 最新的模板
         const activeTemplatesMap = new Map();
-        for (const template of decryptedTemplates) {
-          const key = template.decryptedActionHint;
-          // 跳过解密失败（null）或空的模板
-          if (!key) {
-            if (key === null) {
-              console.warn(`跳过解密失败的模板 (ID: ${template.id})`);
-            }
+        for (const template of allRoutineTemplates) {
+          // 使用 originalActionHint 作为唯一标识（如果没有则用 actionHint）
+          const templateKey = template.originalActionHint || template.actionHint;
+
+          // 跳过空的模板
+          if (!templateKey) {
+            console.warn(`跳过无效模板 (ID: ${template.id})`);
             continue;
           }
-
-          // 使用 originalActionHint 作为唯一标识（如果没有则用 decryptedActionHint）
-          const templateKey = template.originalActionHint || key;
 
           // 如果该键已存在，比较创建时间，保留最新的
           if (!activeTemplatesMap.has(templateKey) || 
@@ -393,9 +381,9 @@ export default function QuestBoard() {
             continue;
           }
 
-          // 比较任务内容是否与模板一致
-          const questActionHint = todayQuest.actionHint; // 已解密
-          const templateActionHint = template.decryptedActionHint;
+          // 比较任务内容是否与模板一致（现在都是明文，直接比较）
+          const questActionHint = todayQuest.actionHint;
+          const templateActionHint = template.actionHint;
 
           // 如果 actionHint 不同，说明模板被修改了，需要更新今日任务
           if (questActionHint !== templateActionHint) {
@@ -408,16 +396,16 @@ export default function QuestBoard() {
               const { data: newTitleResult } = await base44.functions.invoke('callDeepSeek', {
                 prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
 
-**当前冒险者每日修炼内容：** ${templateActionHint}
+              **当前冒险者每日修炼内容：** ${templateActionHint}
 
-请为这个每日修炼任务生成**全新的**RPG风格标题（只需要标题，不需要重新评定难度）。
+              请为这个每日修炼任务生成**全新的**RPG风格标题（只需要标题，不需要重新评定难度）。
 
-要求：
-1. 标题要有变化，不要每天都一样（但核心内容要体现任务本质）
-2. 格式：【2字类型】+ 7字标题
-3. 保持任务的核心特征
+              要求：
+              1. 标题要有变化，不要每天都一样（但核心内容要体现任务本质）
+              2. 格式：【2字类型】+ 7字标题
+              3. 保持任务的核心特征
 
-只返回标题。`,
+              只返回标题。`,
                 response_json_schema: {
                   type: "object",
                   properties: {
@@ -427,16 +415,10 @@ export default function QuestBoard() {
                 }
               });
 
-              // 加密新内容
-              const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
-                title: newTitleResult.title,
-                actionHint: templateActionHint
-              });
-
-              // 更新任务
+              // Routine 任务不加密，直接更新明文内容
               await base44.entities.Quest.update(todayQuest.id, {
-                title: encrypted.encryptedTitle,
-                actionHint: encrypted.encryptedActionHint,
+                title: newTitleResult.title,
+                actionHint: templateActionHint,
                 difficulty: template.difficulty,
                 rarity: template.rarity,
                 originalActionHint: templateActionHint
@@ -495,24 +477,11 @@ export default function QuestBoard() {
         const refreshedTodayQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
         console.log(`重新获取今日任务，当前数量: ${refreshedTodayQuests.length}`);
 
-        // 解密今日任务以便比对
-        const { data: decryptedRefreshedData } = await base44.functions.invoke('decryptQuestData', {
-          encryptedQuests: refreshedTodayQuests.map(quest => ({
-            encryptedTitle: quest.title,
-            encryptedActionHint: quest.actionHint
-          }))
-        });
-
-        const decryptedRefreshedQuests = refreshedTodayQuests.map((quest, index) => ({
-          ...quest,
-          title: decryptedRefreshedData.decryptedQuests[index].title,
-          actionHint: decryptedRefreshedData.decryptedQuests[index].actionHint
-        }));
-
+        // Routine 任务已经是明文，不需要解密
         // 筛选需要创建的任务
         const toCreate = [];
         for (const [actionHintPlain, templateQuest] of activeTemplatesMap) {
-          const alreadyExists = decryptedRefreshedQuests.some(
+          const alreadyExists = refreshedTodayQuests.some(
             q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === actionHintPlain)
           );
           if (!alreadyExists) {
@@ -529,16 +498,16 @@ export default function QuestBoard() {
                 base44.functions.invoke('callDeepSeek', {
                   prompt: `你是【星陨纪元冒险者工会】的首席史诗书记官。
 
-        **当前冒险者每日修炼内容：** ${actionHintPlain}
+            **当前冒险者每日修炼内容：** ${actionHintPlain}
 
-        请为这个每日修炼任务生成**全新的**RPG风格标题（只需要标题，不需要重新评定难度）。
+            请为这个每日修炼任务生成**全新的**RPG风格标题（只需要标题，不需要重新评定难度）。
 
-        要求：
-        1. 标题要有变化，不要每天都一样（但核心内容要体现任务本质）
-        2. 格式：【2字类型】+ 7字标题
-        3. 保持任务的核心特征
+            要求：
+            1. 标题要有变化，不要每天都一样（但核心内容要体现任务本质）
+            2. 格式：【2字类型】+ 7字标题
+            3. 保持任务的核心特征
 
-        只返回标题。`,
+            只返回标题。`,
                   response_json_schema: {
                     type: "object",
                     properties: {
@@ -553,21 +522,16 @@ export default function QuestBoard() {
               )
             );
 
-            // 🔥 并行加密并创建任务
+            // 🔥 并行创建任务（Routine 任务不加密）
             await Promise.all(
               toCreate.map(async ({ actionHintPlain, templateQuest }, index) => {
                 const result = llmResults[index];
                 if (!result) return;
 
                 try {
-                  const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
-                    title: result.title,
-                    actionHint: actionHintPlain
-                  });
-
                   await base44.entities.Quest.create({
-                    title: encrypted.encryptedTitle,
-                    actionHint: encrypted.encryptedActionHint,
+                    title: result.title,
+                    actionHint: actionHintPlain,
                     difficulty: templateQuest.difficulty,
                     rarity: templateQuest.rarity,
                     date: today,
@@ -583,7 +547,7 @@ export default function QuestBoard() {
               })
             );
 
-          createdCount = toCreate.length;
+            createdCount = toCreate.length;
           }
           } catch (error) {
           console.error('❌ 运行每日修炼任务步骤失败:', error);
@@ -1093,7 +1057,16 @@ export default function QuestBoard() {
         return newQuest;
       }
 
-      // 登录模式：加密后保存到后端
+      // 登录模式：检查是否为 routine 任务
+      if (questData.isRoutine) {
+        // Routine 任务不加密，直接保存
+        console.log('Routine 任务，跳过加密');
+        const result = await base44.entities.Quest.create(questData);
+        console.log('Routine 任务创建成功');
+        return result;
+      }
+
+      // 非 routine 任务：加密后保存到后端
       const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
         title: questData.title,
         actionHint: questData.actionHint
@@ -1136,9 +1109,16 @@ export default function QuestBoard() {
         return updated;
       }
 
-      // 登录模式：加密后更新后端
+      // 登录模式：检查是否为 routine 任务
       const updateData = { ...data };
 
+      // 如果是 routine 任务，不加密
+      if (data.isRoutine) {
+        console.log('更新 Routine 任务，跳过加密');
+        return base44.entities.Quest.update(id, updateData);
+      }
+
+      // 非 routine 任务：加密后更新后端
       if (data.title !== undefined || data.actionHint !== undefined || data.originalActionHint !== undefined) {
         const toEncrypt = {
           title: data.title,

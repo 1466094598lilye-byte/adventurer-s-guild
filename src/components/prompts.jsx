@@ -165,13 +165,20 @@ Please write acknowledgment (around 50 words) **completely as ${role.nameEn}**:`
 
 export function getTreasurePrompt(language, rarity, randomSeed = Math.floor(Math.random() * 100000)) {
   if (language === 'zh') {
+    // Common级别：从预设类别中随机抽取
+    const commonCategories = ['工具', '饰品', '食物', '布料', '木器', '陶器', '铁器', '植物', '石器', '皮革', '骨器', '羽毛', '贝壳', '矿石', '书页', '墨水', '绳索', '袋囊', '香料', '蜡烛'];
+    const selectedCategory = rarity === 'Common' 
+      ? commonCategories[randomSeed % commonCategories.length]
+      : null;
+
     const rarityConfig = {
       'Common': {
         role: '偏远乡村的小卖店老板',
         context: '你的铺子靠近驿道，主要客人是新手冒险者、猎人和本地村民。你进的货大多来自本地工匠、过路商队或以物易物。你卖的东西通常便宜、实用、消耗快，有时并不完美。',
-        task: '请从这个生活场景出发，描述你货架上的一件物品。',
+        task: `请从这个生活场景出发，描述你货架上的一件**${selectedCategory}类**物品。`,
         nameLength: '4-8个汉字',
-        descLength: '15-25个汉字'
+        descLength: '15-25个汉字',
+        category: selectedCategory
       },
       'Rare': {
         role: '在城市中经营的魔导道具商人',
@@ -208,6 +215,7 @@ ${config.context}
 
 🎲 创意随机种子：${randomSeed}
 （请将这个数字作为灵感，每次生成不同的物品）
+${config.category ? `\n⚠️ 【强制要求】本次必须生成：${config.category}类物品（不能是其他类别！）` : ''}
 
 【任务】
 ${config.task}

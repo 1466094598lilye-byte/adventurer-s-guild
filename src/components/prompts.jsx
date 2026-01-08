@@ -167,142 +167,114 @@ export function getTreasurePrompt(language, rarity, randomSeed = Math.floor(Math
   if (language === 'zh') {
     const rarityConfig = {
       'Common': {
-        context: '普通 - 简单朴素',
+        role: '偏远乡村的小卖店老板',
+        context: '你的铺子靠近驿道，主要客人是新手冒险者、猎人和本地村民。你进的货大多来自本地工匠、过路商队或以物易物。你卖的东西通常便宜、实用、消耗快，有时并不完美。',
+        task: '请从这个生活场景出发，描述你货架上的一件物品。',
         nameLength: '4-8个汉字',
-        descLength: '15-25个汉字',
-        nameExample: '风化的石板',
-        descExample: '记录着冒险者日常足迹的普通石板，虽平凡却见证时光流转。',
-        themes: ['工具', '饰品', '食物', '布料', '木器', '陶器', '铁器', '植物', '石器', '皮革', '骨器', '羽毛', '贝壳', '矿石', '书页', '墨水', '绳索', '袋囊', '水具', '火具']
+        descLength: '15-25个汉字'
       },
       'Rare': {
-        context: '稀有 - 有些特别',
+        role: '在城市中经营的魔导道具商人',
+        context: '你的店铺位于冒险者公会或学院附近，顾客多为常驻冒险者、雇佣兵、小贵族随从。你售卖的并非传说中的奇物，而是经过验证、稳定可靠、可以反复出售的魔导道具。你的货源来自城市工坊、炼金坊或长期合作的魔导技师。',
+        task: '请从这个经营场景出发，描述你店铺中正在出售的一件商品。',
         nameLength: '5-10个汉字',
-        descLength: '25-35个汉字',
-        nameExample: '月光水晶',
-        descExample: '在月圆之夜才会发光的神秘水晶，据说能指引迷失者找到归途，是夜行冒险者的珍贵护符。'
+        descLength: '25-35个汉字'
       },
       'Epic': {
-        context: '史诗 - 强大华丽',
+        role: '王国的司库',
+        context: '你负责保管国家最重要的宝物与象征。你所接触的物品往往与王权、战争、外交或国家命运紧密相关。这些物品并非为了日常使用，而是被珍藏、被记载、被在特定时刻取出。它们可能来自古老的王朝、决定胜负的战争、或一次改变历史的盟约。',
+        task: '请从你的视角，描述你所保管的一件宝物。',
         nameLength: '6-12个汉字',
-        descLength: '40-60个汉字',
-        nameExample: '不灭之炎核心',
-        descExample: '传说中永不熄灭的圣火碎片，象征着永恒的意志与不屈的精神。能赋予持有者在绝境中燃起希望的勇气，是英雄们代代相传的信念图腾，见证了无数史诗般的战役与传奇。'
+        descLength: '40-60个汉字'
       },
       'Legendary': {
-        context: '传说 - 传奇神话',
+        role: '创世之初的存在',
+        context: '你见证并塑造世界的法则。在世界的某个关键转折点，你决定将一件存在交付给一位被选中的勇者。这并非单纯的"武器"或"奖励"，而是承载概念、命运或选择的礼物。它可能改变使用者，也可能改变世界本身。',
+        task: '请描述你赐予勇者的这件宝物。',
         nameLength: '8-15个汉字',
-        descLength: '60-90个汉字',
-        nameExample: '时空枢纽钥匙',
-        descExample: '据说能开启任意时空之门的终极神器，只有真正的英雄才配拥有。它承载着改变命运、扭转乾坤的至高力量，在历史长河中仅出现过三次，每一次都改写了整个纪元的走向。持有者将获得穿梭维度、掌控时间之流的神秘能力，成为星陨纪元最伟大的传说。'
+        descLength: '60-90个汉字'
       }
     };
 
     const config = rarityConfig[rarity];
 
-    const themeHint = rarity === 'Common' && config.themes 
-      ? `\n\n💡 **主题建议**（从以下类型中随机选择一个作为创意方向）：\n${config.themes.join('、')}\n请根据随机种子 ${randomSeed} 选择不同的主题方向，确保多样性！` 
-      : '';
-
     return {
-      prompt: `生成一个RPG风格的战利品道具。
+      prompt: `【角色扮演】
 
-稀有度：${rarity}（${config.context}）
-🎲 创意随机种子：${randomSeed}${themeHint}
+你是一名${config.role}。
 
-⚠️ **核心要求 - 必须生成全新的独特物品**：
-1. **使用随机种子${randomSeed}作为创意灵感来源**，确保每次生成都不同
-2. **绝对禁止**复用示例中的名称或描述
-3. 每次必须创造**完全不同**的新物品
-4. 发挥想象力，创造独特的幻想道具
-${rarity === 'Common' ? '5. **强制多样性**：严禁总是生成工具类物品！必须尝试不同类型（食物、饰品、布料、陶器等）' : ''}
+【场景设定】
+${config.context}
 
-要求：
-1. 名称：${config.nameLength}，${rarity === 'Legendary' ? '要有史诗感和传奇色彩' : rarity === 'Epic' ? '要有力量感和华丽感' : rarity === 'Rare' ? '要有些神秘和特别' : '简洁朴素'}
-2. 简介：${config.descLength}，RPG风味，${rarity === 'Legendary' ? '详细描述其传说来历、神话力量、历史影响，展现其改变命运的至高地位' : rarity === 'Epic' ? '详细描述其史诗来历、强大能力、象征意义，展现其英雄级价值' : rarity === 'Rare' ? '描述其特殊之处、神秘背景、实用价值' : '简单描述其平凡用途和见证意义'}
-3. 选择合适的emoji作为图标
+🎲 创意随机种子：${randomSeed}
+（请将这个数字作为灵感，每次生成不同的物品）
 
-参考示例（仅供格式参考，**不要复用这些内容**）：
-- Common 格式示例 (${rarityConfig.Common.nameLength} / ${rarityConfig.Common.descLength}): 
-  "${rarityConfig.Common.nameExample}" / "${rarityConfig.Common.descExample}"
+【任务】
+${config.task}
 
-- Rare 格式示例 (${rarityConfig.Rare.nameLength} / ${rarityConfig.Rare.descLength}):
-  "${rarityConfig.Rare.nameExample}" / "${rarityConfig.Rare.descExample}"
+【格式要求】
+- 物品名称：${config.nameLength}
+- 物品简介：${config.descLength}
+- 选择一个合适的emoji作为图标
 
-- Epic 格式示例 (${rarityConfig.Epic.nameLength} / ${rarityConfig.Epic.descLength}):
-  "${rarityConfig.Epic.nameExample}" / "${rarityConfig.Epic.descExample}"
-
-- Legendary 格式示例 (${rarityConfig.Legendary.nameLength} / ${rarityConfig.Legendary.descLength}):
-  "${rarityConfig.Legendary.nameExample}" / "${rarityConfig.Legendary.descExample}"
-
-**重要提醒**：请生成与示例完全不同的全新道具，发挥创造力！`,
+请完全沉浸在你的角色中，用自然的方式描述这件物品。`,
       nameRange: config.nameLength,
       descRange: config.descLength
     };
   } else {
     const rarityConfig = {
       'Common': {
-        context: 'Common - Simple and plain',
+        role: 'a small shop owner in a remote village',
+        context: 'Your shop is near the caravan route. Your main customers are novice adventurers, hunters, and local villagers. Your goods mostly come from local craftsmen, passing merchants, or bartering. What you sell is usually cheap, practical, quickly consumed, and sometimes imperfect.',
+        task: 'From this everyday scene, describe one item on your shelf.',
         nameLength: '2-4 words',
-        descLength: '15-25 words',
-        nameExample: 'Weathered Stone Tablet',
-        descExample: 'An ordinary stone tablet recording adventurer\'s daily steps. Though plain, it witnesses the passage of time.'
+        descLength: '15-25 words'
       },
       'Rare': {
-        context: 'Rare - Somewhat special',
+        role: 'a magical tools merchant operating in the city',
+        context: 'Your shop is located near the Adventurer\'s Guild or Academy. Your customers are mostly resident adventurers, mercenaries, and minor noble attendants. You don\'t sell legendary artifacts, but verified, reliable, repeatedly sellable magical tools. Your supply comes from city workshops, alchemy labs, or long-term partner magic technicians.',
+        task: 'From this business setting, describe one item currently for sale in your shop.',
         nameLength: '3-5 words',
-        descLength: '25-35 words',
-        nameExample: 'Moonlight Crystal Shard',
-        descExample: 'A mysterious crystal that glows only during full moons, said to guide lost souls back to their path. A precious talisman for night travelers.'
+        descLength: '25-35 words'
       },
       'Epic': {
-        context: 'Epic - Powerful and magnificent',
+        role: 'the Royal Treasurer of the kingdom',
+        context: 'You are responsible for safeguarding the nation\'s most important treasures and symbols. The items you handle are closely tied to sovereignty, war, diplomacy, or national destiny. These items are not for daily use, but are preserved, recorded, and taken out at specific moments. They may come from ancient dynasties, battles that decided victory, or treaties that changed history.',
+        task: 'From your perspective, describe one treasure you safeguard.',
         nameLength: '4-6 words',
-        descLength: '40-60 words',
-        nameExample: 'Eternal Flame Core Fragment',
-        descExample: 'A sacred fire shard that never extinguishes, symbolizing eternal will and unwavering spirit. Grants its bearer the courage to ignite hope in the darkest hours. A totem of belief passed down through generations of heroes, witnessing countless epic battles and legendary tales.'
+        descLength: '40-60 words'
       },
       'Legendary': {
-        context: 'Legendary - Mythic and legendary',
+        role: 'a being from the dawn of creation',
+        context: 'You witness and shape the laws of the world. At a critical turning point in history, you decide to bestow an existence upon a chosen hero. This is not merely a "weapon" or "reward," but a gift carrying concepts, destiny, or choice. It may change the bearer, or change the world itself.',
+        task: 'Describe this treasure you bestow upon the hero.',
         nameLength: '5-8 words',
-        descLength: '60-90 words',
-        nameExample: 'Chrono Nexus Key Artifact',
-        descExample: 'The ultimate mythical artifact said to unlock any temporal gateway, destined only for true heroes. It bears the supreme power to alter fate and reshape reality itself. Throughout history, it has appeared only three times, each rewriting the course of entire eras. Its wielder gains mystical abilities to traverse dimensions and command the flow of time, becoming the greatest legend of the Starfall Era.'
+        descLength: '60-90 words'
       }
     };
 
     const config = rarityConfig[rarity];
 
     return {
-      prompt: `Generate an RPG-style treasure item.
+      prompt: `【Role Play】
 
-Rarity: ${rarity} (${config.context})
+You are ${config.role}.
+
+【Scene Setting】
+${config.context}
+
 🎲 Creative Random Seed: ${randomSeed}
+(Use this number as inspiration to generate a different item each time)
 
-⚠️ **Core Requirement - Must Generate Completely Unique Item**:
-1. **Use random seed ${randomSeed} as creative inspiration source** to ensure each generation is different
-2. **Absolutely forbidden** to reuse names or descriptions from examples
-3. Must create **entirely different** new items each time
-4. Use your imagination to create unique fantasy treasures
+【Task】
+${config.task}
 
-Requirements:
-1. Name: ${config.nameLength}, ${rarity === 'Legendary' ? 'epic and legendary feel' : rarity === 'Epic' ? 'powerful and magnificent feel' : rarity === 'Rare' ? 'mysterious and special' : 'simple and plain'}
-2. Description: ${config.descLength}, RPG flavor, ${rarity === 'Legendary' ? 'detail its legendary origin, mythic powers, historical impact, showing its supreme status in changing destiny' : rarity === 'Epic' ? 'detail its epic origin, powerful abilities, symbolic meaning, showing its heroic-level value' : rarity === 'Rare' ? 'describe its special features, mysterious background, practical value' : 'simply describe its mundane purpose and witnessing significance'}
-3. Choose appropriate emoji as icon
+【Format Requirements】
+- Item Name: ${config.nameLength}
+- Item Description: ${config.descLength}
+- Choose an appropriate emoji as the icon
 
-Format Reference Examples (**Do NOT reuse these contents**):
-- Common format example (${rarityConfig.Common.nameLength} / ${rarityConfig.Common.descLength}): 
-  "${rarityConfig.Common.nameExample}" / "${rarityConfig.Common.descExample}"
-
-- Rare format example (${rarityConfig.Rare.nameLength} / ${rarityConfig.Rare.descLength}):
-  "${rarityConfig.Rare.nameExample}" / "${rarityConfig.Rare.descExample}"
-
-- Epic format example (${rarityConfig.Epic.nameLength} / ${rarityConfig.Epic.descLength}):
-  "${rarityConfig.Epic.nameExample}" / "${rarityConfig.Epic.descExample}"
-
-- Legendary format example (${rarityConfig.Legendary.nameLength} / ${rarityConfig.Legendary.descLength}):
-  "${rarityConfig.Legendary.nameExample}" / "${rarityConfig.Legendary.descExample}"
-
-**Important**: Generate completely new items different from examples. Be creative!`,
+Fully immerse yourself in your role and describe this item naturally.`,
       nameRange: config.nameLength,
       descRange: config.descLength
     };

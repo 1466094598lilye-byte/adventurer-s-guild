@@ -165,11 +165,9 @@ Please write acknowledgment (around 50 words) **completely as ${role.nameEn}**:`
 
 export function getTreasurePrompt(language, rarity, randomSeed = Math.floor(Math.random() * 100000)) {
   if (language === 'zh') {
-    // Common级别：从预设类别中随机抽取
-    const commonCategories = ['工具', '饰品', '食物', '布料', '木器', '陶器', '铁器', '植物', '石器', '皮革', '骨器', '羽毛', '贝壳', '矿石', '书页', '墨水', '绳索', '袋囊', '香料', '蜡烛'];
-    const selectedCategory = rarity === 'Common' 
-      ? commonCategories[randomSeed % commonCategories.length]
-      : null;
+    // 所有级别：从预设类别中随机抽取
+    const categories = ['工具', '饰品', '食物', '布料', '木器', '陶器', '铁器', '植物', '石器', '皮革', '骨器', '羽毛', '贝壳', '矿石', '书页', '墨水', '绳索', '袋囊', '香料', '蜡烛'];
+    const selectedCategory = categories[randomSeed % categories.length];
 
     const rarityConfig = {
       'Common': {
@@ -183,23 +181,26 @@ export function getTreasurePrompt(language, rarity, randomSeed = Math.floor(Math
       'Rare': {
         role: '在城市中经营的魔导道具商人',
         context: '你的店铺位于冒险者公会或学院附近，顾客多为常驻冒险者、雇佣兵、小贵族随从。你售卖的并非传说中的奇物，而是经过验证、稳定可靠、可以反复出售的魔导道具。你的货源来自城市工坊、炼金坊或长期合作的魔导技师。',
-        task: '请从这个经营场景出发，描述你店铺中正在出售的一件商品。',
+        task: `请从这个经营场景出发，描述你店铺中正在出售的一件**${selectedCategory}类**商品。`,
         nameLength: '5-10个汉字',
-        descLength: '25-35个汉字'
+        descLength: '25-35个汉字',
+        category: selectedCategory
       },
       'Epic': {
         role: '王国的司库',
         context: '你负责保管国家最重要的宝物与象征。你所接触的物品往往与王权、战争、外交或国家命运紧密相关。这些物品并非为了日常使用，而是被珍藏、被记载、被在特定时刻取出。它们可能来自古老的王朝、决定胜负的战争、或一次改变历史的盟约。',
-        task: '请从你的视角，描述你所保管的一件宝物。',
+        task: `请从你的视角，描述你所保管的一件**${selectedCategory}类**宝物。`,
         nameLength: '6-12个汉字',
-        descLength: '40-60个汉字'
+        descLength: '40-60个汉字',
+        category: selectedCategory
       },
       'Legendary': {
         role: '创世之初的存在',
         context: '你见证并塑造世界的法则。在世界的某个关键转折点，你决定将一件存在交付给一位被选中的勇者。这并非单纯的"武器"或"奖励"，而是承载概念、命运或选择的礼物。它可能改变使用者，也可能改变世界本身。',
-        task: '请描述你赐予勇者的这件宝物。',
+        task: `请描述你赐予勇者的这件**${selectedCategory}类**宝物。`,
         nameLength: '8-15个汉字',
-        descLength: '60-90个汉字'
+        descLength: '60-90个汉字',
+        category: selectedCategory
       }
     };
 
@@ -230,34 +231,42 @@ ${config.task}
       descRange: config.descLength
     };
   } else {
+    // 所有级别：从预设类别中随机抽取
+    const categories = ['tools', 'jewelry', 'food', 'cloth', 'wood', 'pottery', 'iron', 'plants', 'stone', 'leather', 'bone', 'feathers', 'shells', 'minerals', 'scrolls', 'ink', 'rope', 'pouches', 'spices', 'candles'];
+    const selectedCategory = categories[randomSeed % categories.length];
+
     const rarityConfig = {
       'Common': {
         role: 'a small shop owner in a remote village',
         context: 'Your shop is near the caravan route. Your main customers are novice adventurers, hunters, and local villagers. Your goods mostly come from local craftsmen, passing merchants, or bartering. What you sell is usually cheap, practical, quickly consumed, and sometimes imperfect.',
-        task: 'From this everyday scene, describe one item on your shelf.',
+        task: `From this everyday scene, describe one **${selectedCategory}** item on your shelf.`,
         nameLength: '2-4 words',
-        descLength: '15-25 words'
+        descLength: '15-25 words',
+        category: selectedCategory
       },
       'Rare': {
         role: 'a magical tools merchant operating in the city',
         context: 'Your shop is located near the Adventurer\'s Guild or Academy. Your customers are mostly resident adventurers, mercenaries, and minor noble attendants. You don\'t sell legendary artifacts, but verified, reliable, repeatedly sellable magical tools. Your supply comes from city workshops, alchemy labs, or long-term partner magic technicians.',
-        task: 'From this business setting, describe one item currently for sale in your shop.',
+        task: `From this business setting, describe one **${selectedCategory}** item currently for sale in your shop.`,
         nameLength: '3-5 words',
-        descLength: '25-35 words'
+        descLength: '25-35 words',
+        category: selectedCategory
       },
       'Epic': {
         role: 'the Royal Treasurer of the kingdom',
         context: 'You are responsible for safeguarding the nation\'s most important treasures and symbols. The items you handle are closely tied to sovereignty, war, diplomacy, or national destiny. These items are not for daily use, but are preserved, recorded, and taken out at specific moments. They may come from ancient dynasties, battles that decided victory, or treaties that changed history.',
-        task: 'From your perspective, describe one treasure you safeguard.',
+        task: `From your perspective, describe one **${selectedCategory}** treasure you safeguard.`,
         nameLength: '4-6 words',
-        descLength: '40-60 words'
+        descLength: '40-60 words',
+        category: selectedCategory
       },
       'Legendary': {
         role: 'a being from the dawn of creation',
         context: 'You witness and shape the laws of the world. At a critical turning point in history, you decide to bestow an existence upon a chosen hero. This is not merely a "weapon" or "reward," but a gift carrying concepts, destiny, or choice. It may change the bearer, or change the world itself.',
-        task: 'Describe this treasure you bestow upon the hero.',
+        task: `Describe this **${selectedCategory}** treasure you bestow upon the hero.`,
         nameLength: '5-8 words',
-        descLength: '60-90 words'
+        descLength: '60-90 words',
+        category: selectedCategory
       }
     };
 

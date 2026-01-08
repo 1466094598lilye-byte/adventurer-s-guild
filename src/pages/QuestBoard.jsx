@@ -154,48 +154,49 @@ export default function QuestBoard() {
 
         const validQuests = allQuests.filter(q => !expiredQuests.find(eq => eq.id === q.id));
 
-        // 分离 routine 任务和非 routine 任务
-        const routineQuests = validQuests.filter(q => q.isRoutine);
-        const nonRoutineQuests = validQuests.filter(q => !q.isRoutine);
+        // 🔥 智能解密策略：尝试解密所有任务，失败则保留原文
+        // 这样可以兼容历史加密数据和新的明文 routine 数据
+        console.log(`今日任务总数: ${validQuests.length}`);
 
-        console.log(`今日任务：${routineQuests.length} 个 routine，${nonRoutineQuests.length} 个非 routine`);
+        const decryptedQuests = [];
 
-        // Routine 任务不需要解密，直接使用
-        let decryptedNonRoutineQuests = [];
+        for (const quest of validQuests) {
+          // 如果任务明确标记为 routine，直接使用明文（新版逻辑）
+          if (quest.isRoutine) {
+            console.log(`✓ Routine 任务（明文）: ${quest.title}`);
+            decryptedQuests.push(quest);
+            continue;
+          }
 
-        // 只解密非 routine 任务
-        if (nonRoutineQuests.length > 0) {
+          // 非 routine 任务：尝试解密
           try {
             const { data } = await base44.functions.invoke('decryptQuestData', {
-              encryptedQuests: nonRoutineQuests.map(quest => ({
+              encryptedQuests: [{
                 encryptedTitle: quest.title,
                 encryptedActionHint: quest.actionHint
-              }))
+              }]
             });
 
-            decryptedNonRoutineQuests = nonRoutineQuests.map((quest, index) => ({
-              ...quest,
-              title: data.decryptedQuests[index].title,
-              actionHint: data.decryptedQuests[index].actionHint
-            }));
+            const decrypted = data.decryptedQuests[0];
 
-            // 过滤掉解密失败的任务（title 或 actionHint 为 null）
-            const beforeFilter = decryptedNonRoutineQuests.length;
-            decryptedNonRoutineQuests = decryptedNonRoutineQuests.filter(quest => 
-              quest.title !== null && quest.actionHint !== null
-            );
-
-            if (decryptedNonRoutineQuests.length < beforeFilter) {
-              console.warn(`过滤掉 ${beforeFilter - decryptedNonRoutineQuests.length} 个解密失败的非 routine 任务`);
+            // 解密成功且有效
+            if (decrypted.title && decrypted.actionHint) {
+              console.log(`✓ 解密成功: ${decrypted.title}`);
+              decryptedQuests.push({
+                ...quest,
+                title: decrypted.title,
+                actionHint: decrypted.actionHint
+              });
+            } else {
+              console.warn(`⚠️ 解密返回空值，跳过任务: ${quest.id}`);
             }
           } catch (error) {
-            console.error('解密非 routine 任务失败:', error);
-            // 解密失败时，非 routine 任务为空数组
+            console.error(`❌ 解密失败，跳过任务 ${quest.id}:`, error.message);
           }
         }
 
-        // 合并 routine 任务（已明文）和解密后的非 routine 任务
-        return [...routineQuests, ...decryptedNonRoutineQuests];
+        console.log(`✅ 最终返回 ${decryptedQuests.length}/${validQuests.length} 个任务`);
+        return decryptedQuests;
       } catch (error) {
         console.error('获取任务失败:', error);
         return [];
@@ -1460,21 +1461,14 @@ export default function QuestBoard() {
         // 只在登录模式下执行（访客模式无需处理模板）
         if (user) {
           try {
-            // 找到所有旧模板的 routine 任务
-            const allQuests = await base44.entities.Quest.filter({ 
+            // 找到所有旧模板的 routine 任务（现在都是明文，直接比对）
+            const allRoutineQuests = await base44.entities.Quest.filter({ 
               isRoutine: true
             }, '-created_date', 200);
             
-            // 解密以便比对 originalActionHint
-            const { data: decryptData } = await base44.functions.invoke('decryptQuestData', {
-              encryptedQuests: allQuests.map(q => ({
-                encryptedActionHint: q.actionHint
-              }))
-            });
-            
-            const oldRoutineQuests = allQuests.filter((q, index) => {
-              const decryptedActionHint = decryptData.decryptedQuests[index].actionHint;
-              return decryptedActionHint === editingQuest.originalActionHint && q.id !== editingQuest.id;
+            const oldRoutineQuests = allRoutineQuests.filter((q) => {
+              // Routine 任务现在是明文，直接比对 originalActionHint
+              return q.originalActionHint === editingQuest.originalActionHint && q.id !== editingQuest.id;
             });
             
             console.log(`找到 ${oldRoutineQuests.length} 个旧模板任务，准备废弃`);

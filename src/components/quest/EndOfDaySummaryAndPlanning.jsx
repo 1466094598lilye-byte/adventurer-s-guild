@@ -9,7 +9,8 @@ export default function EndOfDaySummaryAndPlanning({
   showCelebration, 
   onClose, 
   currentStreak,
-  onPlanSaved 
+  onPlanSaved,
+  fromChestOpen = false
 }) {
   const [celebrationMessage, setCelebrationMessage] = useState('');
   const [loadingCelebration, setLoadingCelebration] = useState(showCelebration);
@@ -19,8 +20,10 @@ export default function EndOfDaySummaryAndPlanning({
   const [plannedQuests, setPlannedQuests] = useState([]);
   const [routineQuests, setRoutineQuests] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
+  const [isReviewMode, setIsReviewMode] = useState(false);
 
   const { language, t } = useLanguage();
+  const today = format(new Date(), 'yyyy-MM-dd');
 
   // 辅助函数：解密任务
   const decryptQuest = async (quest) => {
@@ -50,12 +53,35 @@ export default function EndOfDaySummaryAndPlanning({
       generateCelebrationMessage();
     }
     loadRoutineQuests();
+    
+    // 如果是从宝箱打开的，检查今天是否已规划
+    if (fromChestOpen) {
+      checkExistingPlan();
+    }
   }, []);
+
+  const checkExistingPlan = async () => {
+    try {
+      const user = await base44.auth.me();
+      const lastPlannedDate = user?.lastPlannedDate;
+      
+      // 如果今天已经规划过，进入回顾/修改模式
+      if (lastPlannedDate === today) {
+        setIsReviewMode(true);
+        
+        // 加载已规划的任务
+        const existingPlan = user?.nextDayPlannedQuests || [];
+        if (existingPlan.length > 0) {
+          setPlannedQuests(existingPlan);
+        }
+      }
+    } catch (error) {
+      console.error('检查规划失败:', error);
+    }
+  };
 
   const loadRoutineQuests = async () => {
     try {
-      const today = format(new Date(), 'yyyy-MM-dd');
-      
       // 只获取今天已经生成的例行任务（routine任务以明文存储，无需解密）
       const todayRoutineQuests = await base44.entities.Quest.filter({ 
         isRoutine: true,
@@ -251,7 +277,9 @@ export default function EndOfDaySummaryAndPlanning({
         </button>
 
         <h2 className="text-3xl font-black uppercase text-center mb-6">
-          {showCelebration ? t('planning_celebration_title') : t('planning_planning_title')}
+          {showCelebration ? t('planning_celebration_title') : 
+           isReviewMode ? (language === 'zh' ? '📋 回顾明日委托 📋' : '📋 Review Tomorrow\'s Quests 📋') :
+           t('planning_planning_title')}
         </h2>
 
         {showCelebration && (
@@ -353,7 +381,17 @@ export default function EndOfDaySummaryAndPlanning({
             border: '4px solid #000'
           }}
         >
-          <h3 className="font-black uppercase mb-3">{t('planning_add_temp_quests')}</h3>
+          <h3 className="font-black uppercase mb-3">
+            {isReviewMode 
+              ? (language === 'zh' ? '已规划的临时任务' : 'Planned Temporary Quests')
+              : t('planning_add_temp_quests')}
+          </h3>
+          
+          {isReviewMode && plannedQuests.length === 0 && (
+            <p className="text-center text-sm font-bold mb-3" style={{ color: '#666' }}>
+              {language === 'zh' ? '暂无临时任务规划' : 'No temporary quests planned'}
+            </p>
+          )}
           
           <div className="flex gap-3 mb-4">
             <input
@@ -511,7 +549,9 @@ export default function EndOfDaySummaryAndPlanning({
             boxShadow: '6px 6px 0px #000'
           }}
         >
-          {plannedQuests.length > 0 
+          {isReviewMode && plannedQuests.length > 0
+            ? (language === 'zh' ? `✓ 确认修改 ${plannedQuests.length} 项任务` : `✓ Confirm ${plannedQuests.length} Quests`)
+            : plannedQuests.length > 0 
             ? `${t('planning_confirm_register')} ${plannedQuests.length} ${t('planning_temp_tasks')}` 
             : t('planning_close')}
         </button>

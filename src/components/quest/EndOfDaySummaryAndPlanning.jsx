@@ -56,16 +56,13 @@ export default function EndOfDaySummaryAndPlanning({
     try {
       const today = format(new Date(), 'yyyy-MM-dd');
       
-      // 只获取今天已经生成的例行任务
+      // 只获取今天已经生成的例行任务（routine任务以明文存储，无需解密）
       const todayRoutineQuests = await base44.entities.Quest.filter({ 
         isRoutine: true,
         date: today
       }, '-created_date', 100);
       
-      // 解密
-      const decryptedQuests = await decryptQuests(todayRoutineQuests);
-      
-      setRoutineQuests(decryptedQuests);
+      setRoutineQuests(todayRoutineQuests);
     } catch (error) {
       console.error('加载每日修炼任务失败:', error);
     }

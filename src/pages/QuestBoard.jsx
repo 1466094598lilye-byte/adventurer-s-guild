@@ -139,7 +139,7 @@ export default function QuestBoard() {
         return validQuests;
       }
 
-      // 登录模式：从后端读取并解密
+      // 登录模式：从后端读取（所有任务都是明文）
       try {
         const allQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
 
@@ -155,41 +155,9 @@ export default function QuestBoard() {
 
         const validQuests = allQuests.filter(q => !expiredQuests.find(eq => eq.id === q.id));
 
-        // 🔥 分离 routine（明文）和非 routine（需解密）任务
-        const routineQuests = validQuests.filter(q => q.isRoutine);
-        const nonRoutineQuests = validQuests.filter(q => !q.isRoutine);
+        console.log(`✅ 加载 ${validQuests.length} 个今日任务（明文）`);
 
-        console.log(`今日任务：${routineQuests.length} 个 routine（明文），${nonRoutineQuests.length} 个非 routine（需解密）`);
-
-        // Routine 任务：直接使用明文
-        let decryptedNonRoutineQuests = [];
-
-        // 非 routine 任务：批量解密
-        if (nonRoutineQuests.length > 0) {
-          try {
-            const { data } = await base44.functions.invoke('decryptQuestData', {
-              encryptedQuests: nonRoutineQuests.map(quest => ({
-                encryptedTitle: quest.title,
-                encryptedActionHint: quest.actionHint
-              }))
-            });
-
-            decryptedNonRoutineQuests = nonRoutineQuests.map((quest, index) => ({
-              ...quest,
-              title: data.decryptedQuests[index].title || quest.title,
-              actionHint: data.decryptedQuests[index].actionHint || quest.actionHint
-            }));
-
-            console.log(`✅ 成功解密 ${decryptedNonRoutineQuests.length} 个非 routine 任务`);
-          } catch (error) {
-            console.error('❌ 批量解密失败:', error);
-            // 解密失败时，保留原始数据（可能显示为乱码，但至少不会丢失任务）
-            decryptedNonRoutineQuests = nonRoutineQuests;
-          }
-        }
-
-        // 合并 routine（明文）和非 routine（解密后）任务
-        return [...routineQuests, ...decryptedNonRoutineQuests];
+        return validQuests;
       } catch (error) {
         console.error('获取任务失败:', error);
         return [];
@@ -262,14 +230,9 @@ export default function QuestBoard() {
             for (const plannedQuest of nextDayPlanned) {
               console.log('正在创建任务:', plannedQuest);
 
-              const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
-                title: plannedQuest.title,
-                actionHint: plannedQuest.actionHint
-              });
-
               const createdQuest = await base44.entities.Quest.create({
-                title: encrypted.encryptedTitle,
-                actionHint: encrypted.encryptedActionHint,
+                title: plannedQuest.title,
+                actionHint: plannedQuest.actionHint,
                 difficulty: plannedQuest.difficulty,
                 rarity: plannedQuest.rarity,
                 date: today,
@@ -409,7 +372,7 @@ export default function QuestBoard() {
                 }
               });
 
-              // Routine 任务不加密，直接更新明文内容
+              // 直接更新明文内容
               await base44.entities.Quest.update(todayQuest.id, {
                 title: newTitleResult.title,
                 actionHint: templateActionHint,
@@ -471,7 +434,6 @@ export default function QuestBoard() {
         const refreshedTodayQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
         console.log(`重新获取今日任务，当前数量: ${refreshedTodayQuests.length}`);
 
-        // Routine 任务已经是明文，不需要解密
         // 筛选需要创建的任务
         const toCreate = [];
         for (const [actionHintPlain, templateQuest] of activeTemplatesMap) {
@@ -516,7 +478,7 @@ export default function QuestBoard() {
               )
             );
 
-            // 🔥 并行创建任务（Routine 任务不加密）
+            // 🔥 并行创建任务（明文）
             await Promise.all(
               toCreate.map(async ({ actionHintPlain, templateQuest }, index) => {
                 const result = llmResults[index];
@@ -1044,36 +1006,16 @@ export default function QuestBoard() {
       console.log('=== createQuestMutation 开始 ===');
       console.log('原始数据:', questData);
 
-      // 访客模式：直接保存到 localStorage（无需加密）
+      // 访客模式：直接保存到 localStorage
       if (!user) {
         const newQuest = addGuestEntity('quests', questData);
         console.log('访客任务创建成功（localStorage）');
         return newQuest;
       }
 
-      // 登录模式：检查是否为 routine 任务
-      if (questData.isRoutine) {
-        // Routine 任务不加密，直接保存
-        console.log('Routine 任务，跳过加密');
-        const result = await base44.entities.Quest.create(questData);
-        console.log('Routine 任务创建成功');
-        return result;
-      }
-
-      // 非 routine 任务：加密后保存到后端
-      const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
-        title: questData.title,
-        actionHint: questData.actionHint
-      });
-
-      console.log('加密完成，准备创建任务');
-
-      const result = await base44.entities.Quest.create({
-        ...questData,
-        title: encrypted.encryptedTitle,
-        actionHint: encrypted.encryptedActionHint
-      });
-
+      // 登录模式：直接保存明文到后端
+      console.log('登录模式，直接保存明文');
+      const result = await base44.entities.Quest.create(questData);
       console.log('任务创建成功');
       return result;
     },
@@ -1097,37 +1039,15 @@ export default function QuestBoard() {
 
   const updateQuestMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      // 访客模式：直接更新 localStorage（无需加密）
+      // 访客模式：直接更新 localStorage
       if (!user) {
         const updated = updateGuestEntity('quests', id, data);
         return updated;
       }
 
-      // 登录模式：检查是否为 routine 任务
-      const updateData = { ...data };
-
-      // 如果是 routine 任务，不加密
-      if (data.isRoutine) {
-        console.log('更新 Routine 任务，跳过加密');
-        return base44.entities.Quest.update(id, updateData);
-      }
-
-      // 非 routine 任务：加密后更新后端
-      if (data.title !== undefined || data.actionHint !== undefined || data.originalActionHint !== undefined) {
-        const toEncrypt = {
-          title: data.title,
-          actionHint: data.actionHint,
-          originalActionHint: data.originalActionHint
-        };
-
-        const { data: encrypted } = await base44.functions.invoke('encryptQuestData', toEncrypt);
-
-        if (data.title !== undefined) updateData.title = encrypted.encryptedTitle;
-        if (data.actionHint !== undefined) updateData.actionHint = encrypted.encryptedActionHint;
-        if (data.originalActionHint !== undefined) updateData.originalActionHint = encrypted.originalActionHint;
-      }
-
-      return base44.entities.Quest.update(id, updateData);
+      // 登录模式：直接更新明文到后端
+      console.log('更新任务，直接保存明文');
+      return base44.entities.Quest.update(id, data);
     },
     onSuccess: () => {
       batchInvalidateQueries(['quests']);
@@ -1241,21 +1161,12 @@ export default function QuestBoard() {
           });
         }
       } else {
-        // 登录模式：批量加密后创建
-        const { data: encryptedData } = await base44.functions.invoke('encryptQuestData', {
-          quests: pendingQuests.map(quest => ({
-            title: quest.title,
-            actionHint: quest.actionHint
-          }))
-        });
-
-        // 批量创建所有任务
+        // 登录模式：直接批量创建明文任务
         await Promise.all(
-          pendingQuests.map(async (quest, index) => {
-            const encrypted = encryptedData.encryptedQuests[index];
+          pendingQuests.map(async (quest) => {
             await base44.entities.Quest.create({
-              title: encrypted.encryptedTitle,
-              actionHint: encrypted.encryptedActionHint,
+              title: quest.title,
+              actionHint: quest.actionHint,
               difficulty: quest.difficulty,
               rarity: quest.rarity,
               date: today,

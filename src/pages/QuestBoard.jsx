@@ -45,6 +45,7 @@ export default function QuestBoard() {
   const [showDeepRestDialog, setShowDeepRestDialog] = useState(false);
   const [deepRestTasks, setDeepRestTasks] = useState([]);
   const [isAddingDeepRest, setIsAddingDeepRest] = useState(false);
+  const [fromChestOpen, setFromChestOpen] = useState(false);
   const queryClient = useQueryClient();
   const { language, t } = useLanguage();
 
@@ -1558,6 +1559,7 @@ export default function QuestBoard() {
     // 宝箱关闭后，总是弹出规划弹窗（带表扬信）
     if (user) {
       console.log('=== 触发规划明日委托弹窗（带表扬信）===');
+      setFromChestOpen(true);
       setShowCelebrationInPlanning(true);
       setShowPlanningDialog(true);
     }
@@ -1618,6 +1620,7 @@ export default function QuestBoard() {
       return;
     }
     
+    setFromChestOpen(false);
     setShowCelebrationInPlanning(false);
     setShowPlanningDialog(true);
   };
@@ -2274,9 +2277,11 @@ export default function QuestBoard() {
           <EndOfDaySummaryAndPlanning
             showCelebration={showCelebrationInPlanning}
             currentStreak={user?.streakCount || 0}
+            fromChestOpen={fromChestOpen}
             onClose={() => {
               setShowPlanningDialog(false);
               setShowCelebrationInPlanning(false);
+              setFromChestOpen(false);
             }}
             onPlanSaved={handlePlanSaved}
           />

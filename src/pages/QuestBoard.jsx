@@ -381,7 +381,7 @@ export default function QuestBoard() {
 
           // 比较任务内容是否与模板一致（现在都是明文，直接比较）
           const questActionHint = todayQuest.actionHint;
-          const templateActionHint = template.actionHint;
+          const templateActionHint = template.originalActionHint || template.actionHint;
 
           // 如果 actionHint 不同，说明模板被修改了，需要更新今日任务
           if (questActionHint !== templateActionHint) {

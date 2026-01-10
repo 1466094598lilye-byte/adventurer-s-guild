@@ -247,7 +247,15 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
             </h2>
 
             <p className="text-center font-bold mb-6">
-              {t('chest_congrats')}
+              {isOpening && selectedRoleName ? (
+                <>
+                  <span style={{ color: '#C44569' }}>{selectedRoleName}:</span>
+                  <br />
+                  {displayMessageText}
+                </>
+              ) : (
+                t('chest_congrats')
+              )}
             </p>
 
             <button

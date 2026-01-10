@@ -27,6 +27,24 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
   const openChest = async () => {
     setIsOpening(true);
 
+    // 随机选择一个角色并初始化文案
+    const randomRole = getRandomRole();
+    const roleData = chestLoadingMessages[randomRole];
+    setSelectedRoleName(roleData.name[language]);
+    
+    const messages = roleData.messages[language];
+    setCurrentMessages(messages);
+    setCurrentMessageIndex(0);
+    setDisplayMessageText(messages[0].text);
+    
+    // 启动文案循环定时器
+    let messageIdx = 0;
+    messageIntervalRef.current = setInterval(() => {
+      messageIdx = (messageIdx + 1) % messages.length;
+      setCurrentMessageIndex(messageIdx);
+      setDisplayMessageText(messages[messageIdx].text);
+    }, 2000);
+
     setTimeout(async () => {
       try {
         // 检查是否为登录用户

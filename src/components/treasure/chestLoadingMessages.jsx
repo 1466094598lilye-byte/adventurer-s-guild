@@ -22,7 +22,7 @@ export const chestLoadingMessages = {
         { text: 'Searching the hall...', duration: 2000 },
         { text: 'Must match your courage...', duration: 2000 },
         { text: 'Your medal awaits...', duration: 2000 },
-        { text: 'Heavy medal, you'll carry it!', duration: 2000 },
+        { text: "Heavy medal, you'll carry it!", duration: 2000 },
         { text: 'Finding the best one...', duration: 2000 }
       ]
     }

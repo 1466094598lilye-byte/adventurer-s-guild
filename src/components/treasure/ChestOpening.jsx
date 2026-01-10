@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Gift, Sparkles, X, Shield } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -6,6 +6,7 @@ import { useLanguage } from '@/components/LanguageContext';
 import { getTreasurePrompt } from '@/components/prompts';
 import { playSound } from '@/components/AudioManager';
 import { addGuestEntity, setGuestData, getGuestData } from '@/components/utils/guestData';
+import { chestLoadingMessages, getRandomRole } from './chestLoadingMessages';
 
 export default function ChestOpening({ date, onClose, onLootGenerated }) {
   const { language, t } = useLanguage();
@@ -15,6 +16,13 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
   const [isPity, setIsPity] = useState(false);
   const [showLoot, setShowLoot] = useState(false);
   const queryClient = useQueryClient();
+  
+  // 加载文案状态管理
+  const [selectedRoleName, setSelectedRoleName] = useState(null);
+  const [currentMessages, setCurrentMessages] = useState([]);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const [displayMessageText, setDisplayMessageText] = useState('');
+  const messageIntervalRef = useRef(null);
 
   const openChest = async () => {
     setIsOpening(true);

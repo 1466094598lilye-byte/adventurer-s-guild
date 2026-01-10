@@ -24,6 +24,16 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
   const [displayMessageText, setDisplayMessageText] = useState('');
   const messageIntervalRef = useRef(null);
 
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (messageIntervalRef.current) {
+        clearInterval(messageIntervalRef.current);
+        messageIntervalRef.current = null;
+      }
+    };
+  }, []);
+
   const openChest = async () => {
     setIsOpening(true);
 
@@ -110,7 +120,13 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
           setGotFreezeToken(false);
           setIsPity(false);
           setShowLoot(true);
-          
+
+          // 清除文案定时器
+          if (messageIntervalRef.current) {
+            clearInterval(messageIntervalRef.current);
+            messageIntervalRef.current = null;
+          }
+
           playSound('chestOpen');
           onLootGenerated(savedLoot);
           setIsOpening(false);
@@ -185,7 +201,13 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
         setGotFreezeToken(wonFreezeToken);
         setIsPity(hitPity);
         setShowLoot(true);
-        
+
+        // 清除文案定时器
+        if (messageIntervalRef.current) {
+          clearInterval(messageIntervalRef.current);
+          messageIntervalRef.current = null;
+        }
+
         playSound('chestOpen');
         onLootGenerated(savedLoot);
       } catch (error) {

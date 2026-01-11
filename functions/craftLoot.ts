@@ -125,6 +125,15 @@ Deno.serve(async (req) => {
 });
 
 function generatePrompt(rarity, language) {
+  // 随机选择物品类别（与宝箱系统一致）
+  const categories = ['工具', '饰品', '食物', '布料', '木器', '陶器', '铁器', '植物', '石器', '皮革', '骨器', '羽毛', '贝壳', '矿石', '书页', '墨水', '绳索', '袋囊', '香料', '蜡烛'];
+  const categoriesEn = ['tools', 'jewelry', 'food', 'cloth', 'wood', 'pottery', 'iron', 'plants', 'stone', 'leather', 'bone', 'feathers', 'shells', 'minerals', 'scrolls', 'ink', 'rope', 'pouches', 'spices', 'candles'];
+  
+  const randomSeed = Math.floor(Math.random() * 100000) + Date.now() % 100000;
+  const selectedCategory = language === 'zh' 
+    ? categories[randomSeed % categories.length]
+    : categoriesEn[randomSeed % categoriesEn.length];
+
   if (language === 'zh') {
     const rarityConfig = {
       'Rare': {
@@ -156,6 +165,10 @@ function generatePrompt(rarity, language) {
       prompt: `生成一个RPG风格的【合成】战利品道具。
 
 稀有度：${rarity}（${config.context}）
+
+🎲 创意随机种子：${randomSeed}
+（请将这个数字作为灵感，每次生成不同的物品）
+⚠️ 【强制要求】本次必须生成：${selectedCategory}类物品（不能是其他类别！）
 
 ⚠️ **核心要求 - 必须生成全新的独特物品**：
 1. **绝对禁止**复用示例中的名称或描述
@@ -207,6 +220,10 @@ function generatePrompt(rarity, language) {
       prompt: `Generate an RPG-style **crafted** treasure item.
 
 Rarity: ${rarity} (${config.context})
+
+🎲 Creative Random Seed: ${randomSeed}
+(Use this number as inspiration to generate a different item each time)
+⚠️ 【MANDATORY REQUIREMENT】This time you MUST generate: ${selectedCategory} category item (no other categories allowed!)
 
 ⚠️ **Core Requirement - Must Generate Completely Unique Item**:
 1. **Absolutely forbidden** to reuse names or descriptions from examples

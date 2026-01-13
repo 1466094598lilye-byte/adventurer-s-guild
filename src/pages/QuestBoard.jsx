@@ -1904,7 +1904,7 @@ export default function QuestBoard() {
                 opacity: canOpenChest ? 1 : 0.6
               }}
             >
-              <Gift className="w-14 h-14" strokeWidth={3} style={{ color: '#FFF', width: '56px', height: '56px' }} />
+              <Gift className="w-16 h-16" strokeWidth={3} style={{ color: '#FFF', width: '64px', height: '64px' }} />
             </Button>
 
             <Input
@@ -1929,10 +1929,8 @@ export default function QuestBoard() {
             <Button
               onClick={handleTextSubmit}
               disabled={isProcessing || !textInput.trim()}
-              className="flex-shrink-0 flex items-center justify-center font-black overflow-visible"
+              className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
               style={{
-                width: '64px',
-                height: '64px',
                 backgroundColor: '#C44569',
                 border: '4px solid #000',
                 boxShadow: '5px 5px 0px #000',
@@ -1940,9 +1938,9 @@ export default function QuestBoard() {
               }}
             >
               {isProcessing ? (
-                <Loader2 className="w-14 h-14 animate-spin" strokeWidth={3} style={{ color: '#FFF', width: '56px', height: '56px' }} />
+                <Loader2 className="w-12 h-12 animate-spin" style={{ color: '#FFF' }} />
               ) : (
-                <Sparkles className="w-14 h-14" strokeWidth={3} style={{ color: '#FFF', fill: 'none', width: '56px', height: '56px' }} />
+                <Sparkles className="w-14 h-14" strokeWidth={3} style={{ color: '#FFF', fill: 'none' }} />
               )}
             </Button>
           </div>

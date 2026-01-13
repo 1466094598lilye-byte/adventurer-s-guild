@@ -1667,7 +1667,7 @@ export default function QuestBoard() {
       const expiresAt = new Date(now.getTime() + duration * 1000);
 
       await createQuestMutation.mutateAsync({
-        title: quest.title,
+        title: minimalAction,
         actionHint: minimalAction,
         difficulty: quest.difficulty,
         rarity: quest.rarity,

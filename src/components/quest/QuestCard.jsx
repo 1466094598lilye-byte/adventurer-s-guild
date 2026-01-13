@@ -98,7 +98,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
       <div 
         className="relative mb-3 p-3 transform transition-all hover:translate-x-1 hover:-translate-y-1"
         style={{
-          backgroundColor: quest.source === 'kickstart' ? '#D6F2C2' : (isDone ? '#F0F0F0' : '#FFF'),
+          backgroundColor: isDone ? '#F0F0F0' : '#FFF',
           border: '4px solid #000',
           boxShadow: isDone ? '3px 3px 0px #000' : '5px 5px 0px #000',
           transform: `rotate(${Math.random() * 2 - 1}deg)`,
@@ -111,12 +111,14 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
             <div 
               className="flex items-center justify-center w-10 h-10 font-black text-lg transform -rotate-3"
               style={{
-                background: quest.isLongTermProject && quest.difficulty === 'S' 
+                background: quest.source === 'kickstart' 
+                  ? 'linear-gradient(135deg, #72B01D 0%, #A8E063 100%)'
+                  : quest.isLongTermProject && quest.difficulty === 'S' 
                   ? 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)'
                   : quest.difficulty === 'R' 
                   ? 'linear-gradient(135deg, #FFE66D 0%, #FFA94D 100%)'
                   : quest.difficulty === 'S' ? '#000' : quest.difficulty === 'A' ? '#C44569' : quest.difficulty === 'B' ? '#FF6B35' : '#FFE66D',
-                color: quest.isLongTermProject && quest.difficulty === 'S' ? '#FFF' : quest.difficulty === 'S' ? '#FFE66D' : '#000',
+                color: quest.source === 'kickstart' ? '#FFF' : quest.isLongTermProject && quest.difficulty === 'S' ? '#FFF' : quest.difficulty === 'S' ? '#FFE66D' : '#000',
                 border: `3px solid ${quest.difficulty === 'S' && !quest.isLongTermProject ? '#FFE66D' : '#000'}`,
                 boxShadow: '3px 3px 0px rgba(0,0,0,1)',
                 textShadow: quest.isLongTermProject && quest.difficulty === 'S' ? '1px 1px 0px #000' : 'none'

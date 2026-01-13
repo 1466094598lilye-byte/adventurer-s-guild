@@ -1362,6 +1362,23 @@ export default function QuestBoard() {
       
       setSelectedQuest(quest);
 
+      // 检查是否有关联的启动任务需要自动完成
+      const relatedKickstartTasks = quests.filter(q => 
+        q.source === 'kickstart' && 
+        q.parentQuestId === quest.id && 
+        q.status === 'todo'
+      );
+
+      if (relatedKickstartTasks.length > 0) {
+        console.log(`发现 ${relatedKickstartTasks.length} 个关联的启动任务，自动标记为完成`);
+        for (const kickstartTask of relatedKickstartTasks) {
+          await updateQuestMutation.mutateAsync({
+            id: kickstartTask.id,
+            data: { status: 'done' }
+          });
+        }
+      }
+
       batchInvalidateQueries(['quests']);
       console.log('查询缓存已刷新');
 

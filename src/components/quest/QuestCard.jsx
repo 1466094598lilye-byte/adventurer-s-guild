@@ -47,6 +47,32 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, [quest.source, quest.status, startTime]);
+
+  // 计算倒计时（启动模式任务）
+  useEffect(() => {
+    if (quest.source !== 'kickstart' || quest.status === 'done' || !quest.bootstrapExpiresAt) {
+      return;
+    }
+
+    const updateCountdown = () => {
+      const now = Date.now();
+      const expiresAt = new Date(quest.bootstrapExpiresAt).getTime();
+      const remaining = expiresAt - now;
+
+      if (remaining <= 0) {
+        setTimeLeft(language === 'zh' ? '悬浮中' : 'Floating');
+        return;
+      }
+
+      const minutes = Math.floor(remaining / 60000);
+      const seconds = Math.floor((remaining % 60000) / 1000);
+      setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [quest.source, quest.status, quest.bootstrapExpiresAt, language]);
   
   const isDone = quest.status === 'done';
 
@@ -131,6 +157,20 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                     }}
                   >
                     <Clock className="w-3 h-3" strokeWidth={3} />
+                    <span className="text-xs font-black">{timeLeft}</span>
+                  </div>
+                )}
+                {timeLeft && quest.source === 'kickstart' && (
+                  <div 
+                    className="inline-flex items-center gap-1 px-2 py-1 mt-1"
+                    style={{
+                      background: timeLeft === (language === 'zh' ? '悬浮中' : 'Floating') 
+                        ? 'linear-gradient(135deg, #C44569 0%, #FF6B35 100%)' 
+                        : 'linear-gradient(135deg, #4ECDC4 0%, #00B4D8 100%)',
+                      border: '2px solid #000'
+                    }}
+                  >
+                    <Zap className="w-3 h-3" strokeWidth={3} />
                     <span className="text-xs font-black">{timeLeft}</span>
                   </div>
                 )}

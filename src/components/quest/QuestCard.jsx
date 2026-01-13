@@ -98,7 +98,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
       <div 
         className="relative mb-3 p-3 transform transition-all hover:translate-x-1 hover:-translate-y-1"
         style={{
-          backgroundColor: isDone ? '#F0F0F0' : '#FFF',
+          backgroundColor: quest.source === 'kickstart' ? '#D6F2C2' : (isDone ? '#F0F0F0' : '#FFF'),
           border: '4px solid #000',
           boxShadow: isDone ? '3px 3px 0px #000' : '5px 5px 0px #000',
           transform: `rotate(${Math.random() * 2 - 1}deg)`,
@@ -130,18 +130,34 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 mb-1">
               <div className="flex-1 min-w-0">
-                <h3 
-                  className="font-black text-base uppercase leading-tight mb-1 break-words"
-                  style={{ 
-                    textDecoration: isDone ? 'line-through' : 'none',
-                    color: isDone ? '#999' : '#000',
-                    wordBreak: 'break-word',
-                    overflowWrap: 'break-word',
-                    hyphens: 'auto'
-                  }}
-                >
-                  {quest.title}
-                </h3>
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  {quest.source === 'kickstart' && (
+                    <span 
+                      className="flex items-center gap-1 px-2 py-1"
+                      style={{
+                        backgroundColor: '#72B01D',
+                        color: '#FFF',
+                        border: '2px solid #000',
+                        boxShadow: '2px 2px 0px #000'
+                      }}
+                    >
+                      <Zap className="w-3 h-3" strokeWidth={3} />
+                      <span className="text-xs font-black">{language === 'zh' ? '启动任务' : 'Kickstart'}</span>
+                    </span>
+                  )}
+                  <h3 
+                    className="font-black text-base uppercase leading-tight break-words flex-1"
+                    style={{ 
+                      textDecoration: isDone ? 'line-through' : 'none',
+                      color: isDone ? '#999' : '#000',
+                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
+                      hyphens: 'auto'
+                    }}
+                  >
+                    {quest.title}
+                  </h3>
+                </div>
                 <p 
                   className="text-xs font-bold line-clamp-2"
                   style={{ color: isDone ? '#999' : '#666' }}

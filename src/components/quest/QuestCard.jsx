@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Check, MoreVertical, Edit, Trash2, RotateCcw, Clock } from 'lucide-react';
+import { Check, MoreVertical, Edit, Trash2, RotateCcw, Clock, Zap } from 'lucide-react';
 import DifficultyBadge from './DifficultyBadge';
 import { format } from 'date-fns';
 import { useLanguage } from '@/components/LanguageContext';
+import KickstartModeDialog from './KickstartModeDialog';
 
-export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReopen }) {
+export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReopen, onKickstart }) {
   const [showMenu, setShowMenu] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showKickstartDialog, setShowKickstartDialog] = useState(false);
   const [isGlowing, setIsGlowing] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   // 计算正计时（深度休息任务）
   const [startTime] = useState(() => {
@@ -167,6 +169,18 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                           <RotateCcw className="w-3 h-3" /> {t('questcard_reopen')}
                         </button>
                       )}
+                      {!isDone && !quest.isBootstrapTask && (
+                        <button
+                          onClick={() => {
+                            setShowKickstartDialog(true);
+                            setShowMenu(false);
+                          }}
+                          className="w-full px-3 py-2 text-left text-xs font-bold hover:bg-gray-100 flex items-center gap-2"
+                          style={{ borderBottom: '2px solid #000' }}
+                        >
+                          <Zap className="w-3 h-3" /> {language === 'zh' ? '启动模式' : 'Kickstart'}
+                        </button>
+                      )}
                       <button
                         onClick={() => {
                           onEdit(quest);
@@ -220,6 +234,15 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
           </button>
         </div>
       </div>
+
+      {/* Kickstart Mode Dialog */}
+      {showKickstartDialog && (
+        <KickstartModeDialog
+          quest={quest}
+          onConfirm={onKickstart}
+          onClose={() => setShowKickstartDialog(false)}
+        />
+      )}
 
       {/* Confirm Reopen Dialog */}
       {showConfirm && (

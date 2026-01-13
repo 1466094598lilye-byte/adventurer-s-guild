@@ -256,31 +256,31 @@ export default function QuestBoard() {
           });
           console.log('✅ 已清空规划列表（防止并发重复）');
 
-          const createdQuestIds = [];
-
           try {
-            for (const plannedQuest of nextDayPlanned) {
-              console.log('正在创建任务:', plannedQuest);
+            // 🔥 批量加密所有任务（并行）
+            const { data: encryptedData } = await base44.functions.invoke('encryptQuestData', {
+              quests: nextDayPlanned.map(quest => ({
+                title: quest.title,
+                actionHint: quest.actionHint
+              }))
+            });
 
-              const { data: encrypted } = await base44.functions.invoke('encryptQuestData', {
-                title: plannedQuest.title,
-                actionHint: plannedQuest.actionHint
-              });
-
-              const createdQuest = await base44.entities.Quest.create({
-                title: encrypted.encryptedTitle,
-                actionHint: encrypted.encryptedActionHint,
-                difficulty: plannedQuest.difficulty,
-                rarity: plannedQuest.rarity,
-                date: today,
-                status: 'todo',
-                source: 'ai',
-                tags: plannedQuest.tags || []
-              });
-
-              createdQuestIds.push(createdQuest.id);
-              console.log('任务创建成功:', createdQuest.id);
-              }
+            // 🔥 批量创建所有任务（并行）
+            await Promise.all(
+              nextDayPlanned.map(async (plannedQuest, index) => {
+                const encrypted = encryptedData.encryptedQuests[index];
+                await base44.entities.Quest.create({
+                  title: encrypted.encryptedTitle,
+                  actionHint: encrypted.encryptedActionHint,
+                  difficulty: plannedQuest.difficulty,
+                  rarity: plannedQuest.rarity,
+                  date: today,
+                  status: 'todo',
+                  source: 'ai',
+                  tags: plannedQuest.tags || []
+                });
+              })
+            )
 
               console.log('✅ 明日规划任务全部创建成功');
 

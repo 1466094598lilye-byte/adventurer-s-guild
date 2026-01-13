@@ -1641,6 +1641,37 @@ export default function QuestBoard() {
     queryClient.refetchQueries({ queryKey: ['hasLongTermQuests'] });
   };
 
+  const handleKickstart = async (quest, { minimalAction, duration }) => {
+    try {
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + duration * 1000);
+
+      await createQuestMutation.mutateAsync({
+        title: quest.title,
+        actionHint: minimalAction,
+        difficulty: quest.difficulty,
+        rarity: quest.rarity,
+        date: today,
+        status: 'todo',
+        source: 'kickstart',
+        isBootstrapTask: true,
+        parentQuestId: quest.id,
+        bootstrapMinimalAction: minimalAction,
+        bootstrapDuration: duration,
+        bootstrapExpiresAt: expiresAt.toISOString(),
+        tags: ['启动模式']
+      });
+
+      setToast(language === 'zh' 
+        ? `✨ 已创建启动任务：${minimalAction}` 
+        : `✨ Created kickstart task: ${minimalAction}`);
+      setTimeout(() => setToast(null), 2000);
+    } catch (error) {
+      console.error('创建启动任务失败:', error);
+      alert(language === 'zh' ? '创建失败，请重试' : 'Failed to create, please retry');
+    }
+  };
+
   const handleDeepRestChallenge = async () => {
     if (isGeneratingDeepRest) return;
     
@@ -2217,6 +2248,7 @@ export default function QuestBoard() {
                 onEdit={(q) => setEditingQuest(q)}
                 onDelete={(id) => deleteQuestMutation.mutate(id)}
                 onReopen={handleReopen}
+                onKickstart={(kickstartData) => handleKickstart(quest, kickstartData)}
               />
             ))}
           </div>

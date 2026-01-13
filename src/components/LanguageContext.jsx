@@ -292,6 +292,14 @@ export function LanguageProvider({ children }) {
       crafting_collect: '收入囊中',
       crafting_error: '合成失败',
       
+      // Kickstart Mode
+      kickstart_mode_title: '⚡ 启动模式 ⚡',
+      kickstart_minimal_action_label: '最小行动',
+      kickstart_duration_label: '倒计时时长',
+      kickstart_create_button: '立即启动',
+      kickstart_countdown_label: '倒计时中',
+      kickstart_suspended_label: '悬浮中',
+
       // Exchange System
       exchange_title: '传说宝物兑换所',
       exchange_subtitle: '用珍贵的传说宝物换取保命的冻结券',
@@ -574,6 +582,14 @@ questboard_toast_quest_added_rest_canceled: 'Quest added, rest day automatically
       crafting_collect: 'Collect',
       crafting_error: 'Crafting Failed',
       
+      // Kickstart Mode
+      kickstart_mode_title: '⚡ Kickstart Mode ⚡',
+      kickstart_minimal_action_label: 'Minimal Action',
+      kickstart_duration_label: 'Countdown Duration',
+      kickstart_create_button: 'Start Now',
+      kickstart_countdown_label: 'Counting Down',
+      kickstart_suspended_label: 'Floating',
+
       // Exchange System
       exchange_title: 'Legendary Exchange',
       exchange_subtitle: 'Trade precious legendary treasures for life-saving freeze tokens',

@@ -124,8 +124,8 @@ export default function QuestBoard() {
         // 删除过期的启动模式任务
         const now = new Date().getTime();
         const validQuests = todayQuests.filter(q => {
-          if (q.source === 'bootstrap' && q.expiresAt && q.status === 'todo') {
-            return new Date(q.expiresAt).getTime() > now;
+          if (q.source === 'kickstart' && q.bootstrapExpiresAt && q.status === 'todo') {
+            return new Date(q.bootstrapExpiresAt).getTime() > now;
           }
           return true;
         });
@@ -146,7 +146,7 @@ export default function QuestBoard() {
         // 删除过期的启动模式任务
         const now = new Date().getTime();
         const expiredQuests = allQuests.filter(q => 
-          q.source === 'bootstrap' && q.expiresAt && q.status === 'todo' && new Date(q.expiresAt).getTime() <= now
+          q.source === 'kickstart' && q.bootstrapExpiresAt && q.status === 'todo' && new Date(q.bootstrapExpiresAt).getTime() <= now
         );
 
         if (expiredQuests.length > 0) {

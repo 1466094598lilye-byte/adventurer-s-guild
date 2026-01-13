@@ -1902,7 +1902,7 @@ export default function QuestBoard() {
                 opacity: canOpenChest ? 1 : 0.6
               }}
             >
-              <Gift className="w-14 h-14" strokeWidth={3} style={{ color: '#FFF' }} />
+              <Gift className="w-28 h-28" strokeWidth={3} style={{ color: '#FFF' }} />
             </Button>
 
             <Input

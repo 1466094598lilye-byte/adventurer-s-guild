@@ -1851,7 +1851,7 @@ export default function QuestBoard() {
                 opacity: canOpenChest ? 1 : 0.6
               }}
             >
-              <Gift className="w-12 h-12" strokeWidth={3} style={{ color: '#FFF' }} />
+              <Gift className="w-14 h-14" strokeWidth={3} style={{ color: '#FFF' }} />
             </Button>
 
             <Input
@@ -1885,9 +1885,9 @@ export default function QuestBoard() {
               }}
             >
               {isProcessing ? (
-                <Loader2 className="w-12 h-12 animate-spin" style={{ color: '#FFF' }} />
+                <Loader2 className="w-14 h-14 animate-spin" style={{ color: '#FFF' }} />
               ) : (
-                <Sparkles className="w-12 h-12" strokeWidth={3} style={{ color: '#FFF', fill: 'none' }} />
+                <Sparkles className="w-14 h-14" strokeWidth={3} style={{ color: '#FFF', fill: 'none' }} />
               )}
             </Button>
           </div>

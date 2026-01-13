@@ -1894,15 +1894,17 @@ export default function QuestBoard() {
                   setTimeout(() => setToast(null), 2000);
                 }
               }}
-              className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
+              className="flex-shrink-0 flex items-center justify-center font-black overflow-visible"
               style={{
+                width: '112px',
+                height: '112px',
                 backgroundColor: canOpenChest ? '#4ECDC4' : '#E0E0E0',
                 border: '4px solid #000',
                 boxShadow: '5px 5px 0px #000',
                 opacity: canOpenChest ? 1 : 0.6
               }}
             >
-              <Gift className="w-28 h-28" strokeWidth={3} style={{ color: '#FFF' }} />
+              <Gift className="w-28 h-28" strokeWidth={3} style={{ color: '#FFF', width: '112px', height: '112px' }} />
             </Button>
 
             <Input

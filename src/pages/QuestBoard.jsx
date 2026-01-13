@@ -1929,8 +1929,10 @@ export default function QuestBoard() {
             <Button
               onClick={handleTextSubmit}
               disabled={isProcessing || !textInput.trim()}
-              className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
+              className="flex-shrink-0 flex items-center justify-center font-black overflow-visible"
               style={{
+                width: '64px',
+                height: '64px',
                 backgroundColor: '#C44569',
                 border: '4px solid #000',
                 boxShadow: '5px 5px 0px #000',
@@ -1938,9 +1940,9 @@ export default function QuestBoard() {
               }}
             >
               {isProcessing ? (
-                <Loader2 className="w-12 h-12 animate-spin" style={{ color: '#FFF' }} />
+                <Loader2 className="w-16 h-16 animate-spin" style={{ color: '#FFF', width: '64px', height: '64px' }} />
               ) : (
-                <Sparkles className="w-14 h-14" strokeWidth={3} style={{ color: '#FFF', fill: 'none' }} />
+                <Sparkles className="w-16 h-16" strokeWidth={3} style={{ color: '#FFF', fill: 'none', width: '64px', height: '64px' }} />
               )}
             </Button>
           </div>

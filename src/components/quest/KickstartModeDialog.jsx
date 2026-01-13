@@ -145,7 +145,8 @@ export default function KickstartModeDialog({ quest, onConfirm, onClose }) {
             onClick={onClose}
             className="flex-1 py-3 font-black uppercase"
             style={{
-              backgroundColor: '#FFF',
+              backgroundColor: '#FF6B35',
+              color: '#FFF',
               border: '4px solid #000',
               boxShadow: '4px 4px 0px #000'
             }}
@@ -175,21 +176,23 @@ export default function KickstartModeDialog({ quest, onConfirm, onClose }) {
           input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 24px;
-            height: 24px;
+            width: 32px;
+            height: 32px;
             background: #000;
             cursor: pointer;
             border: 3px solid #FFE66D;
-            box-shadow: 2px 2px 0px #000;
+            border-radius: 6px;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.4);
           }
           
           input[type="range"]::-moz-range-thumb {
-            width: 24px;
-            height: 24px;
+            width: 32px;
+            height: 32px;
             background: #000;
             cursor: pointer;
             border: 3px solid #FFE66D;
-            box-shadow: 2px 2px 0px #000;
+            border-radius: 6px;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.4);
           }
         `}</style>
       </div>

@@ -1894,7 +1894,7 @@ export default function QuestBoard() {
                   setTimeout(() => setToast(null), 2000);
                 }
               }}
-              className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
+              className="flex-shrink-0 w-32 h-32 flex items-center justify-center font-black"
               style={{
                 backgroundColor: canOpenChest ? '#4ECDC4' : '#E0E0E0',
                 border: '4px solid #000',

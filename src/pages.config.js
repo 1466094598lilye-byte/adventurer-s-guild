@@ -1,15 +1,15 @@
 import Journal from './pages/Journal';
 import Profile from './pages/Profile';
-import Treasures from './pages/Treasures';
 import QuestBoard from './pages/QuestBoard';
+import Treasures from './pages/Treasures';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "Journal": Journal,
     "Profile": Profile,
-    "Treasures": Treasures,
     "QuestBoard": QuestBoard,
+    "Treasures": Treasures,
 }
 
 export const pagesConfig = {

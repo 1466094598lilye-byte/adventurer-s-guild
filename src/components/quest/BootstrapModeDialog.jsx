@@ -100,7 +100,8 @@ export default function BootstrapModeDialog({ tasks, onClose, onConfirm, isAddin
             disabled={isAdding}
             className="flex-1 py-3 font-black uppercase"
             style={{
-              backgroundColor: '#FFF',
+              backgroundColor: '#FF6B35',
+              color: '#FFF',
               border: '4px solid #000',
               boxShadow: '4px 4px 0px #000',
               opacity: isAdding ? 0.5 : 1

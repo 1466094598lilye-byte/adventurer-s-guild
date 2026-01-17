@@ -1694,59 +1694,45 @@ export default function QuestBoard() {
 
   const handleDeepRestChallenge = async () => {
     if (isGeneratingDeepRest) return;
-    
+
     setIsGeneratingDeepRest(true);
     const loadingAudio = playLoadingSound();
-    
-    try {
-      const { data: result } = await base44.functions.invoke('callDeepSeek', {
-        prompt: getBootstrapModePrompt(language),
-        response_json_schema: {
-          type: "object",
-          properties: {
-            tasks: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  title: {
-                    type: "string",
-                    description: language === 'zh'
-                      ? "必须是【休息】+正好7个汉字！例如：【休息】慢慢伸展放松身心"
-                      : "Must be [Rest]: <5-8 Word Simple Phrase>! Example: [Rest]: Slowly Stretch And Relax Body"
-                  },
-                  actionHint: {
-                    type: "string",
-                    description: language === 'zh'
-                      ? "用简单的语言描述这个蓄力动作"
-                      : "Describe this recharge action in simple language"
-                  }
-                },
-                required: ["title", "actionHint"]
-              },
-              minItems: 3,
-              maxItems: 3
-            }
-          },
-          required: ["tasks"]
-        }
-      });
 
-      // 添加临时ID并显示弹窗
-      const tasksWithIds = result.tasks.map((task, index) => ({
-        ...task,
+    try {
+      // 从数据库获取所有深度休息任务
+      const allTasks = await base44.entities.DeepRestTask.list();
+
+      if (allTasks.length < 3) {
+        alert(language === 'zh'
+          ? '深度休息任务库数据不足，请联系管理员'
+          : 'Insufficient deep rest tasks, please contact admin');
+        return;
+      }
+
+      // 随机抽取3个不重复的任务（Fisher-Yates shuffle取前3个）
+      const shuffled = [...allTasks];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      const selectedTasks = shuffled.slice(0, 3);
+
+      // 转换为前端需要的格式
+      const tasksWithIds = selectedTasks.map((task, index) => ({
+        title: language === 'zh' ? `【休息】${task.titleZh}` : `[Rest]: ${task.titleEn}`,
+        actionHint: language === 'zh' ? task.descriptionZh : task.descriptionEn,
         tempId: `deeprest_${Date.now()}_${index}`
       }));
-      
+
       setDeepRestTasks(tasksWithIds);
       setShowDeepRestDialog(true);
     } catch (error) {
-      console.error('生成深度休息任务失败:', error);
+      console.error('获取深度休息任务失败:', error);
       alert(language === 'zh'
-        ? '生成失败，请重试'
-        : 'Generation failed, please try again');
+        ? '获取失败，请重试'
+        : 'Failed to load tasks, please try again');
     }
-    
+
     loadingAudio.pause();
     loadingAudio.currentTime = 0;
     setIsGeneratingDeepRest(false);

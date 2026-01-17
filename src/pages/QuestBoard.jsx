@@ -2638,13 +2638,20 @@ export default function QuestBoard() {
                 strokeWidth={4}
                 style={{ color: '#000' }}
               />
-              
+
               <h2 
-                className="text-2xl font-black uppercase mb-3"
+                className="text-2xl font-black uppercase mb-2"
                 style={{ color: '#000' }}
               >
                 {language === 'zh' ? '⚙️ 工会同步中 ⚙️' : '⚙️ Guild Syncing ⚙️'}
               </h2>
+
+              <p 
+                className="text-base font-black mb-4"
+                style={{ color: '#C44569' }}
+              >
+                💡 {getCurrentLoadingMessage()}
+              </p>
 
               <div 
                 className="p-4"
@@ -2659,13 +2666,6 @@ export default function QuestBoard() {
                     : 'Loading today\'s quests and planned tasks, please wait...'}
                 </p>
               </div>
-
-              <p 
-                className="text-xs font-bold mt-4"
-                style={{ color: '#666' }}
-              >
-                💡 {getCurrentLoadingMessage()}
-              </p>
             </div>
           </div>
         </div>

@@ -32,7 +32,7 @@ export const chestLoadingMessages = {
     icon: '🏛️',
     name: {
       zh: '协会总管',
-      en: 'Guild Manager'
+      en: 'Guild Steward'
     },
     messages: {
       zh: [

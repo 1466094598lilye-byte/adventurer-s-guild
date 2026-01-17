@@ -44,7 +44,7 @@ export const chestLoadingMessages = {
         { text: '协会总管翻遍了仓库...马上找到!', duration: 2000 }
       ],
       en: [
-        { text: 'Manager checking the vault...', duration: 2000 },
+        { text: 'Steward checking the vault...', duration: 2000 },
         { text: 'Inspecting quality...', duration: 2000 },
         { text: 'You earned real value...', duration: 2000 },
         { text: 'Wrapping it up...', duration: 2000 },

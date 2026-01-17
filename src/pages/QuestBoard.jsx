@@ -46,6 +46,7 @@ export default function QuestBoard() {
   const [deepRestTasks, setDeepRestTasks] = useState([]);
   const [isAddingDeepRest, setIsAddingDeepRest] = useState(false);
   const [fromChestOpen, setFromChestOpen] = useState(false);
+  const [rolloverLoadingSeconds, setRolloverLoadingSeconds] = useState(0);
   const queryClient = useQueryClient();
   const { language, t } = useLanguage();
 
@@ -67,9 +68,52 @@ export default function QuestBoard() {
     } catch {}
   };
   const invalidationTimeoutRef = useRef(null);
+  const rolloverTimerRef = useRef(null);
 
   const today = format(new Date(), 'yyyy-MM-dd');
   const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+
+  // 日更加载动态文案
+  const rolloverLoadingMessages = {
+    zh: [
+      { text: '推开协会大门...', duration: 3 },
+      { text: '神秘智者抬起头,感知到你的到来', duration: 2 },
+      { text: '首席书记官翻开今日的记录本', duration: 2 },
+      { text: '协会总管开始清点你的任务清单', duration: 2 },
+      { text: '大长老从座位上缓缓起身', duration: 2 },
+      { text: '战术大师在作战图上标注今日要点', duration: 2 },
+      { text: '荣誉骑士团长检查你的装备状态', duration: 2 },
+      { text: '智者点燃今日的引路明灯', duration: 2 },
+      { text: '协会总管在做最后确认...', duration: 2 },
+      { text: '任务清单内容较多,正在整理...', duration: 2 }
+    ],
+    en: [
+      { text: 'Entering the guild...', duration: 3 },
+      { text: 'Sage senses your arrival...', duration: 2 },
+      { text: 'Scribe opens today\'s log...', duration: 2 },
+      { text: 'Steward reviewing your tasks...', duration: 2 },
+      { text: 'Elder rises from seat...', duration: 2 },
+      { text: 'Tactician marking key points...', duration: 2 },
+      { text: 'Knight checking your gear...', duration: 2 },
+      { text: 'Sage lights today\'s lantern...', duration: 2 },
+      { text: 'Steward doing final checks...', duration: 2 },
+      { text: 'Organizing task details...', duration: 2 }
+    ]
+  };
+
+  const getCurrentLoadingMessage = () => {
+    const messages = rolloverLoadingMessages[language];
+    let accumulatedTime = 0;
+
+    for (const msg of messages) {
+      accumulatedTime += msg.duration;
+      if (rolloverLoadingSeconds < accumulatedTime) {
+        return msg.text;
+      }
+    }
+
+    return messages[messages.length - 1].text;
+  };
 
   // 🔥 优化：批量刷新查询，避免频繁触发
   const batchInvalidateQueries = (keys) => {
@@ -95,6 +139,28 @@ export default function QuestBoard() {
     const interval = setInterval(updateHour, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  // 日更加载计时器
+  useEffect(() => {
+    if (isDayRolloverInProgress) {
+      setRolloverLoadingSeconds(0);
+      rolloverTimerRef.current = setInterval(() => {
+        setRolloverLoadingSeconds(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (rolloverTimerRef.current) {
+        clearInterval(rolloverTimerRef.current);
+        rolloverTimerRef.current = null;
+      }
+      setRolloverLoadingSeconds(0);
+    }
+
+    return () => {
+      if (rolloverTimerRef.current) {
+        clearInterval(rolloverTimerRef.current);
+      }
+    };
+  }, [isDayRolloverInProgress]);
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -2598,9 +2664,7 @@ export default function QuestBoard() {
                 className="text-xs font-bold mt-4"
                 style={{ color: '#666' }}
               >
-                {language === 'zh'
-                  ? '💡 通常只需要几秒钟'
-                  : '💡 This usually takes just a few seconds'}
+                💡 {getCurrentLoadingMessage()}
               </p>
             </div>
           </div>

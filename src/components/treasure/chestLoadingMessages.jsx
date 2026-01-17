@@ -58,7 +58,7 @@ export const chestLoadingMessages = {
     icon: '📜',
     name: {
       zh: '首席史诗书记官',
-      en: 'Chief Epic Scribe'
+      en: 'Chief Epic Chronicler'
     },
     messages: {
       zh: [

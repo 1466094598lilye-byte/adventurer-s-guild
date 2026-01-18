@@ -72,6 +72,9 @@ function LayoutContent({ children }) {
                 <p className="font-bold text-xs leading-tight mt-0.5" style={{ color: '#666' }}>
                   {t('guest_mode_warning_subtitle')}
                 </p>
+                <p className="font-bold text-xs leading-tight mt-1" style={{ color: '#333' }}>
+                  {t('guest_mode_terms_notice')}
+                </p>
               </div>
             </div>
             <button

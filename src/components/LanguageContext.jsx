@@ -37,6 +37,7 @@ export function LanguageProvider({ children }) {
       // Guest Mode Warning
       guest_mode_warning_title: '游客模式',
       guest_mode_warning_subtitle: '刷新页面数据会丢失，建议登录以永久保存你的冒险记录',
+      guest_mode_terms_notice: '登录即表示同意 Terms and Privacy Policy for Adventurer Guild',
       login_button: '登录',
       
       // Quest Board
@@ -327,6 +328,7 @@ export function LanguageProvider({ children }) {
       // Guest Mode Warning
       guest_mode_warning_title: 'Guest Mode',
       guest_mode_warning_subtitle: 'Data will be lost on page refresh. Please log in to save your progress permanently',
+      guest_mode_terms_notice: 'By logging in, you agree to the Terms and Privacy Policy for Adventurer Guild',
       login_button: 'Login',
       
       // Quest Board

@@ -12,7 +12,6 @@ import LongTermCalendar from '../components/quest/LongTermCalendar';
 import JointPraiseDialog from '../components/quest/JointPraiseDialog';
 import StreakBreakDialog from '../components/streak/StreakBreakDialog';
 import BootstrapModeDialog from '../components/quest/BootstrapModeDialog';
-import OnboardingTutorial from '../components/tutorial/OnboardingTutorial';
 import { format, subDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,7 +47,6 @@ export default function QuestBoard() {
   const [isAddingDeepRest, setIsAddingDeepRest] = useState(false);
   const [fromChestOpen, setFromChestOpen] = useState(false);
   const [rolloverLoadingSeconds, setRolloverLoadingSeconds] = useState(0);
-  const [showTutorial, setShowTutorial] = useState(false);
   const queryClient = useQueryClient();
   const { language, t } = useLanguage();
 
@@ -177,19 +175,6 @@ export default function QuestBoard() {
     staleTime: 10000,
     refetchOnWindowFocus: false,
   });
-
-  // 检查是否需要显示新手教程
-  useEffect(() => {
-    if (user && quests) {
-      const tutorialCompleted = localStorage.getItem(`tutorial_completed_${user.id}`);
-      const hasQuests = quests.length > 0;
-      
-      // 如果用户从未完成教程，且当前没有任务，显示教程
-      if (!tutorialCompleted && !hasQuests && !isLoading) {
-        setShowTutorial(true);
-      }
-    }
-  }, [user, quests, isLoading]);
 
   const { data: quests = [], isLoading } = useQuery({
     queryKey: ['quests', today],
@@ -2627,23 +2612,6 @@ export default function QuestBoard() {
           onUseToken={handleUseToken}
           onBreakStreak={handleBreakStreak}
           onClose={() => setStreakBreakInfo(null)}
-        />
-      )}
-
-      {showTutorial && (
-        <OnboardingTutorial
-          onComplete={() => {
-            if (user) {
-              localStorage.setItem(`tutorial_completed_${user.id}`, 'true');
-            }
-            setShowTutorial(false);
-          }}
-          onSkip={() => {
-            if (user) {
-              localStorage.setItem(`tutorial_completed_${user.id}`, 'true');
-            }
-            setShowTutorial(false);
-          }}
         />
       )}
 

@@ -1,13 +1,15 @@
 import React from 'react'; // Added React import
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { LogOut, Award, Flame, Shield, Settings } from 'lucide-react';
+import { LogOut, Award, Flame, Shield, Settings, Trash2 } from 'lucide-react';
 import StreakDisplay from '../components/profile/StreakDisplay';
 import { useLanguage } from '@/components/LanguageContext';
 
 export default function Profile() {
   const { t, language, switchLanguage } = useLanguage();
   const [showRestoreButton, setShowRestoreButton] = React.useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   const { data: user, isLoading } = useQuery({
     queryKey: ['user'],
@@ -16,6 +18,36 @@ export default function Profile() {
 
   const handleLogout = () => {
     base44.auth.logout();
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      const { data } = await base44.functions.invoke('deleteUserData');
+      
+      if (data.success) {
+        alert(language === 'zh' 
+          ? `✅ 账户数据已成功删除（共删除 ${data.totalDeleted} 条记录）。即将退出登录...` 
+          : `✅ Account data successfully deleted (${data.totalDeleted} records). Logging out...`);
+        
+        // 延迟1秒后退出登录
+        setTimeout(() => {
+          base44.auth.logout();
+        }, 1000);
+      } else {
+        alert(language === 'zh' 
+          ? `❌ 删除失败：${data.message}` 
+          : `❌ Deletion failed: ${data.message}`);
+        setIsDeleting(false);
+      }
+    } catch (error) {
+      console.error('Delete account error:', error);
+      alert(language === 'zh' 
+        ? `❌ 删除账户时发生错误：${error.message}` 
+        : `❌ Error deleting account: ${error.message}`);
+      setIsDeleting(false);
+    }
+    setShowDeleteConfirm(false);
   };
 
   // 🔥 临时修复：帮助用户恢复丢失的连胜数据
@@ -361,7 +393,7 @@ export default function Profile() {
         {/* Logout Button */}
         <button
           onClick={handleLogout}
-          className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
+          className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3 mb-4"
           style={{
             backgroundColor: '#FF6B35',
             color: '#FFF',
@@ -372,6 +404,101 @@ export default function Profile() {
           <LogOut className="w-6 h-6" strokeWidth={3} />
           {language === 'zh' ? '退出登录' : 'Logout'}
         </button>
+
+        {/* Delete Account Button */}
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          disabled={isDeleting}
+          className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
+          style={{
+            backgroundColor: '#C44569',
+            color: '#FFF',
+            border: '4px solid #000',
+            boxShadow: '6px 6px 0px #000',
+            opacity: isDeleting ? 0.5 : 1
+          }}
+        >
+          <Trash2 className="w-6 h-6" strokeWidth={3} />
+          {isDeleting 
+            ? (language === 'zh' ? '删除中...' : 'Deleting...') 
+            : (language === 'zh' ? '永久删除账户' : 'Delete Account Permanently')}
+        </button>
+
+        {/* Delete Confirmation Dialog */}
+        {showDeleteConfirm && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
+            onClick={() => setShowDeleteConfirm(false)}
+          >
+            <div
+              className="relative max-w-md w-full p-6"
+              style={{
+                backgroundColor: '#FF6B35',
+                border: '5px solid #000',
+                boxShadow: '12px 12px 0px #000'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-2xl font-black uppercase text-center mb-4 text-white">
+                {language === 'zh' ? '⚠️ 确认删除账户 ⚠️' : '⚠️ Confirm Account Deletion ⚠️'}
+              </h2>
+
+              <div
+                className="mb-6 p-4"
+                style={{
+                  backgroundColor: '#FFF',
+                  border: '3px solid #000'
+                }}
+              >
+                <p className="font-bold text-sm leading-relaxed mb-3">
+                  {language === 'zh' 
+                    ? '此操作将永久删除以下所有数据：' 
+                    : 'This will permanently delete all of the following data:'}
+                </p>
+                <ul className="space-y-2 font-bold text-sm">
+                  <li>• {language === 'zh' ? '所有任务记录' : 'All quest records'}</li>
+                  <li>• {language === 'zh' ? '所有宝箱记录' : 'All chest records'}</li>
+                  <li>• {language === 'zh' ? '所有战利品' : 'All loot items'}</li>
+                  <li>• {language === 'zh' ? '所有大项目' : 'All long-term projects'}</li>
+                  <li>• {language === 'zh' ? '所有深度休息任务' : 'All deep rest tasks'}</li>
+                  <li>• {language === 'zh' ? '用户账户信息' : 'User account information'}</li>
+                </ul>
+                <p className="font-black text-sm mt-4" style={{ color: '#FF6B35' }}>
+                  {language === 'zh' 
+                    ? '⚠️ 此操作不可恢复！' 
+                    : '⚠️ This action cannot be undone!'}
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 py-3 font-black uppercase"
+                  style={{
+                    backgroundColor: '#4ECDC4',
+                    border: '4px solid #000',
+                    boxShadow: '4px 4px 0px #000'
+                  }}
+                >
+                  {language === 'zh' ? '取消' : 'Cancel'}
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  className="flex-1 py-3 font-black uppercase"
+                  style={{
+                    backgroundColor: '#000',
+                    color: '#FFF',
+                    border: '4px solid #FFF',
+                    boxShadow: '4px 4px 0px #FFF'
+                  }}
+                >
+                  {language === 'zh' ? '确认删除' : 'Confirm Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <style>{`
           @keyframes pulse {

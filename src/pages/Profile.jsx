@@ -10,6 +10,7 @@ export default function Profile() {
   const [showRestoreButton, setShowRestoreButton] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = React.useState('');
 
   const { data: user, isLoading } = useQuery({
     queryKey: ['user'],
@@ -21,6 +22,15 @@ export default function Profile() {
   };
 
   const handleDeleteAccount = async () => {
+    const requiredText = language === 'zh' ? '删除我的账户' : 'DELETE MY ACCOUNT';
+    
+    if (deleteConfirmText !== requiredText) {
+      alert(language === 'zh' 
+        ? `❌ 请输入"${requiredText}"以确认删除` 
+        : `❌ Please type "${requiredText}" to confirm`);
+      return;
+    }
+
     setIsDeleting(true);
     try {
       const { data } = await base44.functions.invoke('deleteUserData');
@@ -48,6 +58,7 @@ export default function Profile() {
       setIsDeleting(false);
     }
     setShowDeleteConfirm(false);
+    setDeleteConfirmText('');
   };
 
   // 🔥 临时修复：帮助用户恢复丢失的连胜数据
@@ -429,10 +440,13 @@ export default function Profile() {
           <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
-            onClick={() => setShowDeleteConfirm(false)}
+            onClick={() => {
+              setShowDeleteConfirm(false);
+              setDeleteConfirmText('');
+            }}
           >
             <div
-              className="relative max-w-md w-full p-6"
+              className="relative max-w-lg w-full p-6"
               style={{
                 backgroundColor: '#FF6B35',
                 border: '5px solid #000',
@@ -440,12 +454,18 @@ export default function Profile() {
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-2xl font-black uppercase text-center mb-4 text-white">
-                {language === 'zh' ? '⚠️ 确认删除账户 ⚠️' : '⚠️ Confirm Account Deletion ⚠️'}
+              <h2 className="text-2xl font-black uppercase text-center mb-2 text-white">
+                {language === 'zh' ? '⚠️ 危险操作：删除账号 ⚠️' : '⚠️ Danger Zone: Delete Account ⚠️'}
               </h2>
+              
+              <p className="text-center font-bold text-sm mb-4 text-white">
+                {language === 'zh' 
+                  ? '此操作不可逆，请谨慎选择。' 
+                  : 'This action is irreversible. Please proceed with extreme caution.'}
+              </p>
 
               <div
-                className="mb-6 p-4"
+                className="mb-4 p-4 max-h-80 overflow-y-auto"
                 style={{
                   backgroundColor: '#FFF',
                   border: '3px solid #000'
@@ -453,47 +473,120 @@ export default function Profile() {
               >
                 <p className="font-bold text-sm leading-relaxed mb-3">
                   {language === 'zh' 
-                    ? '此操作将永久删除以下所有数据：' 
-                    : 'This will permanently delete all of the following data:'}
+                    ? '点击确认后，以下与您关联的个人数据将从服务器永久删除：' 
+                    : 'Upon confirmation, the following personal data associated with your account will be permanently removed from our servers:'}
                 </p>
-                <ul className="space-y-2 font-bold text-sm">
-                  <li>• {language === 'zh' ? '所有任务记录' : 'All quest records'}</li>
-                  <li>• {language === 'zh' ? '所有宝箱记录' : 'All chest records'}</li>
-                  <li>• {language === 'zh' ? '所有战利品' : 'All loot items'}</li>
-                  <li>• {language === 'zh' ? '所有大项目' : 'All long-term projects'}</li>
-                  <li>• {language === 'zh' ? '所有深度休息任务' : 'All deep rest tasks'}</li>
-                  <li>• {language === 'zh' ? '用户账户信息' : 'User account information'}</li>
-                </ul>
+                
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <p className="font-black mb-1">
+                      {language === 'zh' ? '📋 任务与项目' : '📋 Tasks & Projects'}
+                    </p>
+                    <ul className="font-bold pl-4 space-y-1" style={{ color: '#666' }}>
+                      <li>• {language === 'zh' ? '任务记录' : 'Quest Records'}</li>
+                      <li>• {language === 'zh' ? '大项目记录' : 'Long-Term Projects'}</li>
+                      <li>• {language === 'zh' ? '深度休息任务' : 'Deep Rest Tasks'}</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <p className="font-black mb-1">
+                      {language === 'zh' ? '💎 资产与进度' : '💎 Assets & Progress'}
+                    </p>
+                    <ul className="font-bold pl-4 space-y-1" style={{ color: '#666' }}>
+                      <li>• {language === 'zh' ? '每日宝箱记录' : 'Daily Chest Records'}</li>
+                      <li>• {language === 'zh' ? '宝物收藏' : 'Loot Collection'}</li>
+                      <li>• {language === 'zh' ? '冻结券' : 'Freeze Tokens'}</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <p className="font-black mb-1">
+                      {language === 'zh' ? '🏆 荣誉与统计' : '🏆 Honor & Stats'}
+                    </p>
+                    <ul className="font-bold pl-4 space-y-1" style={{ color: '#666' }}>
+                      <li>• {language === 'zh' ? '连胜记录' : 'Streak Records'}</li>
+                      <li>• {language === 'zh' ? '协会称号' : 'Guild Title'}</li>
+                      <li>• {language === 'zh' ? '连胜里程碑' : 'Streak Milestones'}</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <p className="font-black mb-1">
+                      {language === 'zh' ? '⚙️ 系统记录' : '⚙️ System Records'}
+                    </p>
+                    <ul className="font-bold pl-4 space-y-1" style={{ color: '#666' }}>
+                      <li>• {language === 'zh' ? '宝箱保底进度' : 'Chest Pity System Progress'}</li>
+                      <li>• {language === 'zh' ? '规划任务' : 'Planned Quests'}</li>
+                      <li>• {language === 'zh' ? '休息日设置' : 'Rest Day Settings'}</li>
+                    </ul>
+                  </div>
+                </div>
+
                 <p className="font-black text-sm mt-4" style={{ color: '#FF6B35' }}>
                   {language === 'zh' 
-                    ? '⚠️ 此操作不可恢复！' 
-                    : '⚠️ This action cannot be undone!'}
+                    ? '⚠️ 一旦删除，我们无法恢复任何已丢失的数据。' 
+                    : '⚠️ We are unable to recover any data once it has been deleted.'}
                 </p>
+              </div>
+
+              <div
+                className="mb-4 p-4"
+                style={{
+                  backgroundColor: '#FFE66D',
+                  border: '3px solid #000'
+                }}
+              >
+                <label className="block font-black text-sm mb-2">
+                  {language === 'zh' 
+                    ? '请输入以下文字以确认：删除我的账户' 
+                    : 'Please type the following to confirm: DELETE MY ACCOUNT'}
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder={language === 'zh' ? '删除我的账户' : 'DELETE MY ACCOUNT'}
+                  className="w-full px-3 py-2 font-bold"
+                  style={{
+                    backgroundColor: '#FFF',
+                    border: '3px solid #000'
+                  }}
+                />
               </div>
 
               <div className="flex gap-3">
                 <button
-                  onClick={() => setShowDeleteConfirm(false)}
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setDeleteConfirmText('');
+                  }}
+                  disabled={isDeleting}
                   className="flex-1 py-3 font-black uppercase"
                   style={{
                     backgroundColor: '#4ECDC4',
                     border: '4px solid #000',
-                    boxShadow: '4px 4px 0px #000'
+                    boxShadow: '4px 4px 0px #000',
+                    opacity: isDeleting ? 0.5 : 1
                   }}
                 >
                   {language === 'zh' ? '取消' : 'Cancel'}
                 </button>
                 <button
                   onClick={handleDeleteAccount}
+                  disabled={isDeleting || deleteConfirmText !== (language === 'zh' ? '删除我的账户' : 'DELETE MY ACCOUNT')}
                   className="flex-1 py-3 font-black uppercase"
                   style={{
                     backgroundColor: '#000',
                     color: '#FFF',
                     border: '4px solid #FFF',
-                    boxShadow: '4px 4px 0px #FFF'
+                    boxShadow: '4px 4px 0px #FFF',
+                    opacity: (isDeleting || deleteConfirmText !== (language === 'zh' ? '删除我的账户' : 'DELETE MY ACCOUNT')) ? 0.5 : 1
                   }}
                 >
-                  {language === 'zh' ? '确认删除' : 'Confirm Delete'}
+                  {isDeleting 
+                    ? (language === 'zh' ? '删除中...' : 'Deleting...') 
+                    : (language === 'zh' ? '确认删除' : 'Confirm Delete')}
                 </button>
               </div>
             </div>

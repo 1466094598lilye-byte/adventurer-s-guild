@@ -31,35 +31,54 @@ Deno.serve(async (req) => {
         
         // 逐个实体删除用户数据
         for (const entityName of entitiesToDelete) {
+            let deleteCount = 0;
+            let failedCount = 0;
+            const failedRecords = [];
+            
             try {
                 // 使用 service role 查询该用户的所有记录
                 const records = await base44.asServiceRole.entities[entityName].filter({ 
                     created_by: userEmail 
                 });
                 
-                let deleteCount = 0;
+                console.log(`${entityName}: Found ${records.length} records to delete`);
                 
-                // 逐条删除记录
+                // 逐条删除记录，即使某条失败也继续
                 for (const record of records) {
-                    await base44.asServiceRole.entities[entityName].delete(record.id);
-                    deleteCount++;
+                    try {
+                        await base44.asServiceRole.entities[entityName].delete(record.id);
+                        deleteCount++;
+                    } catch (deleteError) {
+                        failedCount++;
+                        failedRecords.push({
+                            id: record.id,
+                            error: deleteError.message
+                        });
+                        console.error(`Failed to delete ${entityName} record ${record.id}:`, deleteError.message);
+                    }
                 }
                 
+                const allDeleted = failedCount === 0;
+                
                 deletionResults[entityName] = {
-                    success: true,
-                    count: deleteCount
+                    success: allDeleted,
+                    count: deleteCount,
+                    failed: failedCount,
+                    ...(failedRecords.length > 0 && { failedRecords })
                 };
                 
                 totalDeleted += deleteCount;
                 
-                console.log(`${entityName}: Deleted ${deleteCount} records`);
+                console.log(`${entityName}: Successfully deleted ${deleteCount} records, failed ${failedCount}`);
                 
             } catch (error) {
-                console.error(`Error deleting ${entityName}:`, error);
+                console.error(`Error processing ${entityName}:`, error);
                 deletionResults[entityName] = {
                     success: false,
                     error: error.message,
-                    count: 0
+                    count: deleteCount,
+                    failed: failedCount,
+                    note: 'Failed to query or process entity records'
                 };
             }
         }

@@ -5,12 +5,14 @@ import { LanguageProvider, useLanguage } from "@/components/LanguageContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { initAudioManager } from "@/components/AudioManager";
+import TermsAndPrivacyDialog from "@/components/TermsAndPrivacyDialog";
 
 function LayoutContent({ children }) {
   const location = useLocation();
   const { t, language } = useLanguage();
+  const [showTerms, setShowTerms] = useState(false);
 
 
 
@@ -52,6 +54,7 @@ function LayoutContent({ children }) {
 
   return (
     <ErrorBoundary>
+      <TermsAndPrivacyDialog isOpen={showTerms} onClose={() => setShowTerms(false)} />
       <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F9FAFB' }}>
         {/* Guest Mode Warning Banner */}
         {!user && (
@@ -73,7 +76,17 @@ function LayoutContent({ children }) {
                   {t('guest_mode_warning_subtitle')}
                 </p>
                 <p className="font-bold text-xs leading-tight mt-1" style={{ color: '#333' }}>
-                  {t('guest_mode_terms_notice')}
+                  {language === 'zh' ? '登录即表示同意 ' : 'By logging in, you agree to the '}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowTerms(true);
+                    }}
+                    className="underline hover:opacity-70"
+                    style={{ color: '#FF6B35', fontWeight: 900 }}
+                  >
+                    Terms and Privacy Policy for Adventurer Guild
+                  </button>
                 </p>
               </div>
             </div>

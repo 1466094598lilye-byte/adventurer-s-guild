@@ -69,7 +69,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
         if (!currentUser) {
           const rarityRoll = Math.random() * 100;
           let rarity;
-          if (rarityRoll < 70) rarity = 'Common';
+          if (rarityRoll < 60) rarity = 'Common';
           else if (rarityRoll < 90) rarity = 'Rare';
           else if (rarityRoll < 98) rarity = 'Epic';
           else rarity = 'Legendary';
@@ -150,7 +150,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
 
         const rarityRoll = Math.random() * 100;
         let rarity;
-        if (rarityRoll < 70) rarity = 'Common';
+        if (rarityRoll < 60) rarity = 'Common';
         else if (rarityRoll < 90) rarity = 'Rare';
         else if (rarityRoll < 98) rarity = 'Epic';
         else rarity = 'Legendary';

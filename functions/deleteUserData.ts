@@ -27,59 +27,84 @@ Deno.serve(async (req) => {
         ];
         
         const deletionResults = {};
+        const recordsToDelete = {};
         let totalDeleted = 0;
         
-        // 逐个实体删除用户数据
-        for (const entityName of entitiesToDelete) {
-            let deleteCount = 0;
-            let failedCount = 0;
-            const failedRecords = [];
-            
-            try {
-                // 使用 service role 查询该用户的所有记录
+        // 阶段1: 预检查 - 收集所有需要删除的记录
+        console.log('Phase 1: Pre-check - collecting all records to delete');
+        try {
+            for (const entityName of entitiesToDelete) {
                 const records = await base44.asServiceRole.entities[entityName].filter({ 
                     created_by: userEmail 
                 });
                 
-                console.log(`${entityName}: Found ${records.length} records to delete`);
-                
-                // 逐条删除记录，即使某条失败也继续
+                recordsToDelete[entityName] = records;
+                console.log(`${entityName}: Found ${records.length} records`);
+            }
+        } catch (error) {
+            console.error('Pre-check failed:', error);
+            return Response.json({
+                success: false,
+                message: 'Pre-check failed - unable to access all entity records',
+                error: error.message
+            }, { status: 500 });
+        }
+        
+        // 阶段2: 执行删除 - 如果任何删除失败，立即停止
+        console.log('Phase 2: Executing deletion - atomic operation');
+        for (const entityName of entitiesToDelete) {
+            const records = recordsToDelete[entityName];
+            let deleteCount = 0;
+            
+            try {
                 for (const record of records) {
                     try {
                         await base44.asServiceRole.entities[entityName].delete(record.id);
                         deleteCount++;
                     } catch (deleteError) {
-                        failedCount++;
-                        failedRecords.push({
-                            id: record.id,
-                            error: deleteError.message
-                        });
-                        console.error(`Failed to delete ${entityName} record ${record.id}:`, deleteError.message);
+                        // 删除失败 - 立即停止并返回错误
+                        console.error(`CRITICAL: Failed to delete ${entityName} record ${record.id}:`, deleteError.message);
+                        
+                        return Response.json({
+                            success: false,
+                            message: 'Deletion failed mid-process - data may be partially deleted',
+                            failedAt: {
+                                entity: entityName,
+                                recordId: record.id,
+                                error: deleteError.message
+                            },
+                            partiallyDeleted: {
+                                totalDeleted: totalDeleted + deleteCount,
+                                details: deletionResults
+                            },
+                            recommendation: 'Please retry the deletion operation or contact support'
+                        }, { status: 500 });
                     }
                 }
                 
-                const allDeleted = failedCount === 0;
-                
                 deletionResults[entityName] = {
-                    success: allDeleted,
-                    count: deleteCount,
-                    failed: failedCount,
-                    ...(failedRecords.length > 0 && { failedRecords })
+                    success: true,
+                    count: deleteCount
                 };
                 
                 totalDeleted += deleteCount;
-                
-                console.log(`${entityName}: Successfully deleted ${deleteCount} records, failed ${failedCount}`);
+                console.log(`${entityName}: Successfully deleted ${deleteCount} records`);
                 
             } catch (error) {
                 console.error(`Error processing ${entityName}:`, error);
-                deletionResults[entityName] = {
+                
+                return Response.json({
                     success: false,
-                    error: error.message,
-                    count: deleteCount,
-                    failed: failedCount,
-                    note: 'Failed to query or process entity records'
-                };
+                    message: 'Entity processing failed',
+                    failedAt: {
+                        entity: entityName,
+                        error: error.message
+                    },
+                    partiallyDeleted: {
+                        totalDeleted,
+                        details: deletionResults
+                    }
+                }, { status: 500 });
             }
         }
         

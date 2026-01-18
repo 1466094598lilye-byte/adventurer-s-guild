@@ -22,7 +22,7 @@ export default function Profile() {
   };
 
   const handleDeleteAccount = async () => {
-    const requiredText = language === 'zh' ? '删除我的账户' : 'DELETE MY ACCOUNT';
+    const requiredText = 'DELETE MY ACCOUNT';
     
     if (deleteConfirmText !== requiredText) {
       alert(language === 'zh' 
@@ -539,14 +539,14 @@ export default function Profile() {
               >
                 <label className="block font-black text-sm mb-2">
                   {language === 'zh' 
-                    ? '请输入以下文字以确认：删除我的账户' 
+                    ? '请输入以下文字以确认：DELETE MY ACCOUNT' 
                     : 'Please type the following to confirm: DELETE MY ACCOUNT'}
                 </label>
                 <input
                   type="text"
                   value={deleteConfirmText}
                   onChange={(e) => setDeleteConfirmText(e.target.value)}
-                  placeholder={language === 'zh' ? '删除我的账户' : 'DELETE MY ACCOUNT'}
+                  placeholder="DELETE MY ACCOUNT"
                   className="w-full px-3 py-2 font-bold"
                   style={{
                     backgroundColor: '#FFF',
@@ -574,14 +574,14 @@ export default function Profile() {
                 </button>
                 <button
                   onClick={handleDeleteAccount}
-                  disabled={isDeleting || deleteConfirmText !== (language === 'zh' ? '删除我的账户' : 'DELETE MY ACCOUNT')}
+                  disabled={isDeleting || deleteConfirmText !== 'DELETE MY ACCOUNT'}
                   className="flex-1 py-3 font-black uppercase"
                   style={{
                     backgroundColor: '#000',
                     color: '#FFF',
                     border: '4px solid #FFF',
                     boxShadow: '4px 4px 0px #FFF',
-                    opacity: (isDeleting || deleteConfirmText !== (language === 'zh' ? '删除我的账户' : 'DELETE MY ACCOUNT')) ? 0.5 : 1
+                    opacity: (isDeleting || deleteConfirmText !== 'DELETE MY ACCOUNT') ? 0.5 : 1
                   }}
                 >
                   {isDeleting 

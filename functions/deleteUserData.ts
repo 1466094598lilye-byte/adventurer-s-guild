@@ -76,6 +76,36 @@ Deno.serve(async (req) => {
             }, { status: 500 });
         }
         
+        // 尝试删除用户自身的 User 实体记录
+        let userRecordDeleted = false;
+        try {
+            // 查找当前用户的 User 记录
+            const userRecords = await base44.asServiceRole.entities.User.filter({ 
+                email: userEmail 
+            });
+            
+            if (userRecords && userRecords.length > 0) {
+                const userId = userRecords[0].id;
+                await base44.asServiceRole.entities.User.delete(userId);
+                userRecordDeleted = true;
+                console.log(`User entity record deleted for: ${userEmail}`);
+            }
+            
+            deletionResults['User'] = {
+                success: true,
+                count: userRecordDeleted ? 1 : 0
+            };
+            
+        } catch (error) {
+            console.error('Error deleting User entity record:', error);
+            deletionResults['User'] = {
+                success: false,
+                error: error.message,
+                count: 0,
+                note: 'User entity deletion may be restricted by platform'
+            };
+        }
+        
         console.log(`Successfully deleted all data for user: ${userEmail}`);
         console.log(`Total records deleted: ${totalDeleted}`);
         
@@ -83,6 +113,7 @@ Deno.serve(async (req) => {
             success: true,
             message: 'All user data deleted successfully',
             totalDeleted,
+            userRecordDeleted,
             details: deletionResults
         });
         

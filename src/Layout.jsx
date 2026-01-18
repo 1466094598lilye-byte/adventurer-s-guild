@@ -82,8 +82,15 @@ function LayoutContent({ children }) {
                       e.stopPropagation();
                       setShowTerms(true);
                     }}
-                    className="underline hover:opacity-70"
-                    style={{ color: '#FF6B35', fontWeight: 900 }}
+                    className="underline hover:opacity-70 cursor-pointer inline"
+                    style={{ 
+                      color: '#FF6B35', 
+                      fontWeight: 900,
+                      textDecoration: 'underline',
+                      background: 'none',
+                      border: 'none',
+                      padding: 0
+                    }}
                   >
                     Terms and Privacy Policy for Adventurer Guild
                   </button>

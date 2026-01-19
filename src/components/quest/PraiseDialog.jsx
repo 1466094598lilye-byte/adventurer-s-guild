@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Star } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useLanguage } from '@/components/LanguageContext';
-import { getPraisePrompt, getPraiseRoles } from '@/components/prompts';
+import { getPraisePrompt, getPraiseRoles, getDeepRestPraisePrompt } from '@/components/prompts';
 
 export default function PraiseDialog({ quest, onClose }) {
   const { language, t } = useLanguage();
@@ -18,10 +18,18 @@ export default function PraiseDialog({ quest, onClose }) {
     setLoading(true);
     try {
       const roles = getPraiseRoles(language);
-      const selectedRole = roles[Math.floor(Math.random() * roles.length)];
+      const isDeepRest = quest.source === 'deeprest';
+      
+      // 深度休息任务只使用疗愈师角色
+      const selectedRole = isDeepRest 
+        ? roles.find(r => r.isHealer) || roles[0]
+        : roles.filter(r => !r.isHealer)[Math.floor(Math.random() * roles.filter(r => !r.isHealer).length)];
+      
       setPraiser(language === 'zh' ? selectedRole.name : selectedRole.nameEn);
 
-      const promptText = getPraisePrompt(language, quest, selectedRole);
+      const promptText = isDeepRest
+        ? getDeepRestPraisePrompt(language, quest, selectedRole)
+        : getPraisePrompt(language, quest, selectedRole);
 
       const { data: result } = await base44.functions.invoke('callDeepSeek', {
         prompt: promptText,

@@ -1337,7 +1337,7 @@ export default function QuestBoard() {
       batchInvalidateQueries(['quests', 'user']);
       setPendingQuests([]);
       setExpandedPending(null);
-      playQuestAddedSound();
+      await playQuestAddedSound();
       setToast(t('questboard_toast_quests_added_to_board', { count: pendingQuests.length }));
       setTimeout(() => setToast(null), 2000);
     } catch (error) {
@@ -1818,7 +1818,7 @@ export default function QuestBoard() {
         });
       }
 
-      playQuestAddedSound();
+      await playQuestAddedSound();
       setToast(language === 'zh' 
         ? `✨ 已添加 ${selectedTasks.length} 个深度休息任务！` 
         : `✨ Added ${selectedTasks.length} deep rest tasks!`);

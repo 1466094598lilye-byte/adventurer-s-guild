@@ -1421,6 +1421,9 @@ export default function QuestBoard() {
       });
       console.log('任务状态更新成功');
       
+      // 播放任务完成音效
+      await playSound('questCompleted');
+      
       // 启动任务完成时不显示表扬弹窗
       if (quest.source !== 'kickstart') {
         setSelectedQuest(quest);

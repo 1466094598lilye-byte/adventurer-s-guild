@@ -4,21 +4,26 @@
 
 const AUDIO_URLS = {
   // 宝箱相关
-  chestOpen: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/%E5%AE%9D%E7%AE%B1%E9%9F%B3%E6%95%88.mp3',
-  collectTreasure: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/%E6%94%B6%E4%B8%8B%E5%AE%9D%E7%89%A9%E9%9F%B3%E6%95%88.mp3',
+  chestOpen: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/宝箱音效.mp3',
+  collectTreasure: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/收下宝物音效.mp3',
   
   // 合成相关
-  craftingLoop: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/%E5%90%88%E6%88%90%E4%B8%AD%E9%9F%B3%E6%95%88%EF%BC%88%E6%9C%80%E7%BB%88%E7%89%88%EF%BC%89.mp3',
-  craftingSuccess: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/%E5%90%88%E6%88%90%E6%88%90%E5%8A%9F%E9%9F%B3%E6%95%88.mp3',
-  craftingSelect: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/%E5%8A%A0%E5%85%A5%E5%90%88%E6%88%90.mp3',
+  craftingLoop: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/合成中音效（最终版）.mp3',
+  craftingSuccess: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/合成成功音效.mp3',
+  craftingSelect: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/加入合成.mp3',
   
   // 工坊相关
-  enterWorkshop: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/%E8%BF%9B%E5%85%A5%E5%B7%A5%E5%9D%8A%E9%9F%B3%E6%95%88.mp3',
+  enterWorkshop: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/进入工坊音效.mp3',
   
   // 大项目相关
-  loadingLoop: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/%E5%8A%A0%E8%BD%BD%E6%97%B6%E6%92%AD%E6%94%BE.mp3',
-  projectParsed: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/%E5%A4%A7%E9%A1%B9%E7%9B%AE%E5%BC%B9%E5%87%BA%E9%9F%B3%E6%95%88.mp3',
-  projectAdded: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/%E5%A4%A7%E9%A1%B9%E7%9B%AE%E5%8A%A0%E5%85%A5%E5%A7%94%E6%89%98%E6%9D%BF.mp3',
+  loadingLoop: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/加载时播放.mp3',
+  projectParsed: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/大项目弹出音效.mp3',
+  projectAdded: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/大项目加入委托板.mp3',
+  projectDeleted: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/大项目删除音效.mp3',
+  
+  // 任务相关
+  questAdded: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/加入委托板.mp3',
+  questCompleted: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/勾掉任务音效.mp3',
 };
 
 // AudioContext（浏览器必须在用户点击后才能启动）

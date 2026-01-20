@@ -23,7 +23,8 @@ const AUDIO_URLS = {
   
   // 任务相关
   questAdded: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@9c46061578b394a7f73b52c6d0c330e063f57010/questAdded.mp3',
-  questCompleted: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@9c46061578b394a7f73b52c6d0c330e063f57010/praiseSound.mp3',
+  questCompleted: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@9c46061578b394a7f73b52c6d0c330e063f57010/questCompleted.mp3',
+  praiseSound: 'https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@9c46061578b394a7f73b52c6d0c330e063f57010/praiseSound.mp3',
 };
 
 // AudioContext（浏览器必须在用户点击后才能启动）

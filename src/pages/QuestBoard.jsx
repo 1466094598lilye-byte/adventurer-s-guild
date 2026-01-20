@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/components/LanguageContext';
 import { getTaskNamingPrompt, getBootstrapModePrompt } from '@/components/prompts';
 import { getGuestData, setGuestData, addGuestEntity, updateGuestEntity, deleteGuestEntity } from '@/components/utils/guestData';
+import { playSound, stopSound } from '@/components/AudioManager';
 
 export default function QuestBoard() {
   const [filter, setFilter] = useState('all');
@@ -1224,7 +1225,7 @@ export default function QuestBoard() {
     if (!textInput.trim() || isProcessing) return;
     
     setIsProcessing(true);
-    const loadingAudio = playLoadingSound();
+    const loadingAudio = await playLoadingSound();
     try {
       const { data: result } = await base44.functions.invoke('callDeepSeek', {
         prompt: getTaskNamingPrompt(language, textInput.trim(), false),
@@ -1261,8 +1262,7 @@ export default function QuestBoard() {
       console.error('任务处理错误:', error);
       alert(t('questboard_alert_task_parse_failed', { message: error.message || t('common_try_again') }));
     }
-    loadingAudio.pause();
-    loadingAudio.currentTime = 0;
+    if (loadingAudio) stopSound(loadingAudio);
     setIsProcessing(false);
   };
 
@@ -1279,23 +1279,19 @@ export default function QuestBoard() {
     }
   };
 
-  const playQuestAddedSound = () => {
-    const audio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%8A%A0%E5%85%A5%E5%A7%94%E6%89%98%E6%9D%BF.mp3');
-    audio.play().catch(() => {});
+  const playQuestAddedSound = async () => {
+    await playSound('questAdded');
   };
 
-  const playLoadingSound = () => {
-    const audio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%8A%A0%E8%BD%BD%E6%97%B6%E6%92%AD%E6%94%BE.mp3');
-    audio.loop = true;
-    audio.play().catch(() => {});
-    return audio;
+  const playLoadingSound = async () => {
+    return await playSound('loadingLoop', { loop: true });
   };
 
   const handleConfirmPendingQuests = async () => {
     if (pendingQuests.length === 0 || isConfirmingPending) return;
     
     setIsConfirmingPending(true);
-    const loadingAudio = playLoadingSound();
+    const loadingAudio = await playLoadingSound();
     try {
       // 访客模式：直接批量创建
       if (!user) {
@@ -1348,8 +1344,7 @@ export default function QuestBoard() {
       console.error('创建任务失败:', error);
       alert(t('questboard_alert_create_quest_failed'));
     }
-    loadingAudio.pause();
-    loadingAudio.currentTime = 0;
+    if (loadingAudio) stopSound(loadingAudio);
     setIsConfirmingPending(false);
   };
 
@@ -1762,7 +1757,7 @@ export default function QuestBoard() {
     if (isGeneratingDeepRest) return;
 
     setIsGeneratingDeepRest(true);
-    const loadingAudio = playLoadingSound();
+    const loadingAudio = await playLoadingSound();
 
     try {
       // 从数据库获取所有深度休息任务
@@ -1799,14 +1794,13 @@ export default function QuestBoard() {
         : 'Failed to load tasks, please try again');
     }
 
-    loadingAudio.pause();
-    loadingAudio.currentTime = 0;
+    if (loadingAudio) stopSound(loadingAudio);
     setIsGeneratingDeepRest(false);
   };
 
   const handleConfirmDeepRestTasks = async (selectedTaskIds) => {
     setIsAddingDeepRest(true);
-    const loadingAudio = playLoadingSound();
+    const loadingAudio = await playLoadingSound();
     
     try {
       const selectedTasks = deepRestTasks.filter(t => selectedTaskIds.includes(t.tempId));
@@ -1839,8 +1833,7 @@ export default function QuestBoard() {
         : 'Failed to add tasks, please try again');
     }
     
-    loadingAudio.pause();
-    loadingAudio.currentTime = 0;
+    if (loadingAudio) stopSound(loadingAudio);
     setIsAddingDeepRest(false);
   };
 

@@ -3,6 +3,7 @@ import { X, Star } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useLanguage } from '@/components/LanguageContext';
 import { getPraisePrompt, getPraiseRoles, getDeepRestPraisePrompt } from '@/components/prompts';
+import { playSound } from '@/components/AudioManager';
 
 export default function PraiseDialog({ quest, onClose }) {
   const { language, t } = useLanguage();
@@ -46,8 +47,7 @@ export default function PraiseDialog({ quest, onClose }) {
         : 'I witnessed your effort. This persistence is making you stronger.'));
       
       // 表扬信文字生成完成后播放音效
-      const praiseAudio = new Audio('https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@9c46061578b394a7f73b52c6d0c330e063f57010/praiseSound.mp3');
-      praiseAudio.play().catch(() => {});
+      await playSound('questCompleted');
     } catch (error) {
       setPraise(language === 'zh'
         ? '我看到了你的努力。这份坚持正在让你变得更强大。'

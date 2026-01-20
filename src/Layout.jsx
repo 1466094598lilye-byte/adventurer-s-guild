@@ -35,11 +35,6 @@ function LayoutContent({ children }) {
     refetchOnWindowFocus: false,
   });
 
-  // 初始化音频管理器
-  useEffect(() => {
-    initAudioManager();
-  }, []);
-
   const tabs = [
     { name: 'QuestBoard', label: t('nav_questboard'), icon: Scroll },
     { name: 'Journal', label: t('nav_journal'), icon: BookOpen },

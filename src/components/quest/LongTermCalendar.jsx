@@ -6,6 +6,7 @@ import { zhCN } from 'date-fns/locale';
 import { useLanguage } from '@/components/LanguageContext';
 import { getCalendarAddTaskPrompt } from '@/components/prompts';
 import { getGuestData, setGuestData, addGuestEntity, updateGuestEntity, deleteGuestEntity } from '@/components/utils/guestData';
+import { playSound, stopSound } from '@/components/AudioManager';
 
 export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
   const [longTermQuests, setLongTermQuests] = useState([]);
@@ -37,9 +38,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
     setLoadError(null);
     
     // 播放加载音效（循环）
-    const loadingAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%8A%A0%E8%BD%BD%E6%97%B6%E6%92%AD%E6%94%BE.mp3');
-    loadingAudio.loop = true;
-    loadingAudio.play().catch(() => {});
+    const loadingAudio = await playSound('loadingLoop', { loop: true });
     
     try {
       // 检查是否为登录用户
@@ -99,8 +98,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       console.log('最终任务列表:', finalQuests);
       
       // 停止加载音效
-      loadingAudio.pause();
-      loadingAudio.currentTime = 0;
+      if (loadingAudio) stopSound(loadingAudio);
       
       setLongTermQuests(finalQuests);
       setIsLoading(false);
@@ -108,15 +106,13 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       
       // 日程表加载完成后播放音效
       if (finalQuests.length > 0) {
-        const calendarLoadAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%A4%A7%E9%A1%B9%E7%9B%AE%E5%8A%A0%E5%85%A5%E5%A7%94%E6%89%98%E6%9D%BF.mp3');
-        calendarLoadAudio.play().catch(() => {});
+        await playSound('projectAdded');
       }
       
       return finalQuests;
     } catch (error) {
       // 停止加载音效
-      loadingAudio.pause();
-      loadingAudio.currentTime = 0;
+      if (loadingAudio) stopSound(loadingAudio);
       
       console.error('❌ 加载大项目任务失败:', error);
       console.error('错误详情:', error.stack);
@@ -228,8 +224,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       console.log('=== 删除完成 ===');
       
       // 6. 播放删除音效
-      const deleteAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%A4%A7%E9%A1%B9%E7%9B%AE%E5%88%A0%E9%99%A4%E9%9F%B3%E6%95%88.mp3');
-      deleteAudio.play().catch(() => {});
+      await playSound('projectDeleted');
       
       // 7. 关闭对话框
       onClose();
@@ -260,8 +255,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
       }
       
       // 播放删除音效
-      const deleteAudio = new Audio('https://pub-281b2ee2a11f4c18b19508c38ea64da0.r2.dev/%E5%A4%A7%E9%A1%B9%E7%9B%AE%E5%88%A0%E9%99%A4%E9%9F%B3%E6%95%88.mp3');
-      deleteAudio.play().catch(() => {});
+      await playSound('projectDeleted');
       await new Promise(resolve => setTimeout(resolve, 300));
       const updatedLongTermQuests = await loadLongTermQuests(); // Get the latest decrypted quests
       

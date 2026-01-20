@@ -46,7 +46,7 @@ export default function PraiseDialog({ quest, onClose }) {
         : 'I witnessed your effort. This persistence is making you stronger.'));
       
       // 表扬信文字生成完成后播放音效
-      const praiseAudio = new Audio('https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@5ae85bbfa1db9ab592f80df153d3d167e6b205f3/表扬弹出音效.mp3');
+      const praiseAudio = new Audio('https://cdn.jsdelivr.net/gh/1466094598lilye-byte/Adventure-Guild-Sound@9c46061578b394a7f73b52c6d0c330e063f57010/praiseSound.mp3');
       praiseAudio.play().catch(() => {});
     } catch (error) {
       setPraise(language === 'zh'

@@ -14,7 +14,10 @@ function LayoutContent({ children }) {
   const { t, language } = useLanguage();
   const [showTerms, setShowTerms] = useState(false);
 
-
+  // 初始化音频系统
+  useEffect(() => {
+    initAudioManager();
+  }, []);
 
   const { data: user } = useQuery({
     queryKey: ['user'],

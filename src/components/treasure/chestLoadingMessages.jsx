@@ -10,20 +10,20 @@ export const chestLoadingMessages = {
     },
     messages: {
       zh: [
-        { text: '骑士团长亲自为你挑选战利品', duration: 2000 },
-        { text: '在荣誉殿堂中搜寻...', duration: 2000 },
-        { text: '这份奖励,必须配得上你的勇气', duration: 2000 },
-        { text: '即将为你授勋', duration: 2000 },
-        { text: '这枚勋章有点沉,但你扛得住', duration: 2000 },
-        { text: '骑士团长坚持要给你最好的...再等1秒!', duration: 2000 }
+        { text: '宝箱正在共鸣你的勇气...', duration: 2000 },
+        { text: '骑士团长听到了宝箱的震动', duration: 2000 },
+        { text: '里面的奖励,正在觉醒...', duration: 2000 },
+        { text: '还没好,再等等...', duration: 2000 },
+        { text: '这个宝箱有点倔,在酝酿...', duration: 2000 },
+        { text: '再等等,它快决定了!', duration: 2000 }
       ],
       en: [
-        { text: 'Selecting your trophy...', duration: 2000 },
-        { text: 'Searching the hall...', duration: 2000 },
-        { text: 'Must match your courage...', duration: 2000 },
-        { text: 'Your medal awaits...', duration: 2000 },
-        { text: "Heavy medal, you'll carry it!", duration: 2000 },
-        { text: 'Finding the best one...', duration: 2000 }
+        { text: 'Chest resonating with courage...', duration: 2000 },
+        { text: 'Knight hears the rumbling...', duration: 2000 },
+        { text: 'Reward awakening inside...', duration: 2000 },
+        { text: 'Not yet, hold on...', duration: 2000 },
+        { text: 'Stubborn chest, still brewing...', duration: 2000 },
+        { text: 'Almost decided now!', duration: 2000 }
       ]
     }
   },
@@ -36,20 +36,20 @@ export const chestLoadingMessages = {
     },
     messages: {
       zh: [
-        { text: '协会总管正在为你调配资源', duration: 2000 },
-        { text: '清点库存...核对品质...', duration: 2000 },
-        { text: '你的努力值得实打实的回报', duration: 2000 },
-        { text: '正在打包,保证完好送达', duration: 2000 },
-        { text: '总管在做最后检查...不能有瑕疵', duration: 2000 },
-        { text: '协会总管翻遍了仓库...马上找到!', duration: 2000 }
+        { text: '宝箱正在运转内部机关...', duration: 2000 },
+        { text: '总管靠近,观察宝箱的反应', duration: 2000 },
+        { text: '齿轮转动...水晶发光...', duration: 2000 },
+        { text: '还在随机抽取中', duration: 2000 },
+        { text: '这个宝箱的机关有点复杂...', duration: 2000 },
+        { text: '概率计算中...快了!', duration: 2000 }
       ],
       en: [
-        { text: 'Steward checking the vault...', duration: 2000 },
-        { text: 'Inspecting quality...', duration: 2000 },
-        { text: 'You earned real value...', duration: 2000 },
-        { text: 'Wrapping it up...', duration: 2000 },
-        { text: 'Final inspection...', duration: 2000 },
-        { text: 'Almost found it!', duration: 2000 }
+        { text: "Chest's mechanism activating...", duration: 2000 },
+        { text: 'Steward observing the chest...', duration: 2000 },
+        { text: 'Gears turning, crystals glowing...', duration: 2000 },
+        { text: 'Still randomizing...', duration: 2000 },
+        { text: 'Complex mechanism inside...', duration: 2000 },
+        { text: 'Calculating odds...', duration: 2000 }
       ]
     }
   },
@@ -62,20 +62,20 @@ export const chestLoadingMessages = {
     },
     messages: {
       zh: [
-        { text: '书记官正在奖品库为你挑选', duration: 2000 },
-        { text: '这个包装不够精致...那个呢...', duration: 2000 },
-        { text: '找到几个不错的,让我再看看细节...', duration: 2000 },
-        { text: '这份奖励的质感正好', duration: 2000 },
-        { text: '书记官在检查每个角落...不能有瑕疵', duration: 2000 },
-        { text: '等等,刚才那个好像更有韵味...', duration: 2000 }
+        { text: '宝箱正在书写它的故事...', duration: 2000 },
+        { text: '书记官侧耳倾听箱内的低语', duration: 2000 },
+        { text: '命运的笔尖,正在落下...', duration: 2000 },
+        { text: '它在斟酌结局', duration: 2000 },
+        { text: '这个故事还没写完...', duration: 2000 },
+        { text: '最后一笔...就要落下了', duration: 2000 }
       ],
       en: [
-        { text: 'Scribe browsing the vault...', duration: 2000 },
-        { text: 'Checking each detail...', duration: 2000 },
-        { text: 'Found some, examining closer...', duration: 2000 },
-        { text: 'Perfect texture found...', duration: 2000 },
-        { text: 'Inspecting every corner...', duration: 2000 },
-        { text: 'Wait, the other one...', duration: 2000 }
+        { text: 'Chest writing its story...', duration: 2000 },
+        { text: 'Scribe listening to whispers...', duration: 2000 },
+        { text: "Fate's pen is falling...", duration: 2000 },
+        { text: 'Choosing the ending...', duration: 2000 },
+        { text: 'Story not finished yet...', duration: 2000 },
+        { text: 'Final stroke coming...', duration: 2000 }
       ]
     }
   },
@@ -88,20 +88,20 @@ export const chestLoadingMessages = {
     },
     messages: {
       zh: [
-        { text: '智者正在奖品库为你寻找', duration: 2000 },
-        { text: '拿起这个...感知一下...不是它...', duration: 2000 },
-        { text: '这个气场更适合你...让我确认一下...', duration: 2000 },
-        { text: '找到了一个很有深意的', duration: 2000 },
-        { text: '智者闭眼感应...想确定是不是最合适的', duration: 2000 },
-        { text: '直觉告诉我...还有更好的在某个角落!', duration: 2000 }
+        { text: '宝箱正在感应你的气场...', duration: 2000 },
+        { text: '智者闭眼,它在做决定', duration: 2000 },
+        { text: '命运的丝线,正在交织...', duration: 2000 },
+        { text: '结果尚未明晰', duration: 2000 },
+        { text: '宝箱在犹豫...或者在逗你玩?', duration: 2000 },
+        { text: '预言显示...即将揭晓', duration: 2000 }
       ],
       en: [
-        { text: 'Sage searching the vault...', duration: 2000 },
-        { text: 'Sensing... not this one...', duration: 2000 },
-        { text: 'This aura fits you...', duration: 2000 },
-        { text: 'Found something meaningful...', duration: 2000 },
-        { text: 'Confirming through intuition...', duration: 2000 },
-        { text: 'Intuition says keep looking...', duration: 2000 }
+        { text: 'Chest sensing your aura...', duration: 2000 },
+        { text: 'Sage closes eyes, deciding...', duration: 2000 },
+        { text: 'Threads of fate weaving...', duration: 2000 },
+        { text: 'Outcome still unclear...', duration: 2000 },
+        { text: 'Chest hesitating... or teasing?', duration: 2000 },
+        { text: 'Vision shows... soon.', duration: 2000 }
       ]
     }
   },
@@ -114,20 +114,20 @@ export const chestLoadingMessages = {
     },
     messages: {
       zh: [
-        { text: '大长老正在奖品库为你挑选', duration: 2000 },
-        { text: '从这排货架看起...一个个检查...', duration: 2000 },
-        { text: '这个分量不错...那个也可以...再看看...', duration: 2000 },
-        { text: '长老拿起一份,掂了掂,又放回去...', duration: 2000 },
-        { text: '长老动作慢,但坚持要亲手过目每一个', duration: 2000 },
-        { text: '大长老说:急不得,值得的东西在深处!', duration: 2000 }
+        { text: '古老的宝箱,正在苏醒...', duration: 2000 },
+        { text: '长老抚摸箱盖,它在思考', duration: 2000 },
+        { text: '这个宝箱,见证过无数冒险者...', duration: 2000 },
+        { text: '它在回忆该给你什么', duration: 2000 },
+        { text: '古老的魔法,需要时间...', duration: 2000 },
+        { text: '它的记忆太长了...稍等', duration: 2000 }
       ],
       en: [
-        { text: 'Elder browsing the vault...', duration: 2000 },
-        { text: 'Checking shelf by shelf...', duration: 2000 },
-        { text: 'Weighing each option carefully...', duration: 2000 },
-        { text: 'Considering the weight...', duration: 2000 },
-        { text: 'Elder inspects each one...', duration: 2000 },
-        { text: 'Best things take time...', duration: 2000 }
+        { text: 'Ancient chest awakening...', duration: 2000 },
+        { text: 'Elder touches lid, thinking...', duration: 2000 },
+        { text: 'Chest has seen many...', duration: 2000 },
+        { text: 'Recalling your gift...', duration: 2000 },
+        { text: 'Ancient magic takes time...', duration: 2000 },
+        { text: 'Long memory... wait.', duration: 2000 }
       ]
     }
   },
@@ -140,20 +140,20 @@ export const chestLoadingMessages = {
     },
     messages: {
       zh: [
-        { text: '战术大师正在装备库为你调取奖励', duration: 2000 },
-        { text: '扫描A区...B区...看看C区有什么...', duration: 2000 },
-        { text: '找到三个候选,正在对比数据...', duration: 2000 },
-        { text: '这个效能值最高,就它了', duration: 2000 },
-        { text: '大师在做最后的精度校准...', duration: 2000 },
-        { text: '系统显示还有更优解...重新检索!', duration: 2000 }
+        { text: '宝箱的随机系统正在启动...', duration: 2000 },
+        { text: '大师观察概率波动', duration: 2000 },
+        { text: '随机算法运行中...', duration: 2000 },
+        { text: '还在计算随机数', duration: 2000 },
+        { text: '量子态还未坍缩...', duration: 2000 },
+        { text: '概率云即将收束!', duration: 2000 }
       ],
       en: [
-        { text: 'Tactician scanning inventory...', duration: 2000 },
-        { text: 'Scanning sectors A, B...', duration: 2000 },
-        { text: 'Comparing three candidates...', duration: 2000 },
-        { text: 'Highest efficiency found...', duration: 2000 },
-        { text: 'Calibrating precision...', duration: 2000 },
-        { text: 'Recalculating optimal choice...', duration: 2000 }
+        { text: 'Randomizer system booting...', duration: 2000 },
+        { text: 'Tactician tracking probability waves...', duration: 2000 },
+        { text: 'Random algorithm running...', duration: 2000 },
+        { text: 'Calculating random number...', duration: 2000 },
+        { text: 'Quantum state unresolved...', duration: 2000 },
+        { text: 'Probability cloud collapsing!', duration: 2000 }
       ]
     }
   }

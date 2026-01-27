@@ -150,7 +150,10 @@ Key Phrases: ${role.keywordsEn.join(', ')} (naturally incorporate these in your 
    - Express the above in ${role.nameEn}'s unique perspective and tone
    - Naturally incorporate at least 1 signature phrase
 
-6. **Length**: Around 50 words, one coherent statement
+6. **Length & Style**: 
+   - **20-30 words maximum** - be concise and direct
+   - Point out core value immediately, avoid decorative language
+   - One focused statement, no fluff
 
 【Wrong vs. Right Examples】:
 ❌ "You completed reading notes, enhanced knowledge depth, showed focus and discipline, important for long-term goals."

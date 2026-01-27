@@ -10,6 +10,7 @@ export default function PraiseDialog({ quest, onClose }) {
   const [praise, setPraise] = useState('');
   const [loading, setLoading] = useState(true);
   const [praiser, setPraiser] = useState('');
+  const [loadingMessage, setLoadingMessage] = useState('');
 
   useEffect(() => {
     generatePraise();
@@ -17,6 +18,42 @@ export default function PraiseDialog({ quest, onClose }) {
 
   const generatePraise = async () => {
     setLoading(true);
+    
+    // 动态文案序列
+    const messages = language === 'zh' 
+      ? [
+          { text: '🏛️ 你太优秀了,他们抢疯了...', duration: 3000 },
+          { text: '⚔️ 骑士团长:"滚开!这荣誉让我来宣布!"', duration: 2000 },
+          { text: '📜 书记官不干:"你只会喊,我更会夸人!"', duration: 2000 },
+          { text: '🔮 智者冷笑:"粗鄙,看我怎么升华主题..."', duration: 2000 },
+          { text: '🎯 战术大师弱弱举手:"要不看数据?"被喷:"滚!"', duration: 2000 },
+          { text: '👑 大长老怒了:"都给我闭嘴!抽签!"', duration: 2000 },
+          { text: '🎲 抽签筒砸在桌上,所有人怂了...', duration: 2000 }
+        ]
+      : [
+          { text: '🏛️ You\'re too good, they\'re losing it...', duration: 3000 },
+          { text: '⚔️ Knight: "Move! This honor\'s mine to announce!"', duration: 2000 },
+          { text: '📜 Scribe objects: "You just yell, I praise better!"', duration: 2000 },
+          { text: '🔮 Sage smirks: "Crude. Watch me elevate this..."', duration: 2000 },
+          { text: '🎯 Tactician timidly: "Check the data?" Others: "NO!"', duration: 2000 },
+          { text: '👑 Elder snaps: "SILENCE! We draw lots!"', duration: 2000 },
+          { text: '🎲 Cylinder slams down, everyone shrinks...', duration: 2000 }
+        ];
+
+    // 启动动态文案
+    let currentIndex = 0;
+    const showNextMessage = () => {
+      if (currentIndex < messages.length) {
+        setLoadingMessage(messages[currentIndex].text);
+        currentIndex++;
+      }
+    };
+
+    showNextMessage();
+    const messageInterval = setInterval(() => {
+      showNextMessage();
+    }, 2000);
+
     try {
       const roles = getPraiseRoles(language);
       const isDeepRest = quest.source === 'deeprest';
@@ -42,6 +79,8 @@ export default function PraiseDialog({ quest, onClose }) {
         }
       });
 
+      clearInterval(messageInterval);
+
       setPraise(result.praise || (language === 'zh' 
         ? '我看到了你的努力。这份坚持正在让你变得更强大。'
         : 'I witnessed your effort. This persistence is making you stronger.'));
@@ -49,6 +88,7 @@ export default function PraiseDialog({ quest, onClose }) {
       // 表扬信文字生成完成后播放音效
       await playSound('praiseSound');
     } catch (error) {
+      clearInterval(messageInterval);
       setPraise(language === 'zh'
         ? '我看到了你的努力。这份坚持正在让你变得更强大。'
         : 'I witnessed your effort. This persistence is making you stronger.');
@@ -133,7 +173,7 @@ export default function PraiseDialog({ quest, onClose }) {
             }}
           >
             {loading ? (
-              <p className="text-center font-bold text-gray-500">{t('praise_guild_reviewing')}</p>
+              <p className="text-center font-bold text-gray-500 whitespace-pre-line">{loadingMessage}</p>
             ) : (
               <>
                 {praiser && (

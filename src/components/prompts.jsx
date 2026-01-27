@@ -162,7 +162,7 @@ Key Phrases: ${role.keywordsEn.join(', ')} (naturally incorporate these in your 
 ✅ "You distilled complex concepts into structured notes, requiring sustained attention and information filtering. This ability to transform knowledge into usable tools is the core of continuous growth."
    → Specific operations (distill, structure), difficulty (attention, filtering), value (transform to tools)
 
-Please write acknowledgment (around 50 words) **completely as ${role.nameEn}**:`;
+Please write acknowledgment (20-30 words, concise & direct) **completely as ${role.nameEn}**:`;
   }
 }
 

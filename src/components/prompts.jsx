@@ -2,53 +2,92 @@
 
 export function getTaskNamingPrompt(language, userInput, isEdit = false) {
   if (language === 'zh') {
+    // 随机选择一个动作类型
+    const actionTypes = ['征讨', '探索', '铸造', '研习', '护送', '调查', '收集', '锻造', '外交', '记录', '守护', '净化', '寻宝', '祭祀', '谈判', '战斗'];
+    const randomType = actionTypes[Math.floor(Math.random() * actionTypes.length)];
+    
     return `你是【星陨纪元冒险者协会】的首席史诗书记官。
 
 用户输入：${userInput}
+
+🎲 **协会为你随机指定的任务类型：【${randomType}】**
 
 你的任务：
 1. 把整个输入作为**单个任务**处理（不要拆分！）
 2. **为这个任务生成专属的RPG史诗风格标题**：
 
 【标题生成规则】（必须100%严格遵守）：
-- 格式：【XX】+ YYYYYYY （XX=动作类型2个字，YYYYYYY=描述正好7个汉字）
-- 动作类型：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化、寻宝、祭祀、谈判
+- 格式：【${randomType}】+ YYYYYYY （YYYYYYY=描述正好7个汉字）
+- **⚠️ 你必须使用【${randomType}】作为类型，不能更改！**
+- **你的任务是让【${randomType}】这个类型和用户输入产生合理且有趣的联系**
 - **7字描述是硬性限制！必须正好7个汉字，不能多也不能少！**
 - 描述要充满幻想色彩，把现实任务转化为史诗叙事
 - **绝对禁止使用"任务"二字！**
 
-【标题示例】（注意每个描述都正好7个字）：
-"跑步5km" → "【征讨】踏破晨曦五里征途"（7字：踏破晨曦五里征途）
-"写周报" → "【记录】编撰冒险周志卷轴"（7字：编撰冒险周志卷轴）
-"开会" → "【议会】召开圆桌战术会议"（7字：召开圆桌战术会议）
+【如何合理化指定类型】：
+- 如果是【战斗】：可以是"与XX战斗"、"攻克XX"、"征服XX"、"击败XX"
+- 如果是【净化】：可以是"清除XX"、"净化XX"、"驱散XX"
+- 如果是【祭祀】：可以是"祭炼XX"、"献祭XX"、"仪式XX"
+- 发挥创意，让看似不相关的类型变得合理！
 
-**重要提醒**：描述部分必须正好7个汉字！
+【标题示例】（注意每个描述都正好7个字）：
+"跑步5km" + 【征讨】 → "【征讨】踏破晨曦五里征途"
+"跑步5km" + 【战斗】 → "【战斗】击败惰性恶魔之战"
+"写代码" + 【研习】 → "【研习】钻研代码符文奥秘"
+"写代码" + 【战斗】 → "【战斗】攻克程序堡垒难关"
+"写代码" + 【净化】 → "【净化】清除代码错误瘟疫"
+"睡觉" + 【战斗】 → "【战斗】与疲惫之魔的对决"
+"睡觉" + 【守护】 → "【守护】守护身心复原之夜"
+
+**重要提醒**：
+1. 必须使用【${randomType}】，不能改成其他类型
+2. 描述部分必须正好7个汉字
+3. 必须让【${randomType}】和任务内容产生合理联系
 
 ${isEdit ? '' : '3. 评定难度和稀有度\n4. 保留用户的完整输入作为 actionHint\n'}
 请返回任务：`;
   } else {
+    // Randomly select an action category
+    const categories = ['Conquest', 'Expedition', 'Forging', 'Research', 'Escort', 'Investigation', 'Collection', 'Crafting', 'Diplomacy', 'Chronicle', 'Guardian', 'Purification', 'Treasure Hunt', 'Ritual', 'Negotiation', 'Battle'];
+    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+    
     return `You are the Chief Epic Chronicler of the [Starfall Era Adventurer's Guild].
 
 User input: ${userInput}
+
+🎲 **The Guild has randomly assigned you this category: [${randomCategory}]**
 
 Your task:
 1. Treat the entire input as a **single task** (do not split!)
 2. **Generate an exclusive RPG epic-style title for this task**:
 
 【Title Generation Rules】(Must be 100% strictly followed):
-- Format: [Category]: <5-8 Word Epic Phrase>
-- Category options: Conquest, Expedition, Forging, Research, Escort, Investigation, Collection, Crafting, Diplomacy, Chronicle, Guardian, Purification, Treasure Hunt, Ritual, Negotiation
+- Format: [${randomCategory}]: <5-8 Word Epic Phrase>
+- **⚠️ You MUST use [${randomCategory}] as the category, cannot change it!**
+- **Your job is to create a reasonable and interesting connection between [${randomCategory}] and the user's input**
 - **Phrase must be 5-8 words, creating an epic fantasy narrative**
 - Transform mundane reality into heroic adventure language
 - **Absolutely forbidden: use the word "task" or "quest" in the phrase!**
 
-【Title Examples】:
-"Run 5km" → "[Conquest]: Dawn March Through Five Miles"
-"Write weekly report" → "[Chronicle]: Forge Epic Weekly Adventure Scroll"
-"Attend meeting" → "[Diplomacy]: Convene Round Table War Council"
-"Buy groceries" → "[Collection]: Secure Market District Provisions"
+【How to Rationalize the Assigned Category】:
+- If [Battle]: "Battle Against XX", "Conquer XX", "Defeat XX", "Vanquish XX"
+- If [Purification]: "Cleanse XX", "Purify XX", "Dispel XX"
+- If [Ritual]: "Forge Ritual of XX", "Sacred Rite of XX"
+- Be creative and make seemingly unrelated categories work!
 
-**Important**: Phrase must be 5-8 words of epic adventure language!
+【Title Examples】(note phrase lengths):
+"Run 5km" + [Conquest] → "[Conquest]: Dawn March Through Five Miles" (6 words)
+"Run 5km" + [Battle] → "[Battle]: Defeat Laziness Demon In Dawn" (6 words)
+"Write code" + [Research] → "[Research]: Decipher Arcane Programming Mysteries" (5 words)
+"Write code" + [Battle] → "[Battle]: Storm Digital Fortress Code Walls" (6 words)
+"Write code" + [Purification] → "[Purification]: Cleanse Bug Plague From Codebase" (6 words)
+"Sleep" + [Battle] → "[Battle]: Fight Exhaustion Demon Through Night" (6 words)
+"Sleep" + [Guardian] → "[Guardian]: Guard Body Soul Restoration Slumber" (6 words)
+
+**Critical Reminders**:
+1. Must use [${randomCategory}], cannot change to another category
+2. Phrase must be 5-8 words
+3. Must create a reasonable connection between [${randomCategory}] and the task
 
 ${isEdit ? '' : '3. Rate difficulty and rarity\n4. Preserve user\'s complete input as actionHint\n'}
 Return task:`;

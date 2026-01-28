@@ -2,9 +2,11 @@
 
 export function getTaskNamingPrompt(language, userInput, isEdit = false) {
   if (language === 'zh') {
-    // 随机选择一个动作类型
-    const actionTypes = ['征讨', '探索', '铸造', '研习', '护送', '调查', '收集', '锻造', '外交', '记录', '守护', '净化', '寻宝', '祭祀', '谈判', '战斗'];
-    const randomType = actionTypes[Math.floor(Math.random() * actionTypes.length)];
+      // 使用哈希算法随机选择一个动作类型
+      const actionTypes = ['征讨', '探索', '铸造', '研习', '护送', '调查', '收集', '锻造', '外交', '记录', '守护', '净化', '寻宝', '祭祀', '谈判', '战斗'];
+      const randomSeed = Math.floor((Date.now() * Math.random() * 1000 + performance.now() * 1000) % 1000000);
+      const hash = (randomSeed * 2654435761) >>> 0;
+      const randomType = actionTypes[hash % actionTypes.length];
     
     return `你是【星陨纪元冒险者协会】的首席史诗书记官。
 
@@ -47,9 +49,11 @@ export function getTaskNamingPrompt(language, userInput, isEdit = false) {
 ${isEdit ? '' : '3. 评定难度和稀有度\n4. 保留用户的完整输入作为 actionHint\n'}
 请返回任务：`;
   } else {
-    // Randomly select an action category
+    // 使用哈希算法随机选择一个动作类型
     const categories = ['Conquest', 'Expedition', 'Forging', 'Research', 'Escort', 'Investigation', 'Collection', 'Crafting', 'Diplomacy', 'Chronicle', 'Guardian', 'Purification', 'Treasure Hunt', 'Ritual', 'Negotiation', 'Battle'];
-    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+    const randomSeed = Math.floor((Date.now() * Math.random() * 1000 + performance.now() * 1000) % 1000000);
+    const hash = (randomSeed * 2654435761) >>> 0;
+    const randomCategory = categories[hash % categories.length];
     
     return `You are the Chief Epic Chronicler of the [Starfall Era Adventurer's Guild].
 

@@ -74,7 +74,10 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
           else if (rarityRoll < 98) rarity = 'Epic';
           else rarity = 'Legendary';
 
-          const randomSeed = Math.floor(Math.random() * 100000) + Date.now() % 100000;
+          // 使用更强的随机种子生成，结合时间戳、随机数和性能计数器
+          const randomSeed = Math.floor(
+            (Date.now() * Math.random() * 1000 + performance.now() * 1000) % 1000000
+          );
           const { prompt } = getTreasurePrompt(language, rarity, randomSeed);
 
           const { data: result } = await base44.functions.invoke('callDeepSeek', {
@@ -155,7 +158,10 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
         else if (rarityRoll < 98) rarity = 'Epic';
         else rarity = 'Legendary';
 
-        const randomSeed = Math.floor(Math.random() * 100000) + Date.now() % 100000;
+        // 使用更强的随机种子生成，结合时间戳、随机数和性能计数器
+        const randomSeed = Math.floor(
+          (Date.now() * Math.random() * 1000 + performance.now() * 1000) % 1000000
+        );
         const { prompt } = getTreasurePrompt(language, rarity, randomSeed);
 
         const { data: result } = await base44.functions.invoke('callDeepSeek', {

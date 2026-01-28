@@ -16,7 +16,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'DeepSeek API key not configured' }, { status: 500 });
     }
 
-    const messages = [{ role: "user", content: prompt }];
+    let finalPrompt = prompt;
+    
+    // 如果需要JSON输出，在prompt中明确要求JSON格式
+    if (response_json_schema) {
+      finalPrompt = `${prompt}\n\nPlease respond with valid JSON matching this schema: ${JSON.stringify(response_json_schema)}`;
+    }
+    
+    const messages = [{ role: "user", content: finalPrompt }];
     
     const requestBody = {
       model: "deepseek-chat",
@@ -28,8 +35,6 @@ Deno.serve(async (req) => {
       requestBody.response_format = {
         type: "json_object"
       };
-      // 在prompt中明确要求JSON格式
-      messages[0].content = `${prompt}\n\nPlease respond with valid JSON matching this schema: ${JSON.stringify(response_json_schema)}`;
     }
 
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {

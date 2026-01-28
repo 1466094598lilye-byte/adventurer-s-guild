@@ -207,9 +207,11 @@ Please write acknowledgment (20-30 words, concise & direct) **completely as ${ro
 
 export function getTreasurePrompt(language, rarity, randomSeed = Math.floor(Math.random() * 100000)) {
   if (language === 'zh') {
-    // 所有级别：从预设类别中随机抽取
+    // 所有级别：从预设类别中随机抽取（使用更均匀的随机方式）
     const categories = ['工具', '饰品', '食物', '布料', '木器', '陶器', '铁器', '植物', '石器', '皮革', '骨器', '羽毛', '贝壳', '矿石', '书页', '墨水', '绳索', '袋囊', '香料', '蜡烛'];
-    const selectedCategory = categories[randomSeed % categories.length];
+    // 使用随机种子的哈希值来确保更均匀的分布
+    const hash = (randomSeed * 2654435761) >>> 0; // Knuth's multiplicative hash
+    const selectedCategory = categories[hash % categories.length];
 
     const rarityConfig = {
       'Common': {
@@ -273,9 +275,11 @@ ${config.task}
       descRange: config.descLength
     };
   } else {
-    // 所有级别：从预设类别中随机抽取
+    // 所有级别：从预设类别中随机抽取（使用更均匀的随机方式）
     const categories = ['tools', 'jewelry', 'food', 'cloth', 'wood', 'pottery', 'iron', 'plants', 'stone', 'leather', 'bone', 'feathers', 'shells', 'minerals', 'scrolls', 'ink', 'rope', 'pouches', 'spices', 'candles'];
-    const selectedCategory = categories[randomSeed % categories.length];
+    // 使用随机种子的哈希值来确保更均匀的分布
+    const hash = (randomSeed * 2654435761) >>> 0; // Knuth's multiplicative hash
+    const selectedCategory = categories[hash % categories.length];
 
     const rarityConfig = {
       'Common': {

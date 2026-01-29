@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Loader2, Sparkles, ChevronDown, ChevronUp, Plus, Repeat } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useLanguage } from '@/components/LanguageContext';
-import { getCelebrationMessagePrompt, getPlanningTaskPrompt } from '@/components/prompts';
+import { getCelebrationMessagePrompt, getTaskNamingPrompt } from '@/components/prompts';
 import { format } from 'date-fns';
 
 export default function EndOfDaySummaryAndPlanning({ 
@@ -124,7 +124,7 @@ export default function EndOfDaySummaryAndPlanning({
     
     setIsProcessing(true);
     try {
-      const promptText = getPlanningTaskPrompt(language, textInput.trim());
+      const promptText = getTaskNamingPrompt(language, textInput.trim(), false);
       
       const { data: result } = await base44.functions.invoke('callDeepSeek', {
         prompt: promptText,
@@ -187,7 +187,7 @@ export default function EndOfDaySummaryAndPlanning({
     
     if (newActionHint.trim()) {
       try {
-        const promptText = getPlanningTaskPrompt(language, newActionHint.trim());
+        const promptText = getTaskNamingPrompt(language, newActionHint.trim(), false);
         
         const { data: result } = await base44.functions.invoke('callDeepSeek', {
           prompt: promptText,

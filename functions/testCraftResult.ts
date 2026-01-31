@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
     const { prompt } = generatePrompt(targetRarity || 'Rare', language || 'zh');
 
     // 调用 DeepSeek 生成实际结果
-    const { data: result } = await base44.functions.invoke('callDeepSeek', {
+    const result = await base44.asServiceRole.functions.invoke('callDeepSeek', {
       prompt: prompt,
       response_json_schema: {
         type: "object",

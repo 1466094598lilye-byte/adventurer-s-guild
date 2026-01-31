@@ -125,122 +125,115 @@ Deno.serve(async (req) => {
 });
 
 function generatePrompt(rarity, language) {
-  // 随机选择物品类别（与宝箱系统一致）
+  // 使用与宝箱系统相同的随机类别选择机制
   const categories = ['工具', '饰品', '食物', '布料', '木器', '陶器', '铁器', '植物', '石器', '皮革', '骨器', '羽毛', '贝壳', '矿石', '书页', '墨水', '绳索', '袋囊', '香料', '蜡烛'];
   const categoriesEn = ['tools', 'jewelry', 'food', 'cloth', 'wood', 'pottery', 'iron', 'plants', 'stone', 'leather', 'bone', 'feathers', 'shells', 'minerals', 'scrolls', 'ink', 'rope', 'pouches', 'spices', 'candles'];
   
   const randomSeed = Math.floor(Math.random() * 100000) + Date.now() % 100000;
+  const hash = (randomSeed * 2654435761) >>> 0;
   const selectedCategory = language === 'zh' 
-    ? categories[randomSeed % categories.length]
-    : categoriesEn[randomSeed % categoriesEn.length];
+    ? categories[hash % categories.length]
+    : categoriesEn[hash % categoriesEn.length];
 
   if (language === 'zh') {
     const rarityConfig = {
       'Rare': {
-        context: '稀有 - 有些特别',
+        role: '在城市中经营的魔导道具商人',
+        context: '你的店铺位于冒险者公会或学院附近，顾客多为常驻冒险者、雇佣兵、小贵族随从。你售卖的并非传说中的奇物，而是经过验证、稳定可靠、可以反复出售的魔导道具。你的货源来自城市工坊、炼金坊或长期合作的魔导技师。',
+        task: `请从这个经营场景出发，描述你店铺中正在出售的一件**${selectedCategory}类**商品。`,
         nameLength: '5-10个汉字',
-        descLength: '25-35个汉字',
-        nameExample: '月光水晶',
-        descExample: '在月圆之夜才会发光的神秘水晶，据说能指引迷失者找到归途，是夜行冒险者的珍贵护符。'
+        descLength: '25-35个汉字'
       },
       'Epic': {
-        context: '史诗 - 强大华丽',
+        role: '王国的司库',
+        context: '你负责保管国家最重要的宝物与象征。你所接触的物品往往与王权、战争、外交或国家命运紧密相关。这些物品并非为了日常使用，而是被珍藏、被记载、被在特定时刻取出。它们可能来自古老的王朝、决定胜负的战争、或一次改变历史的盟约。',
+        task: `请从你的视角，描述你所保管的一件**${selectedCategory}类**宝物。`,
         nameLength: '6-12个汉字',
-        descLength: '40-60个汉字',
-        nameExample: '不灭之炎核心',
-        descExample: '传说中永不熄灭的圣火碎片，象征着永恒的意志与不屈的精神。能赋予持有者在绝境中燃起希望的勇气，是英雄们代代相传的信念图腾，见证了无数史诗般的战役与传奇。'
+        descLength: '40-60个汉字'
       },
       'Legendary': {
-        context: '传说 - 传奇神话',
+        role: '创世之初的存在',
+        context: '你见证并塑造世界的法则。在世界的某个关键转折点，你决定将一件存在交付给一位被选中的勇者。这并非单纯的"武器"或"奖励"，而是承载概念、命运或选择的礼物。它可能改变使用者，也可能改变世界本身。',
+        task: `请描述你赐予勇者的这件**${selectedCategory}类**宝物。`,
         nameLength: '8-15个汉字',
-        descLength: '60-90个汉字',
-        nameExample: '时空枢纽钥匙',
-        descExample: '据说能开启任意时空之门的终极神器，只有真正的英雄才配拥有。它承载着改变命运、扭转乾坤的至高力量，在历史长河中仅出现过三次，每一次都改写了整个纪元的走向。持有者将获得穿梭维度、掌控时间之流的神秘能力，成为星陨纪元最伟大的传说。'
+        descLength: '60-90个汉字'
       }
     };
 
     const config = rarityConfig[rarity];
 
     return {
-      prompt: `生成一个RPG风格的【合成】战利品道具。
+      prompt: `【角色扮演】
 
-稀有度：${rarity}（${config.context}）
+你是一名${config.role}。
+
+【场景设定】
+${config.context}
 
 🎲 创意随机种子：${randomSeed}
 （请将这个数字作为灵感，每次生成不同的物品）
 ⚠️ 【强制要求】本次必须生成：${selectedCategory}类物品（不能是其他类别！）
 
-⚠️ **核心要求 - 必须生成全新的独特物品**：
-1. **绝对禁止**复用示例中的名称或描述
-2. 每次必须创造**完全不同**的新物品
-3. 发挥想象力，创造独特的幻想道具
+【任务】
+${config.task}
 
-**重要提示**：这是通过合成低级材料铸造而成的宝物，请在描述中体现"熔炼"、"升华"、"铸造"、"淬炼"等合成相关的概念。
+【格式要求】
+- 物品名称：${config.nameLength}
+- 物品简介：${config.descLength}，⚠️ **关键要求**：这件物品是通过合成工艺铸就的，请在描述中自然融入"由...熔炼而成"、"经过...淬炼"、"在工坊中铸就"等体现合成来源的表达。
+- 选择一个合适的emoji作为图标
 
-要求：
-1. 名称：${config.nameLength}，要体现合成铸造的特点
-2. 简介：${config.descLength}，必须包含合成相关的背景故事（如：由XXX材料熔炼而成、经过淬炼升华、在铸造工坊锻造等）
-3. 选择合适的emoji作为图标
-
-格式参考示例（仅供格式参考，**不要复用这些内容**）：
-"${config.nameExample}" / "${config.descExample}"
-
-**重要提醒**：请生成与示例完全不同的全新道具，发挥创造力！必须在描述中体现合成/铸造过程。`,
+请完全沉浸在你的角色中，用自然的方式描述这件物品。`,
       nameRange: config.nameLength,
       descRange: config.descLength
     };
   } else {
     const rarityConfig = {
       'Rare': {
-        context: 'Rare - Somewhat special',
+        role: 'a magical tools merchant operating in the city',
+        context: 'Your shop is located near the Adventurer\'s Guild or Academy. Your customers are mostly resident adventurers, mercenaries, and minor noble attendants. You don\'t sell legendary artifacts, but verified, reliable, repeatedly sellable magical tools. Your supply comes from city workshops, alchemy labs, or long-term partner magic technicians.',
+        task: `From this business setting, describe one **${selectedCategory}** item currently for sale in your shop.`,
         nameLength: '3-5 words',
-        descLength: '25-35 words',
-        nameExample: 'Moonlight Crystal Shard',
-        descExample: 'A mysterious crystal that glows only during full moons, said to guide lost souls back to their path. A precious talisman for night travelers.'
+        descLength: '25-35 words'
       },
       'Epic': {
-        context: 'Epic - Powerful and magnificent',
+        role: 'the Royal Treasurer of the kingdom',
+        context: 'You are responsible for safeguarding the nation\'s most important treasures and symbols. The items you handle are closely tied to sovereignty, war, diplomacy, or national destiny. These items are not for daily use, but are preserved, recorded, and taken out at specific moments. They may come from ancient dynasties, battles that decided victory, or treaties that changed history.',
+        task: `From your perspective, describe one **${selectedCategory}** treasure you safeguard.`,
         nameLength: '4-6 words',
-        descLength: '40-60 words',
-        nameExample: 'Eternal Flame Core Fragment',
-        descExample: 'A sacred fire shard that never extinguishes, symbolizing eternal will and unwavering spirit. Grants its bearer the courage to ignite hope in the darkest hours. A totem of belief passed down through generations of heroes, witnessing countless epic battles and legendary tales.'
+        descLength: '40-60 words'
       },
       'Legendary': {
-        context: 'Legendary - Mythic and legendary',
+        role: 'a being from the dawn of creation',
+        context: 'You witness and shape the laws of the world. At a critical turning point in history, you decide to bestow an existence upon a chosen hero. This is not merely a "weapon" or "reward," but a gift carrying concepts, destiny, or choice. It may change the bearer, or change the world itself.',
+        task: `Describe this **${selectedCategory}** treasure you bestow upon the hero.`,
         nameLength: '5-8 words',
-        descLength: '60-90 words',
-        nameExample: 'Chrono Nexus Key Artifact',
-        descExample: 'The ultimate mythical artifact said to unlock any temporal gateway, destined only for true heroes. It bears the supreme power to alter fate and reshape reality itself. Throughout history, it has appeared only three times, each rewriting the course of entire eras. Its wielder gains mystical abilities to traverse dimensions and command the flow of time, becoming the greatest legend of the Starfall Era.'
+        descLength: '60-90 words'
       }
     };
 
     const config = rarityConfig[rarity];
 
     return {
-      prompt: `Generate an RPG-style **crafted** treasure item.
+      prompt: `【Role Play】
 
-Rarity: ${rarity} (${config.context})
+You are ${config.role}.
+
+【Scene Setting】
+${config.context}
 
 🎲 Creative Random Seed: ${randomSeed}
 (Use this number as inspiration to generate a different item each time)
-⚠️ 【MANDATORY REQUIREMENT】This time you MUST generate: ${selectedCategory} category item (no other categories allowed!)
+⚠️ 【Mandatory Requirement】This time you MUST generate: ${selectedCategory} category item (cannot be other categories!)
 
-⚠️ **Core Requirement - Must Generate Completely Unique Item**:
-1. **Absolutely forbidden** to reuse names or descriptions from examples
-2. Must create **entirely different** new items each time
-3. Use your imagination to create unique fantasy treasures
+【Task】
+${config.task}
 
-**Important**: This treasure was forged through crafting/smelting lower-tier materials. The description MUST reflect crafting concepts like "forged from", "smelted", "tempered", "ascended through crafting", etc.
+【Format Requirements】
+- Item Name: ${config.nameLength}
+- Item Description: ${config.descLength}, ⚠️ **Key Requirement**: This item was crafted through synthesis. Naturally incorporate expressions like "forged from...", "smelted from...", "tempered in the workshop" to reflect its crafted origin.
+- Choose an appropriate emoji as the icon
 
-Requirements:
-1. Name: ${config.nameLength}, reflecting its crafted nature
-2. Description: ${config.descLength}, MUST include crafting backstory (e.g., forged from XXX materials, tempered in the forge, ascended through smelting, etc.)
-3. Choose appropriate emoji as icon
-
-Format Reference Example (**Do NOT reuse these contents**):
-"${config.nameExample}" / "${config.descExample}"
-
-**Important**: Generate completely new items different from examples. Be creative! MUST include crafting/forging process in description.`,
+Fully immerse yourself in your role and describe this item naturally.`,
       nameRange: config.nameLength,
       descRange: config.descLength
     };

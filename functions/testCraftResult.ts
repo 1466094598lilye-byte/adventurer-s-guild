@@ -13,19 +13,43 @@ Deno.serve(async (req) => {
 
     const { prompt } = generatePrompt(targetRarity || 'Rare', language || 'zh');
 
-    // 调用 DeepSeek 生成实际结果
-    const result = await base44.asServiceRole.functions.invoke('callDeepSeek', {
-      prompt: prompt,
-      response_json_schema: {
-        type: "object",
-        properties: {
-          name: { type: "string" },
-          flavorText: { type: "string" },
-          icon: { type: "string" }
-        },
-        required: ["name", "flavorText", "icon"]
-      }
+    // 直接调用 DeepSeek API
+    const apiKey = Deno.env.get("DEEPSEEK_API_KEY");
+    if (!apiKey) {
+      return Response.json({ error: 'DeepSeek API key not configured' }, { status: 500 });
+    }
+
+    const finalPrompt = `${prompt}\n\nPlease respond with valid JSON matching this schema: ${JSON.stringify({
+      type: "object",
+      properties: {
+        name: { type: "string" },
+        flavorText: { type: "string" },
+        icon: { type: "string" }
+      },
+      required: ["name", "flavorText", "icon"]
+    })}`;
+
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [{ role: "user", content: finalPrompt }],
+        response_format: { type: "json_object" }
+      })
     });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return Response.json({ error: `DeepSeek API error: ${response.status}`, details: errorText }, { status: response.status });
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    const result = JSON.parse(content);
 
     return Response.json({ 
       success: true,

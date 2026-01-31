@@ -177,12 +177,23 @@ ${config.context}
 【任务】
 ${config.task}
 
+【任务】
+${config.task}
+
+⚠️ **核心要求 - 必须体现合成来源**：
+这件物品是冒险者通过合成工艺铸就的战利品，你的描述中**必须明确包含**以下合成相关的表达（至少使用其中2-3个概念）：
+- "由...熔炼而成" / "从...中铸就"
+- "经过...淬炼" / "淬火锻造"
+- "在工坊中铸成" / "铸造师的杰作"
+- "升华自..." / "熔铸自多件..."
+- "工匠的巧手将...融合" / "炉火中诞生"
+
 【格式要求】
 - 物品名称：${config.nameLength}
-- 物品简介：${config.descLength}，⚠️ **关键要求**：这件物品是通过合成工艺铸就的，请在描述中自然融入"由...熔炼而成"、"经过...淬炼"、"在工坊中铸就"等体现合成来源的表达。
+- 物品简介：${config.descLength}
 - 选择一个合适的emoji作为图标
 
-请完全沉浸在你的角色中，用自然的方式描述这件物品。`,
+请完全沉浸在你的角色中，用自然的方式描述这件物品，**确保描述中能让人明确感知到这是一件合成而来的宝物**。`,
       nameRange: config.nameLength,
       descRange: config.descLength
     };
@@ -228,12 +239,20 @@ ${config.context}
 【Task】
 ${config.task}
 
+⚠️ **Core Requirement - Must Reflect Crafting Origin**:
+This item is a treasure crafted by adventurers through synthesis. Your description **must explicitly include** crafting-related expressions (use at least 2-3 of these concepts):
+- "forged from..." / "crafted from..."
+- "tempered through..." / "smelted in..."
+- "born in the workshop" / "masterwork of the forge"
+- "ascended from..." / "fused from multiple..."
+- "artisan's hands merged..." / "born of flame"
+
 【Format Requirements】
 - Item Name: ${config.nameLength}
-- Item Description: ${config.descLength}, ⚠️ **Key Requirement**: This item was crafted through synthesis. Naturally incorporate expressions like "forged from...", "smelted from...", "tempered in the workshop" to reflect its crafted origin.
+- Item Description: ${config.descLength}
 - Choose an appropriate emoji as the icon
 
-Fully immerse yourself in your role and describe this item naturally.`,
+Fully immerse yourself in your role and describe this item naturally, **ensuring the description clearly conveys that this is a synthesized treasure**.`,
       nameRange: config.nameLength,
       descRange: config.descLength
     };

@@ -1644,14 +1644,6 @@ export default function QuestBoard() {
     console.log('=== 宝箱关闭 ===');
     setShowChest(false);
     batchInvalidateQueries(['chest', 'quests']);
-    
-    // 宝箱关闭后，总是弹出规划弹窗（带表扬信）
-    if (user) {
-      console.log('=== 触发规划明日委托弹窗（带表扬信）===');
-      setFromChestOpen(true);
-      setShowCelebrationInPlanning(true);
-      setShowPlanningDialog(true);
-    }
   };
 
   const handleOpenChest = async () => {

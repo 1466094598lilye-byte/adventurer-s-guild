@@ -1873,15 +1873,15 @@ export default function QuestBoard() {
   };
 
   return (
-    <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
+    <div className="min-h-screen p-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className="max-w-2xl mx-auto">
         <div 
           className="mb-6 p-4 transform -rotate-1"
           style={{
-            backgroundColor: '#000',
-            color: '#FFE66D',
-            border: '5px solid #FFE66D',
-            boxShadow: '8px 8px 0px #FFE66D'
+            backgroundColor: 'var(--bg-black)',
+            color: 'var(--color-yellow)',
+            border: '5px solid var(--color-yellow)',
+            boxShadow: '8px 8px 0px var(--color-yellow)'
           }}
         >
           <h1 className="text-3xl font-black uppercase text-center">
@@ -1898,9 +1898,9 @@ export default function QuestBoard() {
           <div 
             className="mb-6 p-4"
             style={{
-              backgroundColor: '#4ECDC4',
-              border: '4px solid #000',
-              boxShadow: '6px 6px 0px #000'
+              backgroundColor: 'var(--bg-cyan)',
+              border: '4px solid var(--border-primary)',
+              boxShadow: '6px 6px 0px var(--border-primary)'
             }}
           >
             <div className="flex items-center justify-center gap-2">
@@ -1916,9 +1916,9 @@ export default function QuestBoard() {
         <div 
           className="p-4 mb-6"
           style={{
-            backgroundColor: '#FFE66D',
-            border: '4px solid #000',
-            boxShadow: '6px 6px 0px #000'
+            backgroundColor: 'var(--bg-warning)',
+            border: '4px solid var(--border-primary)',
+            boxShadow: '6px 6px 0px var(--border-primary)'
           }}
         >
           <div className="flex gap-3 mb-3">

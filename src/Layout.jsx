@@ -251,6 +251,12 @@ function LayoutContent({ children }) {
             -webkit-tap-highlight-color: transparent;
           }
 
+          /* 禁用导航、按钮和图标的文本选择 */
+          nav, nav *, button, button *, a, a * {
+            user-select: none;
+            -webkit-user-select: none;
+          }
+
           body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             overflow-x: hidden;

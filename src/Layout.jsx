@@ -171,6 +171,74 @@ function LayoutContent({ children }) {
 
         {/* Neo-Brutalism Global Styles */}
         <style>{`
+          :root {
+            /* Backgrounds */
+            --bg-primary: #F9FAFB;
+            --bg-secondary: #FFF;
+            --bg-warning: #FFE66D;
+            --bg-cyan: #4ECDC4;
+            --bg-orange: #FF6B35;
+            --bg-pink: #C44569;
+            --bg-black: #000;
+            
+            /* Text Colors */
+            --text-primary: #000;
+            --text-secondary: #666;
+            --text-tertiary: #333;
+            --text-inverse: #FFF;
+            
+            /* Border Colors */
+            --border-primary: #000;
+            --border-warning: #FFE66D;
+            --border-orange: #FF6B35;
+            
+            /* Theme Colors */
+            --color-yellow: #FFE66D;
+            --color-orange: #FF6B35;
+            --color-cyan: #4ECDC4;
+            --color-pink: #C44569;
+            
+            /* Scrollbar */
+            --scrollbar-track: #F0F0F0;
+            --scrollbar-thumb: #000;
+            --scrollbar-border: #FFE66D;
+          }
+
+          @media (prefers-color-scheme: dark) {
+            :root {
+              /* Backgrounds */
+              --bg-primary: #1a1a1a;
+              --bg-secondary: #2a2a2a;
+              --bg-warning: #3a3a2a;
+              --bg-cyan: #2a3a3a;
+              --bg-orange: #3a2a2a;
+              --bg-pink: #3a2a3a;
+              --bg-black: #f5f5f5;
+              
+              /* Text Colors */
+              --text-primary: #f5f5f5;
+              --text-secondary: #aaa;
+              --text-tertiary: #ccc;
+              --text-inverse: #1a1a1a;
+              
+              /* Border Colors */
+              --border-primary: #f5f5f5;
+              --border-warning: #FFE66D;
+              --border-orange: #FF6B35;
+              
+              /* Theme Colors remain vibrant */
+              --color-yellow: #FFE66D;
+              --color-orange: #FF6B35;
+              --color-cyan: #4ECDC4;
+              --color-pink: #C44569;
+              
+              /* Scrollbar */
+              --scrollbar-track: #2a2a2a;
+              --scrollbar-thumb: #f5f5f5;
+              --scrollbar-border: #FFE66D;
+            }
+          }
+
           * {
             -webkit-tap-highlight-color: transparent;
           }

@@ -64,8 +64,8 @@ function LayoutContent({ children }) {
           <div 
             className="w-full py-3 px-4 flex items-center justify-between gap-3 sticky top-0 z-40"
             style={{
-              backgroundColor: '#FFE66D',
-              borderBottom: '5px solid #000',
+              backgroundColor: 'var(--bg-warning)',
+              borderBottom: '5px solid var(--border-primary)',
               boxShadow: '0 5px 0px rgba(0,0,0,0.1)',
               paddingTop: 'env(safe-area-inset-top)'
             }}
@@ -76,10 +76,10 @@ function LayoutContent({ children }) {
                 <p className="font-black text-sm uppercase leading-tight">
                   {t('guest_mode_warning_title')}
                 </p>
-                <p className="font-bold text-xs leading-tight mt-0.5" style={{ color: '#666' }}>
+                <p className="font-bold text-xs leading-tight mt-0.5" style={{ color: 'var(--text-secondary)' }}>
                   {t('guest_mode_warning_subtitle')}
                 </p>
-                <p className="font-bold text-xs leading-tight mt-1" style={{ color: '#333' }}>
+                <p className="font-bold text-xs leading-tight mt-1" style={{ color: 'var(--text-tertiary)' }}>
                   {language === 'zh' ? '登录即表示同意 ' : 'By logging in, you agree to the '}
                   <button
                     onClick={(e) => {
@@ -88,7 +88,7 @@ function LayoutContent({ children }) {
                     }}
                     className="underline hover:opacity-70 cursor-pointer inline"
                     style={{ 
-                      color: '#FF6B35', 
+                      color: 'var(--color-orange)', 
                       fontWeight: 900,
                       textDecoration: 'underline',
                       background: 'none',
@@ -105,10 +105,10 @@ function LayoutContent({ children }) {
               onClick={handleLogin}
               className="flex-shrink-0 px-5 py-3 font-black uppercase text-sm flex flex-col items-center gap-1 animate-bounce-subtle"
               style={{
-                backgroundColor: '#FF6B35',
-                color: '#FFF',
-                border: '4px solid #000',
-                boxShadow: '5px 5px 0px #000'
+                backgroundColor: 'var(--color-orange)',
+                color: 'var(--text-inverse)',
+                border: '4px solid var(--border-primary)',
+                boxShadow: '5px 5px 0px var(--border-primary)'
               }}
             >
               <div className="flex items-center gap-2">

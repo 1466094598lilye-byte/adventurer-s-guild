@@ -317,7 +317,7 @@ export default function TreasuresPage() {
                         onClick={() => toggleExpand(loot.id)}
                         className="p-2 mb-2 cursor-pointer hover:opacity-90 transition-opacity"
                         style={{
-                          backgroundColor: 'rgba(255,255,255,0.9)',
+                          backgroundColor: 'var(--bg-secondary)',
                           color: 'var(--text-primary)',
                           border: '2px solid var(--border-primary)'
                         }}

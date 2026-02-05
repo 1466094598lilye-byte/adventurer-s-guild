@@ -254,6 +254,7 @@ function LayoutContent({ children }) {
           body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             overflow-x: hidden;
+            overscroll-behavior: none;
           }
 
           input, textarea, button {

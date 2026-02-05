@@ -253,7 +253,7 @@ function LayoutContent({ children }) {
           }
 
           input:focus, textarea:focus {
-            outline: 3px solid #FF6B35;
+            outline: 3px solid var(--border-orange);
             outline-offset: 2px;
           }
 
@@ -263,8 +263,8 @@ function LayoutContent({ children }) {
           }
 
           ::selection {
-            background: #FFE66D;
-            color: #000;
+            background: var(--color-yellow);
+            color: var(--text-primary);
           }
 
           ::-webkit-scrollbar {
@@ -273,12 +273,12 @@ function LayoutContent({ children }) {
           }
 
           ::-webkit-scrollbar-track {
-            background: #F0F0F0;
+            background: var(--scrollbar-track);
           }
 
           ::-webkit-scrollbar-thumb {
-            background: #000;
-            border: 2px solid #FFE66D;
+            background: var(--scrollbar-thumb);
+            border: 2px solid var(--scrollbar-border);
           }
 
           @keyframes bounce-subtle {

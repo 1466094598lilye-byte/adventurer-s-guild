@@ -1,7 +1,7 @@
 import React from 'react'; // Added React import
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { LogOut, Award, Flame, Shield, Settings, Trash2 } from 'lucide-react';
+import { LogOut, Award, Flame, Shield, Settings, Trash2, Moon, Sun } from 'lucide-react';
 import StreakDisplay from '../components/profile/StreakDisplay';
 import { useLanguage } from '@/components/LanguageContext';
 
@@ -11,6 +11,9 @@ export default function Profile() {
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = React.useState('');
+  const [isDarkMode, setIsDarkMode] = React.useState(() => {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
 
   const { data: user, isLoading } = useQuery({
     queryKey: ['user'],
@@ -396,6 +399,43 @@ export default function Profile() {
                 }}
               >
                 {t('profile_english')}
+              </button>
+            </div>
+          </div>
+
+          {/* Dark Mode Toggle */}
+          <div className="mb-4">
+            <label className="block text-sm font-black uppercase mb-2">
+              {language === 'zh' ? '🌙 深色模式' : '🌙 Dark Mode'}
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setIsDarkMode(false)}
+                className="py-3 font-black uppercase flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: !isDarkMode ? '#FFE66D' : '#F0F0F0',
+                  color: '#000',
+                  border: '3px solid #000',
+                  boxShadow: !isDarkMode ? '4px 4px 0px #000' : '2px 2px 0px #000',
+                  transform: !isDarkMode ? 'scale(1.02)' : 'scale(1)'
+                }}
+              >
+                <Sun className="w-5 h-5" strokeWidth={3} />
+                {language === 'zh' ? '浅色' : 'Light'}
+              </button>
+              <button
+                onClick={() => setIsDarkMode(true)}
+                className="py-3 font-black uppercase flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: isDarkMode ? '#4ECDC4' : '#F0F0F0',
+                  color: '#000',
+                  border: '3px solid #000',
+                  boxShadow: isDarkMode ? '4px 4px 0px #000' : '2px 2px 0px #000',
+                  transform: isDarkMode ? 'scale(1.02)' : 'scale(1)'
+                }}
+              >
+                <Moon className="w-5 h-5" strokeWidth={3} />
+                {language === 'zh' ? '深色' : 'Dark'}
               </button>
             </div>
           </div>

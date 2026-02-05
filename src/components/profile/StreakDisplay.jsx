@@ -10,59 +10,59 @@ export default function StreakDisplay({ currentStreak, longestStreak, freezeToke
       <div 
         className="p-4"
         style={{
-          backgroundColor: 'var(--color-orange)',
-          border: '4px solid var(--border-primary)',
-          boxShadow: '6px 6px 0px var(--border-primary)'
+          backgroundColor: '#FF6B35',
+          border: '4px solid #000',
+          boxShadow: '6px 6px 0px #000'
         }}
       >
         <div className="flex items-center gap-2 mb-2">
-          <Flame className="w-6 h-6" style={{ color: 'var(--text-inverse)' }} strokeWidth={3} />
-          <span className="text-sm font-bold uppercase" style={{ color: 'var(--text-inverse)' }}>
+          <Flame className="w-6 h-6 text-white" strokeWidth={3} />
+          <span className="text-sm font-bold uppercase text-white">
             {t('journal_current_streak')}
           </span>
         </div>
-        <p className="text-4xl font-black" style={{ color: 'var(--text-inverse)' }}>{currentStreak}</p>
-        <p className="text-sm font-bold" style={{ color: 'var(--text-inverse)' }}>{t('journal_days')}</p>
+        <p className="text-4xl font-black text-white">{currentStreak}</p>
+        <p className="text-sm font-bold text-white">{t('journal_days')}</p>
       </div>
 
       {/* Longest Streak */}
       <div 
         className="p-4"
         style={{
-          backgroundColor: 'var(--color-pink)',
-          border: '4px solid var(--border-primary)',
-          boxShadow: '6px 6px 0px var(--border-primary)'
+          backgroundColor: '#C44569',
+          border: '4px solid #000',
+          boxShadow: '6px 6px 0px #000'
         }}
       >
         <div className="flex items-center gap-2 mb-2">
-          <Award className="w-6 h-6" style={{ color: 'var(--text-inverse)' }} strokeWidth={3} />
-          <span className="text-sm font-bold uppercase" style={{ color: 'var(--text-inverse)' }}>
+          <Award className="w-6 h-6 text-white" strokeWidth={3} />
+          <span className="text-sm font-bold uppercase text-white">
             {t('journal_longest_streak')}
           </span>
         </div>
-        <p className="text-4xl font-black" style={{ color: 'var(--text-inverse)' }}>{longestStreak}</p>
-        <p className="text-sm font-bold" style={{ color: 'var(--text-inverse)' }}>{t('journal_days')}</p>
+        <p className="text-4xl font-black text-white">{longestStreak}</p>
+        <p className="text-sm font-bold text-white">{t('journal_days')}</p>
       </div>
 
       {/* Freeze Tokens */}
       <div 
         className="col-span-2 p-4"
         style={{
-          backgroundColor: 'var(--color-cyan)',
-          border: '4px solid var(--border-primary)',
-          boxShadow: '6px 6px 0px var(--border-primary)'
+          backgroundColor: '#4ECDC4',
+          border: '4px solid #000',
+          boxShadow: '6px 6px 0px #000'
         }}
       >
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <Shield className="w-6 h-6" style={{ color: 'var(--text-primary)' }} strokeWidth={3} />
-            <span className="text-sm font-bold uppercase" style={{ color: 'var(--text-primary)' }}>
+            <Shield className="w-6 h-6" strokeWidth={3} />
+            <span className="text-sm font-bold uppercase">
               {t('journal_freeze_tokens')}
             </span>
           </div>
-          <p className="text-4xl font-black" style={{ color: 'var(--text-primary)' }}>{freezeTokens}</p>
+          <p className="text-4xl font-black">{freezeTokens}</p>
         </div>
-        <p className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>
+        <p className="text-xs font-bold">
           {t('journal_freeze_hint')}
         </p>
       </div>

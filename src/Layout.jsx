@@ -131,7 +131,7 @@ function LayoutContent({ children }) {
         <nav 
           className="fixed bottom-0 left-0 right-0 z-50"
           style={{
-            backgroundColor: 'var(--bg-secondary)',
+            backgroundColor: 'var(--bg-black)',
             borderTop: '5px solid var(--border-warning)',
             paddingBottom: 'env(safe-area-inset-bottom)'
           }}

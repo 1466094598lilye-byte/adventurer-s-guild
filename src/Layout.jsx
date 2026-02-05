@@ -8,7 +8,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { initAudioManager } from "@/components/AudioManager";
 import TermsAndPrivacyDialog from "@/components/TermsAndPrivacyDialog";
-import { AnimatePresence, motion } from "framer-motion";
 
 function LayoutContent({ children }) {
   const location = useLocation();
@@ -124,18 +123,9 @@ function LayoutContent({ children }) {
         )}
 
         {/* Main Content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="flex-1 pb-20"
-          >
-            {children}
-          </motion.div>
-        </AnimatePresence>
+        <div className="flex-1 pb-20">
+          {children}
+        </div>
 
         {/* Bottom Navigation */}
         <nav 

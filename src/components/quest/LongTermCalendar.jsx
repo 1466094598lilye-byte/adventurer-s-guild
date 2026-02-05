@@ -1030,7 +1030,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-black uppercase mb-2">
+                <label className="block font-black uppercase mb-2">
                   {t('calendar_task_content_label')}
                 </label>
                 <textarea

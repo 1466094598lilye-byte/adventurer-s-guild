@@ -1938,9 +1938,9 @@ export default function QuestBoard() {
               style={{
                 width: '64px',
                 height: '64px',
-                backgroundColor: canOpenChest ? '#4ECDC4' : '#E0E0E0',
-                border: '4px solid #000',
-                boxShadow: '5px 5px 0px #000',
+                backgroundColor: canOpenChest ? 'var(--color-cyan)' : '#E0E0E0',
+                border: '4px solid var(--border-primary)',
+                boxShadow: '5px 5px 0px var(--border-primary)',
                 opacity: canOpenChest ? 1 : 0.6
               }}
             >
@@ -1960,9 +1960,10 @@ export default function QuestBoard() {
               disabled={isProcessing}
               className="flex-1 h-16 px-4 font-bold text-lg"
               style={{
-                backgroundColor: '#FFF',
-                border: '4px solid #000',
-                boxShadow: '5px 5px 0px #000'
+                backgroundColor: 'var(--bg-secondary)',
+                border: '4px solid var(--border-primary)',
+                boxShadow: '5px 5px 0px var(--border-primary)',
+                color: 'var(--text-primary)'
               }}
             />
 
@@ -1971,9 +1972,9 @@ export default function QuestBoard() {
               disabled={isProcessing || !textInput.trim()}
               className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
               style={{
-                backgroundColor: '#C44569',
-                border: '4px solid #000',
-                boxShadow: '5px 5px 0px #000',
+                backgroundColor: 'var(--color-pink)',
+                border: '4px solid var(--border-primary)',
+                boxShadow: '5px 5px 0px var(--border-primary)',
                 opacity: (!textInput.trim() || isProcessing) ? 0.5 : 1
               }}
             >
@@ -1992,16 +1993,16 @@ export default function QuestBoard() {
             className="w-full py-3 font-black uppercase text-sm flex items-center justify-center gap-2"
             style={{
               backgroundColor: '#9B59B6',
-              color: '#FFF',
-              border: '4px solid #000',
-              boxShadow: '5px 5px 0px #000'
+              color: 'var(--text-inverse)',
+              border: '4px solid var(--border-primary)',
+              boxShadow: '5px 5px 0px var(--border-primary)'
             }}
           >
             <Briefcase className="w-5 h-5" strokeWidth={3} />
             {t('questboard_longterm_btn')}
           </Button>
           
-          <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
+          <p className="text-xs font-bold text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
             {t('questboard_longterm_hint')}
           </p>
 
@@ -2009,8 +2010,8 @@ export default function QuestBoard() {
             <div 
               className="mt-4 p-3"
               style={{
-                backgroundColor: '#FFF',
-                border: '3px solid #000'
+                backgroundColor: 'var(--bg-secondary)',
+                border: '3px solid var(--border-primary)'
               }}
             >
               <div className="flex items-center justify-between mb-3">
@@ -2024,8 +2025,8 @@ export default function QuestBoard() {
                   <div 
                     key={quest.tempId}
                     style={{
-                      backgroundColor: '#F9FAFB',
-                      border: '3px solid #000'
+                      backgroundColor: 'var(--bg-primary)',
+                      border: '3px solid var(--border-primary)'
                     }}
                   >
                     <div 
@@ -2037,8 +2038,8 @@ export default function QuestBoard() {
                           className="px-2 py-1 text-sm font-black flex-shrink-0"
                           style={{
                             backgroundColor: difficultyColors[quest.difficulty],
-                            color: quest.difficulty === 'S' ? '#FFE66D' : '#000',
-                            border: '2px solid #000'
+                            color: quest.difficulty === 'S' ? 'var(--color-yellow)' : 'var(--text-primary)',
+                            border: '2px solid var(--border-primary)'
                           }}
                         >
                           {quest.difficulty}
@@ -2058,7 +2059,7 @@ export default function QuestBoard() {
                     </div>
 
                     {expandedPending === quest.tempId && (
-                      <div className="px-3 pb-3 pt-0" style={{ borderTop: '2px solid #000' }}>
+                    <div className="px-3 pb-3 pt-0" style={{ borderTop: '2px solid var(--border-primary)' }}>
                         <div className="mb-3 mt-3">
                           <label className="block text-xs font-bold uppercase mb-2">
                             {t('questboard_pending_quest_content_label')}
@@ -2068,7 +2069,11 @@ export default function QuestBoard() {
                             value={quest.actionHint}
                             onChange={(e) => handleUpdatePendingQuest(quest.tempId, 'actionHint', e.target.value)}
                             className="w-full px-3 py-2 font-bold text-sm"
-                            style={{ border: '2px solid #000' }}
+                            style={{ 
+                              border: '2px solid var(--border-primary)',
+                              backgroundColor: 'var(--bg-secondary)',
+                              color: 'var(--text-primary)'
+                            }}
                           />
                         </div>
 
@@ -2084,8 +2089,8 @@ export default function QuestBoard() {
                                 className="py-2 font-black"
                                 style={{
                                   backgroundColor: quest.difficulty === level ? difficultyColors[level] : '#F0F0F0',
-                                  color: level === 'S' && quest.difficulty === level ? '#FFE66D' : '#000',
-                                  border: quest.difficulty === level ? '3px solid #000' : '2px solid #000'
+                                  color: level === 'S' && quest.difficulty === level ? 'var(--color-yellow)' : 'var(--text-primary)',
+                                  border: quest.difficulty === level ? '3px solid var(--border-primary)' : '2px solid var(--border-primary)'
                                 }}
                               >
                                 {level}
@@ -2098,9 +2103,9 @@ export default function QuestBoard() {
                           onClick={() => handleDeletePendingQuest(quest.tempId)}
                           className="w-full py-2 font-bold uppercase text-sm"
                           style={{
-                            backgroundColor: '#FFF',
-                            color: '#FF6B35',
-                            border: '2px solid #FF6B35'
+                            backgroundColor: 'var(--bg-secondary)',
+                            color: 'var(--color-orange)',
+                            border: '2px solid var(--color-orange)'
                           }}
                         >
                           {t('questboard_pending_quest_delete_button')}
@@ -2116,9 +2121,9 @@ export default function QuestBoard() {
                 disabled={isConfirmingPending}
                 className="w-full py-3 font-black uppercase text-sm flex items-center justify-center gap-2"
                 style={{
-                  backgroundColor: '#4ECDC4',
-                  border: '4px solid #000',
-                  boxShadow: '4px 4px 0px #000',
+                  backgroundColor: 'var(--color-cyan)',
+                  border: '4px solid var(--border-primary)',
+                  boxShadow: '4px 4px 0px var(--border-primary)',
                   opacity: isConfirmingPending ? 0.5 : 1
                 }}
               >
@@ -2143,8 +2148,8 @@ export default function QuestBoard() {
             className="mb-6 p-4"
             style={{
               backgroundColor: '#9B59B6',
-              border: '4px solid #000',
-              boxShadow: '6px 6px 0px #000'
+              border: '4px solid var(--border-primary)',
+              boxShadow: '6px 6px 0px var(--border-primary)'
             }}
           >
             <Button
@@ -2184,9 +2189,9 @@ export default function QuestBoard() {
           <div 
             className="mb-6 p-4"
             style={{
-              backgroundColor: '#C44569',
-              border: '4px solid #000',
-              boxShadow: '6px 6px 0px #000'
+              backgroundColor: 'var(--color-pink)',
+              border: '4px solid var(--border-primary)',
+              boxShadow: '6px 6px 0px var(--border-primary)'
             }}
           >
             {nextDayPlannedCount > 0 && (
@@ -2236,10 +2241,10 @@ export default function QuestBoard() {
               onClick={() => setFilter(f)}
               className="flex-1 py-2 font-black uppercase text-sm"
               style={{
-                backgroundColor: filter === f ? '#4ECDC4' : '#FFF',
-                color: '#000',
-                border: '3px solid #000',
-                boxShadow: filter === f ? '4px 4px 0px #000' : '2px 2px 0px #000',
+                backgroundColor: filter === f ? 'var(--color-cyan)' : 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                border: '3px solid var(--border-primary)',
+                boxShadow: filter === f ? '4px 4px 0px var(--border-primary)' : '2px 2px 0px var(--border-primary)',
                 transform: filter === f ? 'scale(1.02)' : 'scale(1)'
               }}
             >
@@ -2255,13 +2260,13 @@ export default function QuestBoard() {
             disabled={isGeneratingDeepRest}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
             style={{
-              backgroundColor: '#FFE66D',
-              color: '#000',
-              border: '4px solid #000',
-              boxShadow: '6px 6px 0px #000',
+              backgroundColor: 'var(--color-yellow)',
+              color: 'var(--text-primary)',
+              border: '4px solid var(--border-primary)',
+              boxShadow: '6px 6px 0px var(--border-primary)',
               background: isGeneratingDeepRest 
                 ? '#E0E0E0' 
-                : 'linear-gradient(135deg, #FFE66D 0%, #FFA94D 100%)',
+                : 'linear-gradient(135deg, var(--color-yellow) 0%, #FFA94D 100%)',
               opacity: isGeneratingDeepRest ? 0.7 : 1
             }}
           >
@@ -2277,7 +2282,7 @@ export default function QuestBoard() {
               </>
             )}
           </Button>
-          <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
+          <p className="text-xs font-bold text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
             {language === 'zh' 
               ? '💡 生成低刺激任务，回收精神能量，真正有效的休息' 
               : '💡 Generate low-stimulation tasks to recharge mental energy'}
@@ -2292,13 +2297,13 @@ export default function QuestBoard() {
           <div 
             className="p-8 text-center"
             style={{
-              backgroundColor: '#FFF',
-              border: '4px solid #000',
-              boxShadow: '6px 6px 0px #000'
+              backgroundColor: 'var(--bg-secondary)',
+              border: '4px solid var(--border-primary)',
+              boxShadow: '6px 6px 0px var(--border-primary)'
             }}
           >
-            <p className="text-2xl font-black uppercase mb-2">{t('questboard_no_quests')}</p>
-            <p className="font-bold text-gray-600">{t('questboard_no_quests_hint')}</p>
+            <p className="text-2xl font-black uppercase mb-2" style={{ color: 'var(--text-primary)' }}>{t('questboard_no_quests')}</p>
+            <p className="font-bold" style={{ color: 'var(--text-secondary)' }}>{t('questboard_no_quests_hint')}</p>
           </div>
         ) : (
           <div>
@@ -2322,10 +2327,10 @@ export default function QuestBoard() {
             disabled={!user || (quests.length > 0 && !isRestDay)}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
             style={{
-              backgroundColor: isRestDay ? '#FF6B35' : '#4ECDC4',
-              color: isRestDay ? '#FFF' : '#000',
-              border: '4px solid #000',
-              boxShadow: '6px 6px 0px #000',
+              backgroundColor: isRestDay ? 'var(--color-orange)' : 'var(--color-cyan)',
+              color: isRestDay ? 'var(--text-inverse)' : 'var(--text-primary)',
+              border: '4px solid var(--border-primary)',
+              boxShadow: '6px 6px 0px var(--border-primary)',
               opacity: (!user || (quests.length > 0 && !isRestDay)) ? 0.5 : 1
             }}
           >
@@ -2333,12 +2338,12 @@ export default function QuestBoard() {
             {isRestDay ? t('questboard_cancel_rest') : t('questboard_set_rest')}
           </Button>
           {!user && (
-            <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
+            <p className="text-xs font-bold text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
               {language === 'zh' ? '游客模式下无法设置休息日' : 'Cannot set rest day in guest mode'}
             </p>
           )}
           {user && quests.length > 0 && !isRestDay && (
-            <p className="text-xs font-bold text-center mt-2" style={{ color: '#666' }}>
+            <p className="text-xs font-bold text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
               {t('questboard_cannot_set_rest_day_hint')}
             </p>
           )}

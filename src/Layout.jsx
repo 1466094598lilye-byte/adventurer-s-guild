@@ -198,6 +198,11 @@ function LayoutContent({ children }) {
             --color-cyan: #4ECDC4;
             --color-pink: #C44569;
             
+            /* Streak Card Backgrounds */
+            --streak-current-bg: #FF6B35;
+            --streak-longest-bg: #C44569;
+            --streak-freeze-bg: #4ECDC4;
+            
             /* Scrollbar */
             --scrollbar-track: #F0F0F0;
             --scrollbar-thumb: #000;
@@ -230,6 +235,11 @@ function LayoutContent({ children }) {
             --color-orange: #FF6B35;
             --color-cyan: #4ECDC4;
             --color-pink: #C44569;
+            
+            /* Streak Card Backgrounds - dark in dark mode */
+            --streak-current-bg: #1a1a1a;
+            --streak-longest-bg: #1a1a1a;
+            --streak-freeze-bg: #1a1a1a;
             
             /* Scrollbar */
             --scrollbar-track: #2a2a2a;

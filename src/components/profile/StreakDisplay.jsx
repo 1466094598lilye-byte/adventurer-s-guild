@@ -10,7 +10,7 @@ export default function StreakDisplay({ currentStreak, longestStreak, freezeToke
       <div 
         className="p-4"
         style={{
-          backgroundColor: 'var(--color-orange)',
+          backgroundColor: 'var(--streak-current-bg)',
           border: '4px solid var(--border-primary)',
           boxShadow: '6px 6px 0px var(--border-primary)'
         }}
@@ -29,7 +29,7 @@ export default function StreakDisplay({ currentStreak, longestStreak, freezeToke
       <div 
         className="p-4"
         style={{
-          backgroundColor: 'var(--color-pink)',
+          backgroundColor: 'var(--streak-longest-bg)',
           border: '4px solid var(--border-primary)',
           boxShadow: '6px 6px 0px var(--border-primary)'
         }}
@@ -48,7 +48,7 @@ export default function StreakDisplay({ currentStreak, longestStreak, freezeToke
       <div 
         className="col-span-2 p-4"
         style={{
-          backgroundColor: 'var(--color-cyan)',
+          backgroundColor: 'var(--streak-freeze-bg)',
           border: '4px solid var(--border-primary)',
           boxShadow: '6px 6px 0px var(--border-primary)'
         }}

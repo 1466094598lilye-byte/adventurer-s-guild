@@ -58,7 +58,7 @@ function LayoutContent({ children }) {
   return (
     <ErrorBoundary>
       <TermsAndPrivacyDialog isOpen={showTerms} onClose={() => setShowTerms(false)} />
-      <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#F9FAFB' }}>
+      <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg-primary)' }}>
         {/* Guest Mode Warning Banner */}
         {!user && (
           <div 

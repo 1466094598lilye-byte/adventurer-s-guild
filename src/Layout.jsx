@@ -132,7 +132,8 @@ function LayoutContent({ children }) {
           className="fixed bottom-0 left-0 right-0 z-50"
           style={{
             backgroundColor: '#000',
-            borderTop: '5px solid #FFE66D'
+            borderTop: '5px solid #FFE66D',
+            paddingBottom: 'env(safe-area-inset-bottom)'
           }}
         >
           <div className="max-w-2xl mx-auto flex">

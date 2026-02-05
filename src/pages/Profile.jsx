@@ -12,8 +12,22 @@ export default function Profile() {
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = React.useState('');
   const [isDarkMode, setIsDarkMode] = React.useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    if (saved !== null) {
+      return saved === 'true';
+    }
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
+
+  // 应用深色模式到 DOM
+  React.useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+    localStorage.setItem('darkMode', isDarkMode.toString());
+  }, [isDarkMode]);
 
   const { data: user, isLoading } = useQuery({
     queryKey: ['user'],

@@ -87,9 +87,9 @@ export default function JournalPage() {
           <div 
             className="p-3"
             style={{
-              backgroundColor: '#4ECDC4',
-              border: '3px solid #000',
-              boxShadow: '4px 4px 0px #000'
+              backgroundColor: 'var(--color-cyan)',
+              border: '3px solid var(--border-primary)',
+              boxShadow: '4px 4px 0px var(--border-primary)'
             }}
           >
             <p className="font-black">{data.date}</p>
@@ -102,9 +102,9 @@ export default function JournalPage() {
         <div 
           className="p-3"
           style={{
-            backgroundColor: '#FFE66D',
-            border: '3px solid #000',
-            boxShadow: '4px 4px 0px #000'
+            backgroundColor: 'var(--color-yellow)',
+            border: '3px solid var(--border-primary)',
+            boxShadow: '4px 4px 0px var(--border-primary)'
           }}
         >
           <p className="font-black">{data.date}</p>
@@ -117,22 +117,22 @@ export default function JournalPage() {
   };
 
   const getBarColor = (value) => {
-    if (value === null) return '#4ECDC4';
-    if (value === 100) return '#4ECDC4';
-    if (value >= 50) return '#FFE66D';
-    return '#FF6B35';
+    if (value === null) return 'var(--color-cyan)';
+    if (value === 100) return 'var(--color-cyan)';
+    if (value >= 50) return 'var(--color-yellow)';
+    return 'var(--color-orange)';
   };
 
   return (
-    <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
+    <div className="min-h-screen p-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className="max-w-4xl mx-auto">
         <div 
           className="mb-6 p-4 transform -rotate-1"
           style={{
-            backgroundColor: '#000',
-            color: '#FFE66D',
-            border: '5px solid #FFE66D',
-            boxShadow: '8px 8px 0px #FFE66D'
+            backgroundColor: 'var(--bg-black)',
+            color: 'var(--color-yellow)',
+            border: '5px solid var(--color-yellow)',
+            boxShadow: '8px 8px 0px var(--color-yellow)'
           }}
         >
           <h1 className="text-3xl font-black uppercase text-center">
@@ -144,16 +144,16 @@ export default function JournalPage() {
           <div 
             className="p-12 text-center"
             style={{
-              backgroundColor: '#FFF',
-              border: '5px solid #000',
-              boxShadow: '8px 8px 0px #000'
+              backgroundColor: 'var(--bg-secondary)',
+              border: '5px solid var(--border-primary)',
+              boxShadow: '8px 8px 0px var(--border-primary)'
             }}
           >
-            <LogIn className="w-24 h-24 mx-auto mb-6" strokeWidth={3} style={{ color: '#FFE66D' }} />
-            <h2 className="text-2xl font-black uppercase mb-3">
+            <LogIn className="w-24 h-24 mx-auto mb-6" strokeWidth={3} style={{ color: 'var(--color-yellow)' }} />
+            <h2 className="text-2xl font-black uppercase mb-3" style={{ color: 'var(--text-primary)' }}>
               {language === 'zh' ? '请登录查看冒险日志' : 'Login to View Adventure Journal'}
             </h2>
-            <p className="font-bold text-gray-600 mb-6">
+            <p className="font-bold mb-6" style={{ color: 'var(--text-secondary)' }}>
               {language === 'zh' 
                 ? '登录后可查看您的连胜记录、完成率趋势等数据'
                 : 'Login to view your streak record, completion trend, and other data'}
@@ -162,9 +162,10 @@ export default function JournalPage() {
               onClick={() => base44.auth.redirectToLogin(window.location.pathname)}
               className="px-8 py-3 font-black uppercase text-lg"
               style={{
-                backgroundColor: '#4ECDC4',
-                border: '4px solid #000',
-                boxShadow: '6px 6px 0px #000'
+                backgroundColor: 'var(--color-cyan)',
+                border: '4px solid var(--border-primary)',
+                boxShadow: '6px 6px 0px var(--border-primary)',
+                color: 'var(--text-primary)'
               }}
             >
               <LogIn className="w-5 h-5 inline mr-2" strokeWidth={3} />
@@ -184,18 +185,18 @@ export default function JournalPage() {
             <div 
               className="p-6"
               style={{
-                backgroundColor: '#FFF',
-                border: '5px solid #000',
-                boxShadow: '8px 8px 0px #000'
+                backgroundColor: 'var(--bg-secondary)',
+                border: '5px solid var(--border-primary)',
+                boxShadow: '8px 8px 0px var(--border-primary)'
               }}
             >
-              <h2 className="text-2xl font-black uppercase mb-4">
+              <h2 className="text-2xl font-black uppercase mb-4" style={{ color: 'var(--text-primary)' }}>
                 {t('journal_completion_trend')} (7{t('journal_days')})
               </h2>
 
               {chartData.every(d => d.totalQuests === 0 && !d.isRestDay) ? (
                 <div className="text-center py-12">
-                  <p className="font-bold text-gray-600">
+                  <p className="font-bold" style={{ color: 'var(--text-secondary)' }}>
                     {language === 'zh' ? '暂无数据' : 'No data available'}
                   </p>
                 </div>
@@ -221,8 +222,8 @@ export default function JournalPage() {
                       <Tooltip content={<CustomTooltip />} />
                       <Bar 
                         dataKey="completionRate" 
-                        fill="#4ECDC4"
-                        stroke="#000"
+                        fill="var(--color-cyan)"
+                        stroke="var(--border-primary)"
                         strokeWidth={2}
                         radius={[8, 8, 0, 0]}
                         shape={(props) => {
@@ -235,7 +236,7 @@ export default function JournalPage() {
                               width={width}
                               height={height}
                               fill={color}
-                              stroke="#000"
+                              stroke="var(--border-primary)"
                               strokeWidth={2}
                               rx={8}
                               ry={8}
@@ -249,8 +250,8 @@ export default function JournalPage() {
                   <div 
                     className="mt-6 p-4"
                     style={{
-                      backgroundColor: '#F9FAFB',
-                      border: '3px solid #000'
+                      backgroundColor: 'var(--bg-primary)',
+                      border: '3px solid var(--border-primary)'
                     }}
                   >
                     <div className="grid grid-cols-3 gap-3 text-center">
@@ -258,31 +259,31 @@ export default function JournalPage() {
                         <div 
                           className="w-6 h-6 mx-auto mb-2"
                           style={{
-                            backgroundColor: '#4ECDC4',
-                            border: '2px solid #000'
+                            backgroundColor: 'var(--color-cyan)',
+                            border: '2px solid var(--border-primary)'
                           }}
                         />
-                        <p className="text-xs font-bold">{t('journal_legend_complete')}</p>
+                        <p className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{t('journal_legend_complete')}</p>
                       </div>
                       <div>
                         <div 
                           className="w-6 h-6 mx-auto mb-2"
                           style={{
-                            backgroundColor: '#FFE66D',
-                            border: '2px solid #000'
+                            backgroundColor: 'var(--color-yellow)',
+                            border: '2px solid var(--border-primary)'
                           }}
                         />
-                        <p className="text-xs font-bold">{t('journal_legend_partial')}</p>
+                        <p className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{t('journal_legend_partial')}</p>
                       </div>
                       <div>
                         <div 
                           className="w-6 h-6 mx-auto mb-2"
                           style={{
-                            backgroundColor: '#FF6B35',
-                            border: '2px solid #000'
+                            backgroundColor: 'var(--color-orange)',
+                            border: '2px solid var(--border-primary)'
                           }}
                         />
-                        <p className="text-xs font-bold">{t('journal_legend_incomplete')}</p>
+                        <p className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>{t('journal_legend_incomplete')}</p>
                       </div>
                     </div>
                   </div>

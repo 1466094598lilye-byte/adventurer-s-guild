@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { X, Save } from 'lucide-react';
 import { useLanguage } from '@/components/LanguageContext';
@@ -77,10 +76,10 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
             border: '3px solid #000'
           }}
         >
-          <p className="text-xs font-bold uppercase mb-1" style={{ color: '#666' }}>
+          <p className="font-bold uppercase mb-1" style={{ color: '#666' }}>
             {t('questedit_current_title')}
           </p>
-          <p className="font-black text-sm">{quest.title}</p>
+          <p className="font-black">{quest.title}</p>
         </div>
 
         {/* Current Difficulty Display */}
@@ -91,7 +90,7 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
             border: '3px solid #000'
           }}
         >
-          <p className="text-xs font-bold uppercase mb-1" style={{ color: '#666' }}>
+          <p className="font-bold uppercase mb-1" style={{ color: '#666' }}>
             {t('questedit_current_difficulty')}
           </p>
           <div className="flex items-center gap-2">
@@ -105,7 +104,7 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
             >
               {quest.difficulty}
             </span>
-            <span className="text-sm font-bold" style={{ color: '#666' }}>
+            <span className="font-bold" style={{ color: '#666' }}>
               {t('questedit_difficulty_hint')}
             </span>
           </div>
@@ -116,7 +115,7 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
           {/* Action Hint Input */}
           <div>
             <label 
-              className="block text-sm font-black uppercase mb-2"
+              className="block font-black uppercase mb-2"
               style={{ color: '#000' }}
             >
               {t('questedit_content_label')} <span style={{ color: '#FF6B35' }}>*</span>
@@ -126,14 +125,14 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
               onChange={(e) => setActionHint(e.target.value)}
               placeholder={t('questedit_content_placeholder')}
               rows={3}
-              className="w-full px-4 py-3 font-bold text-base resize-none"
+              className="w-full px-4 py-3 font-bold resize-none"
               style={{
                 backgroundColor: '#FFF',
                 border: '3px solid #000',
                 boxShadow: '4px 4px 0px #000'
               }}
             />
-            <p className="text-xs font-bold mt-2" style={{ color: '#666' }}>
+            <p className="font-bold mt-2" style={{ color: '#666' }}>
               {t('questedit_content_hint')}
             </p>
           </div>
@@ -158,7 +157,7 @@ export default function QuestEditFormModal({ quest, onSave, onClose }) {
               />
               <div>
                 <span className="font-black uppercase">{t('questedit_routine')}</span>
-                <p className="text-xs font-bold mt-1">
+                <p className="font-bold mt-1">
                   {t('questedit_routine_hint')}
                 </p>
               </div>

@@ -561,7 +561,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
           <h2 className="text-3xl font-black uppercase text-white mb-2">
             📅 {t('calendar_title')} 📅
           </h2>
-          <p className="font-bold text-white text-sm">
+          <p className="font-bold text-white">
             {t('calendar_total_quests')} {longTermQuests.length} {t('calendar_epic_quests')}
           </p>
         </div>
@@ -615,7 +615,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
           >
             <CalendarIcon className="w-16 h-16 mx-auto mb-4" strokeWidth={3} />
             <p className="font-black text-xl mb-2">{t('calendar_empty_title')}</p>
-            <p className="font-bold text-sm">
+            <p className="font-bold">
               {t('calendar_empty_hint')}
             </p>
           </div>
@@ -657,7 +657,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                             </span>
                             {isToday && (
                               <span
-                                className="px-2 py-0.5 text-xs font-black"
+                                className="px-2 py-0.5 font-black"
                                 style={{
                                   backgroundColor: '#4ECDC4',
                                   border: '2px solid #000',
@@ -671,7 +671,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
 
                           <div className="flex items-center gap-3">
                             <div
-                              className="px-3 py-1 font-black text-sm"
+                              className="px-3 py-1 font-black"
                               style={{
                                 backgroundColor: status.allDone ? '#4ECDC4' : '#FFE66D',
                                 border: '2px solid #000',
@@ -682,7 +682,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                             </div>
 
                             {status.allDone && (
-                              <span className="text-sm font-bold" style={{ color: '#4ECDC4' }}>
+                              <span className="font-bold" style={{ color: '#4ECDC4' }}>
                                 ✓ {t('calendar_completed')}
                               </span>
                             )}
@@ -712,7 +712,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                   <div
-                                    className="px-2 py-0.5 text-xs font-black"
+                                    className="px-2 py-0.5 font-black"
                                     style={{
                                       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)',
                                       color: '#FFF',
@@ -723,13 +723,13 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                                     S
                                   </div>
                                   {quest.status === 'done' && (
-                                    <span className="text-xs font-bold" style={{ color: '#4ECDC4' }}>
+                                    <span className="font-bold" style={{ color: '#4ECDC4' }}>
                                       ✓ {t('calendar_completed')}
                                     </span>
                                   )}
                                 </div>
                                 <p
-                                  className="font-black text-sm mb-1"
+                                  className="font-black mb-1"
                                   style={{
                                     color: quest.status === 'done' ? '#999' : '#9B59B6',
                                     textDecoration: quest.status === 'done' ? 'line-through' : 'none'
@@ -738,7 +738,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                                   {quest.title}
                                 </p>
                                 <p
-                                  className="text-xs font-bold"
+                                  className="font-bold"
                                   style={{ color: quest.status === 'done' ? '#999' : '#666' }}
                                 >
                                   {quest.actionHint}
@@ -782,7 +782,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                             e.stopPropagation();
                             handleAddTask(date);
                           }}
-                          className="w-full py-2 font-bold uppercase text-sm flex items-center justify-center gap-2"
+                          className="w-full py-2 font-bold uppercase flex items-center justify-center gap-2"
                           style={{
                             backgroundColor: '#4ECDC4',
                             border: '3px solid #000',
@@ -934,13 +934,13 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                                 S
                               </div>
                             </div>
-                            <p className="font-black text-lg mb-1 text-purple-800">
+                            <p className="font-black mb-1 text-purple-800">
                               {quest.title}
                             </p>
-                            <p className="text-sm font-bold text-gray-600">
+                            <p className="font-bold text-gray-600">
                               {quest.actionHint}
                             </p>
-                            <p className="text-xs font-bold mt-2" style={{ color: '#999' }}>
+                            <p className="font-bold mt-2" style={{ color: '#999' }}>
                               {t('calendar_status')}：{quest.status === 'done' ? t('calendar_status_done') : t('calendar_status_pending')}
                             </p>
                           </div>
@@ -1022,7 +1022,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                   border: '3px solid #000'
                 }}
               >
-                <p className="font-bold text-sm">
+                <p className="font-bold">
                   📅 {t('common_date')}：{language === 'zh' 
                     ? safeFormatDate(addingToDate, 'yyyy年MM月dd日')
                     : safeFormatDate(addingToDate, 'MMMM dd, yyyy')}
@@ -1128,12 +1128,12 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                   border: '3px solid #000'
                 }}
               >
-                <p className="font-bold text-sm mb-2">
+                <p className="font-bold mb-2">
                   💡 {language === 'zh' 
                     ? `当前最晚日期：${latestDate ? safeFormatDate(latestDate, 'yyyy年MM月dd日') : '无'}`
                     : `Current latest date: ${latestDate ? safeFormatDate(latestDate, 'MMMM dd, yyyy') : 'None'}`}
                 </p>
-                <p className="font-bold text-xs" style={{ color: '#666' }}>
+                <p className="font-bold" style={{ color: '#666' }}>
                   {language === 'zh' 
                     ? '适用于项目延期等场景，可添加到更远的日期'
                     : 'Suitable for project delays, add tasks to later dates'}
@@ -1141,7 +1141,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-black uppercase mb-2">
+                <label className="block font-black uppercase mb-2">
                   {t('common_date')}
                 </label>
                 <input
@@ -1157,7 +1157,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-black uppercase mb-2">
+                <label className="block font-black uppercase mb-2">
                   {t('calendar_task_content_label')}
                 </label>
                 <textarea
@@ -1241,7 +1241,7 @@ export default function LongTermCalendar({ onClose, onQuestsUpdated }) {
                   <p className="font-bold mb-2">
                     {t('calendar_delete_warning')} {longTermQuests.length} {language === 'zh' ? '项大项目任务' : 'long-term project tasks'}
                   </p>
-                  <p className="text-sm font-bold" style={{ color: '#C44569' }}>
+                  <p className="font-bold" style={{ color: '#C44569' }}>
                     {t('calendar_delete_cannot_undo')}
                   </p>
                 </div>

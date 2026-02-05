@@ -76,10 +76,10 @@ function LayoutContent({ children }) {
                 <p className="font-black text-sm uppercase leading-tight">
                   {t('guest_mode_warning_title')}
                 </p>
-                <p className="font-bold text-xs leading-tight mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                <p className="font-bold text-sm leading-tight mt-0.5" style={{ color: 'var(--text-secondary)' }}>
                   {t('guest_mode_warning_subtitle')}
                 </p>
-                <p className="font-bold text-xs leading-tight mt-1" style={{ color: 'var(--text-tertiary)' }}>
+                <p className="font-bold text-sm leading-tight mt-1" style={{ color: 'var(--text-tertiary)' }}>
                   {language === 'zh' ? '登录即表示同意 ' : 'By logging in, you agree to the '}
                   <button
                     onClick={(e) => {
@@ -115,7 +115,7 @@ function LayoutContent({ children }) {
                 <LogIn className="w-5 h-5" strokeWidth={3} />
                 <span>{t('login_button')}</span>
               </div>
-              <span className="text-xs font-bold opacity-90">
+              <span className="text-sm font-bold opacity-90">
                 {language === 'zh' ? '💾 保存进度' : '💾 Save Progress'}
               </span>
             </button>
@@ -158,7 +158,7 @@ function LayoutContent({ children }) {
                     style={{ color: active ? 'var(--text-primary)' : 'var(--color-yellow)' }}
                   />
                   <span 
-                    className="text-xs font-black uppercase"
+                    className="text-sm font-black uppercase"
                     style={{ color: active ? 'var(--text-primary)' : 'var(--color-yellow)' }}
                   >
                     {tab.label}

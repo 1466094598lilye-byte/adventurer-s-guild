@@ -1990,7 +1990,7 @@ export default function QuestBoard() {
             onClick={() => {
               setShowLongTermDialog(true);
             }}
-            className="w-full py-3 font-black uppercase text-sm flex items-center justify-center gap-2"
+            className="w-full py-3 font-black uppercase flex items-center justify-center gap-2"
             style={{
               backgroundColor: '#9B59B6',
               color: 'var(--text-inverse)',
@@ -2002,7 +2002,7 @@ export default function QuestBoard() {
             {t('questboard_longterm_btn')}
           </Button>
           
-          <p className="text-xs font-bold text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
+          <p className="font-bold text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
             {t('questboard_longterm_hint')}
           </p>
 
@@ -2015,7 +2015,7 @@ export default function QuestBoard() {
               }}
             >
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-black uppercase text-sm">
+                <h3 className="font-black uppercase">
                   {t('questboard_pending_quests_title', { count: pendingQuests.length })}
                 </h3>
               </div>
@@ -2046,7 +2046,7 @@ export default function QuestBoard() {
                         </span>
                         <div className="flex-1 min-w-0">
                           <p className="font-black text-sm mb-1 break-words leading-tight">{quest.title}</p>
-                          <p className="text-xs font-bold text-gray-600 break-words">
+                          <p className="font-bold text-gray-600 break-words">
                             ({quest.actionHint})
                           </p>
                         </div>
@@ -2061,7 +2061,7 @@ export default function QuestBoard() {
                     {expandedPending === quest.tempId && (
                     <div className="px-3 pb-3 pt-0" style={{ borderTop: '2px solid var(--border-primary)' }}>
                         <div className="mb-3 mt-3">
-                          <label className="block text-xs font-bold uppercase mb-2">
+                          <label className="block font-bold uppercase mb-2">
                             {t('questboard_pending_quest_content_label')}
                           </label>
                           <Input
@@ -2078,7 +2078,7 @@ export default function QuestBoard() {
                         </div>
 
                         <div className="mb-3">
-                          <label className="block text-xs font-bold uppercase mb-2">
+                          <label className="block font-bold uppercase mb-2">
                             {t('questboard_pending_quest_difficulty_label')}
                           </label>
                           <div className="grid grid-cols-4 gap-2">
@@ -2101,7 +2101,7 @@ export default function QuestBoard() {
 
                         <Button
                           onClick={() => handleDeletePendingQuest(quest.tempId)}
-                          className="w-full py-2 font-bold uppercase text-sm"
+                          className="w-full py-2 font-bold uppercase"
                           style={{
                             backgroundColor: 'var(--bg-secondary)',
                             color: 'var(--color-orange)',
@@ -2119,7 +2119,7 @@ export default function QuestBoard() {
               <Button
                 onClick={handleConfirmPendingQuests}
                 disabled={isConfirmingPending}
-                className="w-full py-3 font-black uppercase text-sm flex items-center justify-center gap-2"
+                className="w-full py-3 font-black uppercase flex items-center justify-center gap-2"
                 style={{
                   backgroundColor: 'var(--color-cyan)',
                   border: '4px solid var(--border-primary)',
@@ -2178,7 +2178,7 @@ export default function QuestBoard() {
                 </>
               )}
             </Button>
-            <p className="text-center text-xs font-bold mt-2 text-white">
+            <p className="text-center font-bold mt-2 text-white">
               {t('questboard_calendar_hint')}
             </p>
           </div>
@@ -2225,7 +2225,7 @@ export default function QuestBoard() {
             )}
 
             {!canShowPlanningButton && nextDayPlannedCount === 0 && user?.lastPlannedDate !== today && (
-              <p className="text-center text-xs font-bold text-white mt-2">
+              <p className="text-center font-bold text-white mt-2">
                 💡 {language === 'zh' 
                   ? '晚上9点后可规划明日任务（或完成今日所有任务后自动弹出）' 
                   : 'Plan tomorrow\'s quests after 9 PM (or automatically after completing all today\'s quests)'}
@@ -2239,7 +2239,7 @@ export default function QuestBoard() {
             <Button
               key={f}
               onClick={() => setFilter(f)}
-              className="flex-1 py-2 font-black uppercase text-sm"
+              className="flex-1 py-2 font-black uppercase"
               style={{
                 backgroundColor: filter === f ? 'var(--color-cyan)' : 'var(--bg-secondary)',
                 color: 'var(--text-primary)',
@@ -2258,7 +2258,7 @@ export default function QuestBoard() {
           <Button
             onClick={handleDeepRestChallenge}
             disabled={isGeneratingDeepRest}
-            className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
+            className="w-full py-4 font-black uppercase flex items-center justify-center gap-3"
             style={{
               backgroundColor: 'var(--color-yellow)',
               color: 'var(--text-primary)',
@@ -2282,7 +2282,7 @@ export default function QuestBoard() {
               </>
             )}
           </Button>
-          <p className="text-xs font-bold text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
+          <p className="font-bold text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
             {language === 'zh' 
               ? '💡 生成低刺激任务，回收精神能量，真正有效的休息' 
               : '💡 Generate low-stimulation tasks to recharge mental energy'}
@@ -2338,12 +2338,12 @@ export default function QuestBoard() {
             {isRestDay ? t('questboard_cancel_rest') : t('questboard_set_rest')}
           </Button>
           {!user && (
-            <p className="text-xs font-bold text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
+            <p className="font-bold text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
               {language === 'zh' ? '游客模式下无法设置休息日' : 'Cannot set rest day in guest mode'}
             </p>
           )}
           {user && quests.length > 0 && !isRestDay && (
-            <p className="text-xs font-bold text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
+            <p className="font-bold text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
               {t('questboard_cannot_set_rest_day_hint')}
             </p>
           )}
@@ -2551,16 +2551,16 @@ export default function QuestBoard() {
                 }}
               >
                 {isRestDay ? (
-                  <div className="space-y-3 font-bold text-sm">
+                  <div className="space-y-3 font-bold">
                     <p>✓ {t('rest_day_dialog_cancel_hint_1')}</p>
                     <p>✓ {t('rest_day_dialog_cancel_hint_2')}</p>
                   </div>
                 ) : (
-                  <div className="space-y-3 font-bold text-sm">
+                  <div className="space-y-3 font-bold">
                     <p>✓ {t('rest_day_dialog_set_hint_1')}</p>
                     <p>✓ {t('rest_day_dialog_set_hint_2')}</p>
                     <p>✓ {t('rest_day_dialog_set_hint_3')}</p>
-                    <p className="text-xs" style={{ color: '#666' }}>
+                    <p style={{ color: '#666' }}>
                       💡 {t('rest_day_dialog_set_hint_4')}
                     </p>
                   </div>

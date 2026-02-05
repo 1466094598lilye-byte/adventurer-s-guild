@@ -325,7 +325,7 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
         <h2 className="text-3xl font-black uppercase text-center text-white mb-2">
           {t('longterm_title')}
         </h2>
-        <p className="text-center font-bold text-white text-sm mb-4">
+        <p className="text-center font-bold text-white mb-4">
           {t('longterm_subtitle')}
         </p>
 
@@ -337,7 +337,7 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
               border: '3px solid #000'
             }}
           >
-            <p className="font-black text-sm text-center" style={{ color: '#000' }}>
+            <p className="font-black text-center" style={{ color: '#000' }}>
               ⚠️ {language === 'zh' 
                 ? '游客模式：刷新页面后数据会丢失，建议登录保存' 
                 : 'Guest Mode: Data will be lost on refresh, please login to save'}
@@ -418,11 +418,11 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
                           <CalendarIcon className="w-4 h-4 flex-shrink-0" strokeWidth={3} />
-                          <span className="font-black text-sm">
+                          <span className="font-black">
                             {formatDateDisplay(quest.date)}
                           </span>
                           <span
-                            className="px-2 py-0.5 text-xs font-black"
+                            className="px-2 py-0.5 font-black"
                             style={{
                               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)',
                               color: '#FFF',
@@ -433,10 +433,10 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
                             S
                           </span>
                         </div>
-                        <p className="font-black text-sm mb-1 text-purple-800 truncate">
+                        <p className="font-black mb-1 text-purple-800 truncate">
                           {quest.title}
                         </p>
-                        <p className="text-xs font-bold text-gray-600 truncate">
+                        <p className="font-bold text-gray-600 truncate">
                           {quest.actionHint}
                         </p>
                       </div>
@@ -451,51 +451,51 @@ export default function LongTermProjectDialog({ onClose, onQuestsCreated }) {
                   {expandedIndex === index && (
                     <div className="px-4 pb-4 bg-gray-50" style={{ borderTop: '2px solid #000' }}>
                       <div className="mb-3 mt-3">
-                        <label className="block text-xs font-bold uppercase mb-2">
+                        <label className="block font-bold uppercase mb-2">
                           {t('longterm_edit_date')}
                         </label>
                         <input
                           type="text"
                           value={quest.date || ''}
                           onChange={(e) => handleUpdateQuest(index, 'date', e.target.value)}
-                          className="w-full px-3 py-2 font-bold text-sm"
+                          className="w-full px-3 py-2 font-bold"
                           style={{ border: '2px solid #000' }}
                           placeholder="MM-DD"
                         />
-                        <p className="text-xs font-bold mt-1" style={{ color: '#666' }}>
+                        <p className="font-bold mt-1" style={{ color: '#666' }}>
                           💡 {language === 'zh' ? '系统会自动补全年份' : 'System will auto-complete the year'}
                         </p>
                       </div>
 
                       <div className="mb-3">
-                        <label className="block text-xs font-bold uppercase mb-2">
+                        <label className="block font-bold uppercase mb-2">
                           {t('longterm_edit_title')}
                         </label>
                         <input
                           type="text"
                           value={quest.title}
                           onChange={(e) => handleUpdateQuest(index, 'title', e.target.value)}
-                          className="w-full px-3 py-2 font-bold text-sm"
+                          className="w-full px-3 py-2 font-bold"
                           style={{ border: '2px solid #000' }}
                         />
                       </div>
 
                       <div className="mb-3">
-                        <label className="block text-xs font-bold uppercase mb-2">
+                        <label className="block font-bold uppercase mb-2">
                           {t('longterm_edit_content')}
                         </label>
                         <textarea
                           value={quest.actionHint}
                           onChange={(e) => handleUpdateQuest(index, 'actionHint', e.target.value)}
                           rows={2}
-                          className="w-full px-3 py-2 font-bold text-sm resize-none"
+                          className="w-full px-3 py-2 font-bold resize-none"
                           style={{ border: '2px solid #000' }}
                         />
                       </div>
 
                       <button
                         onClick={() => handleDeleteQuest(index)}
-                        className="w-full py-2 font-bold uppercase text-sm"
+                        className="w-full py-2 font-bold uppercase"
                         style={{
                           backgroundColor: '#FFF',
                           color: '#FF6B35',

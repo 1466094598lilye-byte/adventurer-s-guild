@@ -315,7 +315,7 @@ export default function EndOfDaySummaryAndPlanning({
             <p className="font-black text-center">
               📋 {t('planning_tomorrow_summary')}：{totalTomorrowQuests} {t('common_items')}
               {routineQuests.length > 0 && (
-                <span className="text-sm font-bold ml-2" style={{ color: '#666' }}>
+                <span className="font-bold ml-2" style={{ color: '#666' }}>
                   （{routineQuests.length}{language === 'zh' ? '项每日修炼' : ' daily routines'} + {plannedQuests.length}{language === 'zh' ? '项临时任务' : ' temporary quests'}）
                 </span>
               )}
@@ -333,7 +333,7 @@ export default function EndOfDaySummaryAndPlanning({
           >
             <div className="flex items-center gap-2 mb-3">
               <Repeat className="w-5 h-5" strokeWidth={3} />
-              <h3 className="font-black uppercase text-sm">{t('planning_routine_quests')}</h3>
+              <h3 className="font-black uppercase">{t('planning_routine_quests')}</h3>
             </div>
             
             <div className="space-y-2">
@@ -348,7 +348,7 @@ export default function EndOfDaySummaryAndPlanning({
                 >
                   <div className="flex items-center gap-2">
                     <span 
-                      className="px-2 py-1 text-xs font-black"
+                      className="px-2 py-1 font-black"
                       style={{
                         backgroundColor: difficultyColors[quest.difficulty],
                         color: quest.difficulty === 'S' ? '#FFE66D' : '#000',
@@ -358,8 +358,8 @@ export default function EndOfDaySummaryAndPlanning({
                       {quest.difficulty}
                     </span>
                     <div className="flex-1">
-                      <p className="font-black text-sm">{quest.title}</p>
-                      <p className="text-xs font-bold text-gray-600">
+                      <p className="font-black">{quest.title}</p>
+                      <p className="font-bold text-gray-600">
                         ({quest.actionHint})
                       </p>
                     </div>
@@ -368,7 +368,7 @@ export default function EndOfDaySummaryAndPlanning({
                 </div>
               ))}
             </div>
-            <p className="text-xs font-bold mt-2 text-center" style={{ color: '#666' }}>
+            <p className="font-bold mt-2 text-center" style={{ color: '#666' }}>
               💡 {t('planning_routine_hint')}
             </p>
           </div>
@@ -388,7 +388,7 @@ export default function EndOfDaySummaryAndPlanning({
           </h3>
           
           {isReviewMode && plannedQuests.length === 0 && (
-            <p className="text-center text-sm font-bold mb-3" style={{ color: '#666' }}>
+            <p className="text-center font-bold mb-3" style={{ color: '#666' }}>
               {language === 'zh' ? '暂无临时任务规划' : 'No temporary quests planned'}
             </p>
           )}
@@ -446,13 +446,13 @@ export default function EndOfDaySummaryAndPlanning({
                     onClick={() => setEditingIndex(editingIndex === i ? null : i)}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="font-black text-sm mb-1 truncate">{quest.title}</p>
+                      <p className="font-black mb-1 truncate">{quest.title}</p>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-gray-600 truncate">
+                        <span className="font-bold text-gray-600 truncate">
                           ({quest.actionHint || (language === 'zh' ? '待填写' : 'To be filled')})
                         </span>
                         <span 
-                          className="px-2 py-0.5 text-xs font-black"
+                          className="px-2 py-0.5 font-black"
                           style={{
                             backgroundColor: difficultyColors[quest.difficulty],
                             color: quest.difficulty === 'S' ? '#FFE66D' : '#000',
@@ -471,23 +471,23 @@ export default function EndOfDaySummaryAndPlanning({
                   </div>
 
                   {editingIndex === i && (
-                    <div className="px-3 pb-3 pt-0" style={{ borderTop: '2px solid #000' }}>
-                      <div className="mb-3 mt-3">
-                        <label className="block text-xs font-bold uppercase mb-2">
-                          {t('planning_edit_content')}
-                        </label>
+                  <div className="px-3 pb-3 pt-0" style={{ borderTop: '2px solid #000' }}>
+                    <div className="mb-3 mt-3">
+                      <label className="block font-bold uppercase mb-2">
+                        {t('planning_edit_content')}
+                      </label>
                         <input
                           type="text"
                           value={quest.actionHint}
                           onChange={(e) => handleChangeActionHint(i, e.target.value)}
                           placeholder={language === 'zh' ? '请输入任务内容...' : 'Enter quest content...'}
-                          className="w-full px-3 py-2 font-bold text-sm"
+                          className="w-full px-3 py-2 font-bold"
                           style={{ border: '2px solid #000' }}
                         />
                       </div>
 
                       <div className="mb-3">
-                        <label className="block text-xs font-bold uppercase mb-2">
+                        <label className="block font-bold uppercase mb-2">
                           {t('planning_edit_difficulty')}
                         </label>
                         <div className="grid grid-cols-4 gap-2">
@@ -510,7 +510,7 @@ export default function EndOfDaySummaryAndPlanning({
 
                       <button
                         onClick={() => handleDeleteQuest(i)}
-                        className="w-full py-2 font-bold uppercase text-sm"
+                        className="w-full py-2 font-bold uppercase"
                         style={{
                           backgroundColor: '#FFF',
                           color: '#FF6B35',
@@ -528,7 +528,7 @@ export default function EndOfDaySummaryAndPlanning({
 
           <button
             onClick={handleAddManualQuest}
-            className="w-full py-2 font-bold uppercase text-sm flex items-center justify-center gap-2"
+            className="w-full py-2 font-bold uppercase flex items-center justify-center gap-2"
             style={{
               backgroundColor: '#FFE66D',
               border: '3px solid #000',

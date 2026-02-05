@@ -322,7 +322,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
                     <Shield className="w-8 h-8" strokeWidth={3} />
                     <span className="text-2xl font-black">{t('chest_freeze_token')} +1</span>
                   </div>
-                  <p className="text-sm font-bold">
+                  <p className="font-bold">
                     {isPity ? t('chest_freeze_pity') : t('chest_freeze_lucky')}
                   </p>
                 </div>
@@ -358,7 +358,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
                   border: '3px solid #000'
                 }}
               >
-                <p className="font-bold leading-relaxed text-sm">
+                <p className="font-bold leading-relaxed">
                   {loot.flavorText}
                 </p>
               </div>

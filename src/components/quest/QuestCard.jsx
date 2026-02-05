@@ -98,9 +98,9 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
       <div 
         className="relative mb-3 p-3 transform transition-all hover:translate-x-1 hover:-translate-y-1"
         style={{
-          backgroundColor: isDone ? '#F0F0F0' : '#FFF',
-          border: '4px solid #000',
-          boxShadow: isDone ? '3px 3px 0px #000' : '5px 5px 0px #000',
+          backgroundColor: isDone ? '#F0F0F0' : 'var(--bg-secondary)',
+          border: '4px solid var(--border-primary)',
+          boxShadow: isDone ? '3px 3px 0px var(--border-primary)' : '5px 5px 0px var(--border-primary)',
           transform: `rotate(${Math.random() * 2 - 1}deg)`,
           animation: isGlowing ? 'glow 0.5s ease-in-out' : 'none'
         }}
@@ -118,8 +118,8 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                   : quest.difficulty === 'R' 
                   ? 'linear-gradient(135deg, #FFE66D 0%, #FFA94D 100%)'
                   : quest.difficulty === 'S' ? '#000' : quest.difficulty === 'A' ? '#C44569' : quest.difficulty === 'B' ? '#FF6B35' : '#FFE66D',
-                color: quest.source === 'kickstart' ? '#FFF' : quest.isLongTermProject && quest.difficulty === 'S' ? '#FFF' : quest.difficulty === 'S' ? '#FFE66D' : '#000',
-                border: `3px solid ${quest.difficulty === 'S' && !quest.isLongTermProject ? '#FFE66D' : '#000'}`,
+                color: quest.source === 'kickstart' ? 'var(--text-inverse)' : quest.isLongTermProject && quest.difficulty === 'S' ? 'var(--text-inverse)' : quest.difficulty === 'S' ? 'var(--color-yellow)' : 'var(--text-primary)',
+                border: `3px solid ${quest.difficulty === 'S' && !quest.isLongTermProject ? 'var(--color-yellow)' : 'var(--border-primary)'}`,
                 boxShadow: '3px 3px 0px rgba(0,0,0,1)',
                 textShadow: quest.isLongTermProject && quest.difficulty === 'S' ? '1px 1px 0px #000' : 'none'
               }}
@@ -138,9 +138,9 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                       className="flex items-center gap-1 px-2 py-1"
                       style={{
                         backgroundColor: '#72B01D',
-                        color: '#FFF',
-                        border: '2px solid #000',
-                        boxShadow: '2px 2px 0px #000'
+                        color: 'var(--text-inverse)',
+                        border: '2px solid var(--border-primary)',
+                        boxShadow: '2px 2px 0px var(--border-primary)'
                       }}
                     >
                       <Zap className="w-3 h-3" strokeWidth={3} />
@@ -151,7 +151,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                     className="font-black text-base uppercase leading-tight break-words flex-1"
                     style={{ 
                       textDecoration: isDone ? 'line-through' : 'none',
-                      color: isDone ? '#999' : '#000',
+                      color: isDone ? '#999' : 'var(--text-primary)',
                       wordBreak: 'break-word',
                       overflowWrap: 'break-word',
                       hyphens: 'auto'
@@ -162,7 +162,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                 </div>
                 <p 
                   className="text-xs font-bold line-clamp-2"
-                  style={{ color: isDone ? '#999' : '#666' }}
+                  style={{ color: isDone ? '#999' : 'var(--text-secondary)' }}
                 >
                   ({quest.actionHint})
                 </p>
@@ -170,8 +170,8 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                   <div 
                     className="inline-flex items-center gap-1 px-2 py-1 mt-1"
                     style={{
-                      background: 'linear-gradient(135deg, #FFE66D 0%, #FFA94D 100%)',
-                      border: '2px solid #000'
+                      background: 'linear-gradient(135deg, var(--color-yellow) 0%, #FFA94D 100%)',
+                      border: '2px solid var(--border-primary)'
                     }}
                   >
                     <Clock className="w-3 h-3" strokeWidth={3} />
@@ -183,9 +183,9 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                     className="inline-flex items-center gap-1 px-2 py-1 mt-1"
                     style={{
                       background: timeLeft === (language === 'zh' ? '悬浮中' : 'Floating') 
-                        ? 'linear-gradient(135deg, #C44569 0%, #FF6B35 100%)' 
-                        : 'linear-gradient(135deg, #4ECDC4 0%, #00B4D8 100%)',
-                      border: '2px solid #000'
+                        ? 'linear-gradient(135deg, var(--color-pink) 0%, var(--color-orange) 100%)' 
+                        : 'linear-gradient(135deg, var(--color-cyan) 0%, #00B4D8 100%)',
+                      border: '2px solid var(--border-primary)'
                     }}
                   >
                     <Zap className="w-3 h-3" strokeWidth={3} />
@@ -198,8 +198,11 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
               <div className="relative flex-shrink-0">
                 <button
                   onClick={() => setShowMenu(!showMenu)}
-                  className="p-1.5 hover:bg-gray-200"
-                  style={{ border: '2px solid #000' }}
+                  className="p-1.5"
+                  style={{ 
+                    border: '2px solid var(--border-primary)',
+                    backgroundColor: 'var(--bg-secondary)'
+                  }}
                 >
                   <MoreVertical className="w-4 h-4" />
                 </button>
@@ -211,18 +214,22 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                       onClick={() => setShowMenu(false)}
                     />
                     <div 
-                      className="absolute right-0 bottom-full mb-2 w-36 bg-white"
+                      className="absolute right-0 bottom-full mb-2 w-36"
                       style={{
-                        border: '3px solid #000',
-                        boxShadow: '4px 4px 0px #000',
+                        backgroundColor: 'var(--bg-secondary)',
+                        border: '3px solid var(--border-primary)',
+                        boxShadow: '4px 4px 0px var(--border-primary)',
                         zIndex: 9999
                       }}
                     >
                       {isDone && (
                         <button
                           onClick={handleReopen}
-                          className="w-full px-3 py-2 text-left text-xs font-bold hover:bg-gray-100 flex items-center gap-2"
-                          style={{ borderBottom: '2px solid #000' }}
+                          className="w-full px-3 py-2 text-left text-xs font-bold flex items-center gap-2"
+                          style={{ 
+                            borderBottom: '2px solid var(--border-primary)',
+                            color: 'var(--text-primary)'
+                          }}
                         >
                           <RotateCcw className="w-3 h-3" /> {t('questcard_reopen')}
                         </button>
@@ -233,8 +240,11 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                             setShowKickstartDialog(true);
                             setShowMenu(false);
                           }}
-                          className="w-full px-3 py-2 text-left text-xs font-bold hover:bg-gray-100 flex items-center gap-2"
-                          style={{ borderBottom: '2px solid #000' }}
+                          className="w-full px-3 py-2 text-left text-xs font-bold flex items-center gap-2"
+                          style={{ 
+                            borderBottom: '2px solid var(--border-primary)',
+                            color: 'var(--text-primary)'
+                          }}
                         >
                           <Zap className="w-3 h-3" /> {language === 'zh' ? '启动模式' : 'Kickstart'}
                         </button>
@@ -244,8 +254,11 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                           onEdit(quest);
                           setShowMenu(false);
                         }}
-                        className="w-full px-3 py-2 text-left text-xs font-bold hover:bg-gray-100 flex items-center gap-2"
-                        style={{ borderBottom: '2px solid #000' }}
+                        className="w-full px-3 py-2 text-left text-xs font-bold flex items-center gap-2"
+                        style={{ 
+                          borderBottom: '2px solid var(--border-primary)',
+                          color: 'var(--text-primary)'
+                        }}
                       >
                         <Edit className="w-3 h-3" /> {t('questcard_edit')}
                       </button>
@@ -254,7 +267,8 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                           onDelete(quest.id);
                           setShowMenu(false);
                         }}
-                        className="w-full px-3 py-2 text-left text-xs font-bold hover:bg-gray-100 flex items-center gap-2"
+                        className="w-full px-3 py-2 text-left text-xs font-bold flex items-center gap-2"
+                        style={{ color: 'var(--text-primary)' }}
                       >
                         <Trash2 className="w-3 h-3" /> {t('questcard_delete')}
                       </button>
@@ -266,7 +280,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
 
             {/* Due Date - More Compact */}
             {quest.dueDate && (
-              <p className="text-xs font-bold mt-1" style={{ color: '#666' }}>
+              <p className="text-xs font-bold mt-1" style={{ color: 'var(--text-secondary)' }}>
                 ⏰ {format(new Date(quest.dueDate), 'MM/dd HH:mm')}
               </p>
             )}
@@ -282,9 +296,9 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
             disabled={isDone}
             className="flex-shrink-0 w-10 h-10 flex items-center justify-center font-black transition-all"
             style={{
-              backgroundColor: isDone ? '#4ECDC4' : '#FFF',
-              border: '3px solid #000',
-              boxShadow: '3px 3px 0px #000',
+              backgroundColor: isDone ? 'var(--color-cyan)' : 'var(--bg-secondary)',
+              border: '3px solid var(--border-primary)',
+              boxShadow: '3px 3px 0px var(--border-primary)',
               cursor: isDone ? 'not-allowed' : 'pointer'
             }}
           >

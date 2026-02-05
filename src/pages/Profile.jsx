@@ -385,7 +385,7 @@ export default function Profile() {
 
           {/* Language Selector */}
           <div className="mb-4">
-            <label className="block text-sm font-black uppercase mb-2">
+            <label className="block text-sm font-black uppercase mb-2" style={{ color: 'var(--text-primary)' }}>
               {t('profile_language')}
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -420,7 +420,7 @@ export default function Profile() {
 
           {/* Dark Mode Toggle */}
           <div className="mb-4">
-            <label className="block text-sm font-black uppercase mb-2">
+            <label className="block text-sm font-black uppercase mb-2" style={{ color: 'var(--text-primary)' }}>
               {language === 'zh' ? '🌙 深色模式' : '🌙 Dark Mode'}
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -536,8 +536,8 @@ export default function Profile() {
                   <div>
                     <p className="font-black mb-1">
                       {language === 'zh' ? '📋 任务与项目' : '📋 Tasks & Projects'}
-                    </p>
-                    <ul className="font-bold pl-4 space-y-1" style={{ color: '#666' }}>
+                      </p>
+                      <ul className="font-bold pl-4 space-y-1" style={{ color: 'var(--text-secondary)' }}>
                       <li>• {language === 'zh' ? '任务记录' : 'Quest Records'}</li>
                       <li>• {language === 'zh' ? '大项目记录' : 'Long-Term Projects'}</li>
                       <li>• {language === 'zh' ? '深度休息任务' : 'Deep Rest Tasks'}</li>
@@ -547,8 +547,8 @@ export default function Profile() {
                   <div>
                     <p className="font-black mb-1">
                       {language === 'zh' ? '💎 资产与进度' : '💎 Assets & Progress'}
-                    </p>
-                    <ul className="font-bold pl-4 space-y-1" style={{ color: '#666' }}>
+                      </p>
+                      <ul className="font-bold pl-4 space-y-1" style={{ color: 'var(--text-secondary)' }}>
                       <li>• {language === 'zh' ? '每日宝箱记录' : 'Daily Chest Records'}</li>
                       <li>• {language === 'zh' ? '宝物收藏' : 'Loot Collection'}</li>
                       <li>• {language === 'zh' ? '冻结券' : 'Freeze Tokens'}</li>
@@ -558,8 +558,8 @@ export default function Profile() {
                   <div>
                     <p className="font-black mb-1">
                       {language === 'zh' ? '🏆 荣誉与统计' : '🏆 Honor & Stats'}
-                    </p>
-                    <ul className="font-bold pl-4 space-y-1" style={{ color: '#666' }}>
+                      </p>
+                      <ul className="font-bold pl-4 space-y-1" style={{ color: 'var(--text-secondary)' }}>
                       <li>• {language === 'zh' ? '连胜记录' : 'Streak Records'}</li>
                       <li>• {language === 'zh' ? '协会称号' : 'Guild Title'}</li>
                       <li>• {language === 'zh' ? '连胜里程碑' : 'Streak Milestones'}</li>
@@ -569,8 +569,8 @@ export default function Profile() {
                   <div>
                     <p className="font-black mb-1">
                       {language === 'zh' ? '⚙️ 系统记录' : '⚙️ System Records'}
-                    </p>
-                    <ul className="font-bold pl-4 space-y-1" style={{ color: '#666' }}>
+                      </p>
+                      <ul className="font-bold pl-4 space-y-1" style={{ color: 'var(--text-secondary)' }}>
                       <li>• {language === 'zh' ? '宝箱保底进度' : 'Chest Pity System Progress'}</li>
                       <li>• {language === 'zh' ? '规划任务' : 'Planned Quests'}</li>
                       <li>• {language === 'zh' ? '休息日设置' : 'Rest Day Settings'}</li>

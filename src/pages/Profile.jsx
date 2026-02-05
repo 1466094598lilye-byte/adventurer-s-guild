@@ -120,7 +120,7 @@ export default function Profile() {
   if (isLoading) return <div className="flex justify-center p-12"><div className="w-12 h-12 border-4 border-black border-t-yellow-400 rounded-full animate-spin"></div></div>;
 
   return (
-    <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
+    <div className="min-h-screen p-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div 
@@ -174,9 +174,9 @@ export default function Profile() {
         <div 
           className="mb-6 p-6"
           style={{
-            backgroundColor: '#FFE66D',
-            border: '4px solid #000',
-            boxShadow: '6px 6px 0px #000'
+            backgroundColor: 'var(--color-yellow)',
+            border: '4px solid var(--border-primary)',
+            boxShadow: '6px 6px 0px var(--border-primary)'
           }}
         >
           <div className="flex items-center gap-4 mb-4">
@@ -207,35 +207,35 @@ export default function Profile() {
               }}
             >
               <Flame className="w-8 h-8 mx-auto mb-2" strokeWidth={3} style={{ color: '#FF6B35' }} />
-              <p className="text-2xl font-black">{user?.streakCount || 0}</p>
-              <p className="text-xs font-bold uppercase">{t('profile_current_streak')}</p>
+              <p className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>{user?.streakCount || 0}</p>
+              <p className="text-xs font-bold uppercase" style={{ color: 'var(--text-primary)' }}>{t('profile_current_streak')}</p>
             </div>
 
             {/* Longest Streak */}
             <div 
               className="p-4 text-center"
               style={{
-                backgroundColor: '#FFF',
-                border: '3px solid #000'
+                backgroundColor: 'var(--bg-secondary)',
+                border: '3px solid var(--border-primary)'
               }}
             >
-              <Award className="w-8 h-8 mx-auto mb-2" strokeWidth={3} style={{ color: '#C44569' }} />
-              <p className="text-2xl font-black">{user?.longestStreak || 0}</p>
-              <p className="text-xs font-bold uppercase">{t('profile_longest_streak')}</p>
+              <Award className="w-8 h-8 mx-auto mb-2" strokeWidth={3} style={{ color: 'var(--color-pink)' }} />
+              <p className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>{user?.longestStreak || 0}</p>
+              <p className="text-xs font-bold uppercase" style={{ color: 'var(--text-primary)' }}>{t('profile_longest_streak')}</p>
             </div>
 
             {/* Freeze Tokens */}
             <div 
               className="p-4 text-center col-span-2"
               style={{
-                backgroundColor: '#4ECDC4',
-                border: '3px solid #000'
+                backgroundColor: 'var(--color-cyan)',
+                border: '3px solid var(--border-primary)'
               }}
             >
-              <Shield className="w-8 h-8 mx-auto mb-2" strokeWidth={3} />
-              <p className="text-2xl font-black">{user?.freezeTokenCount || 0}</p>
-              <p className="text-xs font-bold uppercase">{t('profile_freeze_tokens')}</p>
-              <p className="text-xs font-bold mt-2" style={{ color: '#000' }}>
+              <Shield className="w-8 h-8 mx-auto mb-2" strokeWidth={3} style={{ color: 'var(--text-primary)' }} />
+              <p className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>{user?.freezeTokenCount || 0}</p>
+              <p className="text-xs font-bold uppercase" style={{ color: 'var(--text-primary)' }}>{t('profile_freeze_tokens')}</p>
+              <p className="text-xs font-bold mt-2" style={{ color: 'var(--text-primary)' }}>
                 {t('profile_freeze_tokens_hint')}
               </p>
             </div>
@@ -246,12 +246,12 @@ export default function Profile() {
         <div 
           className="mb-6 p-6 text-center"
           style={{
-            backgroundColor: user?.title ? '#C44569' : '#E0E0E0',
-            border: '4px solid #000',
-            boxShadow: '6px 6px 0px #000'
+            backgroundColor: user?.title ? 'var(--color-pink)' : '#E0E0E0',
+            border: '4px solid var(--border-primary)',
+            boxShadow: '6px 6px 0px var(--border-primary)'
           }}
         >
-          <Award className="w-12 h-12 mx-auto mb-3" strokeWidth={3} style={{ color: user?.title ? '#FFF' : '#999' }} />
+          <Award className="w-12 h-12 mx-auto mb-3" strokeWidth={3} style={{ color: user?.title ? 'var(--text-inverse)' : '#999' }} />
           <p className="text-xs font-bold uppercase mb-2" style={{ color: user?.title ? '#FFF' : '#666' }}>
             {t('profile_guild_title')}
           </p>
@@ -271,12 +271,12 @@ export default function Profile() {
         <div 
           className="mb-6 p-6"
           style={{
-            backgroundColor: '#FFF',
-            border: '4px solid #000',
-            boxShadow: '6px 6px 0px #000'
+            backgroundColor: 'var(--bg-secondary)',
+            border: '4px solid var(--border-primary)',
+            boxShadow: '6px 6px 0px var(--border-primary)'
           }}
         >
-          <h3 className="text-xl font-black uppercase mb-4">
+          <h3 className="text-xl font-black uppercase mb-4" style={{ color: 'var(--text-primary)' }}>
             {t('profile_milestones')}
           </h3>
 
@@ -288,8 +288,9 @@ export default function Profile() {
                   key={milestone.days}
                   className="p-4"
                   style={{
-                    backgroundColor: isUnlocked ? '#FFE66D' : '#F0F0F0',
-                    border: '3px solid #000',
+                    backgroundColor: isUnlocked ? 'var(--color-yellow)' : '#F0F0F0',
+                    border: '3px solid var(--border-primary)',
+                    color: 'var(--text-primary)',
                     opacity: isUnlocked ? 1 : 0.6
                   }}
                 >
@@ -297,9 +298,9 @@ export default function Profile() {
                     <span className="text-3xl">{milestone.icon}</span>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-black text-lg">{milestone.days} {t('journal_days')}</p>
+                        <p className="font-black text-lg" style={{ color: 'var(--text-primary)' }}>{milestone.days} {t('journal_days')}</p>
                         {isUnlocked && (
-                          <span className="text-xs font-black px-2 py-0.5" style={{ backgroundColor: '#4ECDC4', border: '2px solid #000' }}>
+                          <span className="text-xs font-black px-2 py-0.5" style={{ backgroundColor: 'var(--color-cyan)', border: '2px solid var(--border-primary)', color: 'var(--text-primary)' }}>
                             ✓ {language === 'zh' ? '已解锁' : 'Unlocked'}
                           </span>
                         )}
@@ -309,7 +310,7 @@ export default function Profile() {
                           </span>
                         )}
                       </div>
-                      <p className="font-bold text-sm">
+                      <p className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
                         {language === 'zh' ? `「${milestone.title}」称号 + ${milestone.tokens}张冻结券` : `"${milestone.title}" Title + ${milestone.tokens} Freeze Token${milestone.tokens > 1 ? 's' : ''}`}
                       </p>
                     </div>
@@ -325,8 +326,8 @@ export default function Profile() {
           className="mb-6 p-6"
           style={{
             backgroundColor: '#9B59B6',
-            border: '4px solid #000',
-            boxShadow: '6px 6px 0px #000'
+            border: '4px solid var(--border-primary)',
+            boxShadow: '6px 6px 0px var(--border-primary)'
           }}
         >
           <h3 className="text-xl font-black uppercase mb-4 text-white">
@@ -338,30 +339,30 @@ export default function Profile() {
           <div 
             className="p-4"
             style={{
-              backgroundColor: '#FFF',
-              border: '3px solid #000'
+              backgroundColor: 'var(--bg-secondary)',
+              border: '3px solid var(--border-primary)'
             }}
           >
-            <p className="text-xs font-bold uppercase mb-2">{t('profile_chest_counter')}</p>
+            <p className="text-xs font-bold uppercase mb-2" style={{ color: 'var(--text-primary)' }}>{t('profile_chest_counter')}</p>
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <div 
                   className="h-6 relative"
                   style={{
                     backgroundColor: '#E0E0E0',
-                    border: '3px solid #000'
+                    border: '3px solid var(--border-primary)'
                   }}
                 >
                   <div 
                     className="h-full transition-all"
                     style={{
-                      backgroundColor: '#4ECDC4',
+                      backgroundColor: 'var(--color-cyan)',
                       width: `${((user?.chestOpenCounter || 0) / 60) * 100}%`
                     }}
                   />
                 </div>
               </div>
-              <p className="font-black text-lg">
+              <p className="font-black text-lg" style={{ color: 'var(--text-primary)' }}>
                 {user?.chestOpenCounter || 0} / 60
               </p>
             </div>
@@ -372,12 +373,12 @@ export default function Profile() {
         <div 
           className="mb-6 p-6"
           style={{
-            backgroundColor: '#FFF',
-            border: '4px solid #000',
-            boxShadow: '6px 6px 0px #000'
+            backgroundColor: 'var(--bg-secondary)',
+            border: '4px solid var(--border-primary)',
+            boxShadow: '6px 6px 0px var(--border-primary)'
           }}
         >
-          <h3 className="flex items-center gap-2 text-xl font-black uppercase mb-4">
+          <h3 className="flex items-center gap-2 text-xl font-black uppercase mb-4" style={{ color: 'var(--text-primary)' }}>
             <Settings className="w-6 h-6" strokeWidth={3} />
             {t('profile_settings')}
           </h3>
@@ -392,10 +393,10 @@ export default function Profile() {
                 onClick={() => switchLanguage('zh')}
                 className="py-3 font-black uppercase"
                 style={{
-                  backgroundColor: language === 'zh' ? '#4ECDC4' : '#FFE66D',
-                  color: '#000',
-                  border: '3px solid #000',
-                  boxShadow: language === 'zh' ? '4px 4px 0px #000' : '2px 2px 0px #000',
+                  backgroundColor: language === 'zh' ? 'var(--color-cyan)' : 'var(--color-yellow)',
+                  color: 'var(--text-primary)',
+                  border: '3px solid var(--border-primary)',
+                  boxShadow: language === 'zh' ? '4px 4px 0px var(--border-primary)' : '2px 2px 0px var(--border-primary)',
                   transform: language === 'zh' ? 'scale(1.02)' : 'scale(1)'
                 }}
               >
@@ -405,10 +406,10 @@ export default function Profile() {
                 onClick={() => switchLanguage('en')}
                 className="py-3 font-black uppercase"
                 style={{
-                  backgroundColor: language === 'en' ? '#4ECDC4' : '#FFE66D',
-                  color: '#000',
-                  border: '3px solid #000',
-                  boxShadow: language === 'en' ? '4px 4px 0px #000' : '2px 2px 0px #000',
+                  backgroundColor: language === 'en' ? 'var(--color-cyan)' : 'var(--color-yellow)',
+                  color: 'var(--text-primary)',
+                  border: '3px solid var(--border-primary)',
+                  boxShadow: language === 'en' ? '4px 4px 0px var(--border-primary)' : '2px 2px 0px var(--border-primary)',
                   transform: language === 'en' ? 'scale(1.02)' : 'scale(1)'
                 }}
               >
@@ -427,10 +428,10 @@ export default function Profile() {
                 onClick={() => setIsDarkMode(false)}
                 className="py-3 font-black uppercase flex items-center justify-center gap-2"
                 style={{
-                  backgroundColor: !isDarkMode ? '#FFE66D' : '#F0F0F0',
-                  color: '#000',
-                  border: '3px solid #000',
-                  boxShadow: !isDarkMode ? '4px 4px 0px #000' : '2px 2px 0px #000',
+                  backgroundColor: !isDarkMode ? 'var(--color-yellow)' : '#F0F0F0',
+                  color: 'var(--text-primary)',
+                  border: '3px solid var(--border-primary)',
+                  boxShadow: !isDarkMode ? '4px 4px 0px var(--border-primary)' : '2px 2px 0px var(--border-primary)',
                   transform: !isDarkMode ? 'scale(1.02)' : 'scale(1)'
                 }}
               >
@@ -441,10 +442,10 @@ export default function Profile() {
                 onClick={() => setIsDarkMode(true)}
                 className="py-3 font-black uppercase flex items-center justify-center gap-2"
                 style={{
-                  backgroundColor: isDarkMode ? '#4ECDC4' : '#F0F0F0',
-                  color: '#000',
-                  border: '3px solid #000',
-                  boxShadow: isDarkMode ? '4px 4px 0px #000' : '2px 2px 0px #000',
+                  backgroundColor: isDarkMode ? 'var(--color-cyan)' : '#F0F0F0',
+                  color: 'var(--text-primary)',
+                  border: '3px solid var(--border-primary)',
+                  boxShadow: isDarkMode ? '4px 4px 0px var(--border-primary)' : '2px 2px 0px var(--border-primary)',
                   transform: isDarkMode ? 'scale(1.02)' : 'scale(1)'
                 }}
               >
@@ -460,10 +461,10 @@ export default function Profile() {
           onClick={handleLogout}
           className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3 mb-4"
           style={{
-            backgroundColor: '#FF6B35',
-            color: '#FFF',
-            border: '4px solid #000',
-            boxShadow: '6px 6px 0px #000'
+            backgroundColor: 'var(--color-orange)',
+            color: 'var(--text-inverse)',
+            border: '4px solid var(--border-primary)',
+            boxShadow: '6px 6px 0px var(--border-primary)'
           }}
         >
           <LogOut className="w-6 h-6" strokeWidth={3} />
@@ -476,10 +477,10 @@ export default function Profile() {
           disabled={isDeleting}
           className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
           style={{
-            backgroundColor: '#C44569',
-            color: '#FFF',
-            border: '4px solid #000',
-            boxShadow: '6px 6px 0px #000',
+            backgroundColor: 'var(--color-pink)',
+            color: 'var(--text-inverse)',
+            border: '4px solid var(--border-primary)',
+            boxShadow: '6px 6px 0px var(--border-primary)',
             opacity: isDeleting ? 0.5 : 1
           }}
         >
@@ -502,9 +503,9 @@ export default function Profile() {
             <div
               className="relative max-w-lg w-full p-6"
               style={{
-                backgroundColor: '#FF6B35',
-                border: '5px solid #000',
-                boxShadow: '12px 12px 0px #000'
+                backgroundColor: 'var(--color-orange)',
+                border: '5px solid var(--border-primary)',
+                boxShadow: '12px 12px 0px var(--border-primary)'
               }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -525,7 +526,7 @@ export default function Profile() {
                   border: '3px solid #000'
                 }}
               >
-                <p className="font-bold text-sm leading-relaxed mb-3">
+                <p className="font-bold text-sm leading-relaxed mb-3" style={{ color: 'var(--text-primary)' }}>
                   {language === 'zh' 
                     ? '点击确认后，以下与您关联的个人数据将从服务器永久删除：' 
                     : 'Upon confirmation, the following personal data associated with your account will be permanently removed from our servers:'}
@@ -577,7 +578,7 @@ export default function Profile() {
                   </div>
                 </div>
 
-                <p className="font-black text-sm mt-4" style={{ color: '#FF6B35' }}>
+                <p className="font-black text-sm mt-4" style={{ color: 'var(--color-orange)' }}>
                   {language === 'zh' 
                     ? '⚠️ 一旦删除，我们无法恢复任何已丢失的数据。' 
                     : '⚠️ We are unable to recover any data once it has been deleted.'}
@@ -587,11 +588,11 @@ export default function Profile() {
               <div
                 className="mb-4 p-4"
                 style={{
-                  backgroundColor: '#FFE66D',
-                  border: '3px solid #000'
+                  backgroundColor: 'var(--color-yellow)',
+                  border: '3px solid var(--border-primary)'
                 }}
               >
-                <label className="block font-black text-sm mb-2">
+                <label className="block font-black text-sm mb-2" style={{ color: 'var(--text-primary)' }}>
                   {language === 'zh' 
                     ? '请输入以下文字以确认：DELETE MY ACCOUNT' 
                     : 'Please type the following to confirm: DELETE MY ACCOUNT'}
@@ -603,8 +604,9 @@ export default function Profile() {
                   placeholder="DELETE MY ACCOUNT"
                   className="w-full px-3 py-2 font-bold"
                   style={{
-                    backgroundColor: '#FFF',
-                    border: '3px solid #000'
+                    backgroundColor: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    border: '3px solid var(--border-primary)'
                   }}
                 />
               </div>
@@ -618,9 +620,10 @@ export default function Profile() {
                   disabled={isDeleting}
                   className="flex-1 py-3 font-black uppercase"
                   style={{
-                    backgroundColor: '#4ECDC4',
-                    border: '4px solid #000',
-                    boxShadow: '4px 4px 0px #000',
+                    backgroundColor: 'var(--color-cyan)',
+                    color: 'var(--text-primary)',
+                    border: '4px solid var(--border-primary)',
+                    boxShadow: '4px 4px 0px var(--border-primary)',
                     opacity: isDeleting ? 0.5 : 1
                   }}
                 >
@@ -631,10 +634,10 @@ export default function Profile() {
                   disabled={isDeleting || deleteConfirmText !== 'DELETE MY ACCOUNT'}
                   className="flex-1 py-3 font-black uppercase"
                   style={{
-                    backgroundColor: '#000',
-                    color: '#FFF',
-                    border: '4px solid #FFF',
-                    boxShadow: '4px 4px 0px #FFF',
+                    backgroundColor: 'var(--bg-black)',
+                    color: 'var(--text-inverse)',
+                    border: '4px solid var(--text-inverse)',
+                    boxShadow: '4px 4px 0px var(--text-inverse)',
                     opacity: (isDeleting || deleteConfirmText !== 'DELETE MY ACCOUNT') ? 0.5 : 1
                   }}
                 >

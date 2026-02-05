@@ -131,8 +131,8 @@ function LayoutContent({ children }) {
         <nav 
           className="fixed bottom-0 left-0 right-0 z-50"
           style={{
-            backgroundColor: '#000',
-            borderTop: '5px solid #FFE66D',
+            backgroundColor: 'var(--bg-black)',
+            borderTop: '5px solid var(--border-warning)',
             paddingBottom: 'env(safe-area-inset-bottom)'
           }}
         >
@@ -147,19 +147,19 @@ function LayoutContent({ children }) {
                   to={createPageUrl(tab.name)}
                   className="flex-1 py-3 flex flex-col items-center gap-1 transition-all"
                   style={{
-                    backgroundColor: active ? '#FFE66D' : 'transparent',
-                    borderLeft: active ? '3px solid #000' : 'none',
-                    borderRight: active ? '3px solid #000' : 'none',
+                    backgroundColor: active ? 'var(--color-yellow)' : 'transparent',
+                    borderLeft: active ? '3px solid var(--border-primary)' : 'none',
+                    borderRight: active ? '3px solid var(--border-primary)' : 'none',
                   }}
                 >
                   <Icon 
                     className="w-6 h-6" 
                     strokeWidth={3}
-                    style={{ color: active ? '#000' : '#FFE66D' }}
+                    style={{ color: active ? 'var(--text-primary)' : 'var(--color-yellow)' }}
                   />
                   <span 
                     className="text-xs font-black uppercase"
-                    style={{ color: active ? '#000' : '#FFE66D' }}
+                    style={{ color: active ? 'var(--text-primary)' : 'var(--color-yellow)' }}
                   >
                     {tab.label}
                   </span>

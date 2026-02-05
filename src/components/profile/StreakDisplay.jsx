@@ -16,13 +16,13 @@ export default function StreakDisplay({ currentStreak, longestStreak, freezeToke
         }}
       >
         <div className="flex items-center gap-2 mb-2">
-          <Flame className="w-6 h-6 text-white" strokeWidth={3} />
-          <span className="text-sm font-bold uppercase text-white">
+          <Flame className="w-6 h-6" strokeWidth={3} style={{ color: 'var(--text-primary)' }} />
+          <span className="text-sm font-bold uppercase" style={{ color: 'var(--text-primary)' }}>
             {t('journal_current_streak')}
           </span>
         </div>
-        <p className="text-4xl font-black text-white">{currentStreak}</p>
-        <p className="text-sm font-bold text-white">{t('journal_days')}</p>
+        <p className="text-4xl font-black" style={{ color: 'var(--text-primary)' }}>{currentStreak}</p>
+        <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{t('journal_days')}</p>
       </div>
 
       {/* Longest Streak */}
@@ -35,13 +35,13 @@ export default function StreakDisplay({ currentStreak, longestStreak, freezeToke
         }}
       >
         <div className="flex items-center gap-2 mb-2">
-          <Award className="w-6 h-6 text-white" strokeWidth={3} />
-          <span className="text-sm font-bold uppercase text-white">
+          <Award className="w-6 h-6" strokeWidth={3} style={{ color: 'var(--text-primary)' }} />
+          <span className="text-sm font-bold uppercase" style={{ color: 'var(--text-primary)' }}>
             {t('journal_longest_streak')}
           </span>
         </div>
-        <p className="text-4xl font-black text-white">{longestStreak}</p>
-        <p className="text-sm font-bold text-white">{t('journal_days')}</p>
+        <p className="text-4xl font-black" style={{ color: 'var(--text-primary)' }}>{longestStreak}</p>
+        <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{t('journal_days')}</p>
       </div>
 
       {/* Freeze Tokens */}
@@ -55,14 +55,14 @@ export default function StreakDisplay({ currentStreak, longestStreak, freezeToke
       >
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <Shield className="w-6 h-6" strokeWidth={3} />
-            <span className="text-sm font-bold uppercase">
+            <Shield className="w-6 h-6" strokeWidth={3} style={{ color: 'var(--text-primary)' }} />
+            <span className="text-sm font-bold uppercase" style={{ color: 'var(--text-primary)' }}>
               {t('journal_freeze_tokens')}
             </span>
           </div>
-          <p className="text-4xl font-black">{freezeTokens}</p>
+          <p className="text-4xl font-black" style={{ color: 'var(--text-primary)' }}>{freezeTokens}</p>
         </div>
-        <p className="text-xs font-bold">
+        <p className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>
           {t('journal_freeze_hint')}
         </p>
       </div>

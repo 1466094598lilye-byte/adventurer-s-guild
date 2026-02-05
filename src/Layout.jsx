@@ -66,7 +66,8 @@ function LayoutContent({ children }) {
             style={{
               backgroundColor: '#FFE66D',
               borderBottom: '5px solid #000',
-              boxShadow: '0 5px 0px rgba(0,0,0,0.1)'
+              boxShadow: '0 5px 0px rgba(0,0,0,0.1)',
+              paddingTop: 'env(safe-area-inset-top)'
             }}
           >
             <div className="flex items-center gap-2 flex-1 min-w-0">

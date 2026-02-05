@@ -139,15 +139,15 @@ export default function TreasuresPage() {
   };
 
   return (
-    <div className="min-h-screen p-4" style={{ backgroundColor: '#F9FAFB' }}>
+    <div className="min-h-screen p-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className="max-w-6xl mx-auto">
         <div 
           className="mb-6 p-4 transform -rotate-1"
           style={{
-            backgroundColor: '#000',
-            color: '#FFE66D',
-            border: '5px solid #FFE66D',
-            boxShadow: '8px 8px 0px #FFE66D'
+            backgroundColor: 'var(--bg-black)',
+            color: 'var(--color-yellow)',
+            border: '5px solid var(--color-yellow)',
+            boxShadow: '8px 8px 0px var(--color-yellow)'
           }}
         >
           <div className="flex items-center justify-center gap-3 mb-2">
@@ -171,10 +171,10 @@ export default function TreasuresPage() {
             }}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
             style={{
-              backgroundColor: '#FF6B35',
-              color: '#FFF',
-              border: '5px solid #000',
-              boxShadow: '8px 8px 0px #000'
+              backgroundColor: 'var(--color-orange)',
+              color: 'var(--text-inverse)',
+              border: '5px solid var(--border-primary)',
+              boxShadow: '8px 8px 0px var(--border-primary)'
             }}
           >
             <Hammer className="w-7 h-7" strokeWidth={3} />
@@ -188,8 +188,8 @@ export default function TreasuresPage() {
             className="mb-6 p-4"
             style={{
               backgroundColor: '#9B59B6',
-              border: '5px solid #000',
-              boxShadow: '8px 8px 0px #000'
+              border: '5px solid var(--border-primary)',
+              boxShadow: '8px 8px 0px var(--border-primary)'
             }}
           >
             <button
@@ -211,16 +211,16 @@ export default function TreasuresPage() {
           <div 
             className="p-12 text-center"
             style={{
-              backgroundColor: '#FFF',
-              border: '5px solid #000',
-              boxShadow: '8px 8px 0px #000'
+              backgroundColor: 'var(--bg-secondary)',
+              border: '5px solid var(--border-primary)',
+              boxShadow: '8px 8px 0px var(--border-primary)'
             }}
           >
-            <Gem className="w-24 h-24 mx-auto mb-6 text-gray-400" strokeWidth={3} />
-            <p className="text-2xl font-black uppercase mb-3">
+            <Gem className="w-24 h-24 mx-auto mb-6" strokeWidth={3} style={{ color: 'var(--text-secondary)' }} />
+            <p className="text-2xl font-black uppercase mb-3" style={{ color: 'var(--text-primary)' }}>
               {t('treasures_title')}
             </p>
-            <p className="font-bold text-gray-600">
+            <p className="font-bold" style={{ color: 'var(--text-secondary)' }}>
               {t('treasures_collected')} 0 {t('treasures_items')}
             </p>
           </div>
@@ -229,12 +229,12 @@ export default function TreasuresPage() {
             <div 
               className="mb-6 p-4"
               style={{
-                backgroundColor: '#FFE66D',
-                border: '4px solid #000',
-                boxShadow: '6px 6px 0px #000'
+                backgroundColor: 'var(--color-yellow)',
+                border: '4px solid var(--border-primary)',
+                boxShadow: '6px 6px 0px var(--border-primary)'
               }}
             >
-              <h3 className="font-black uppercase mb-3 text-sm">{t('treasures_stats')}</h3>
+              <h3 className="font-black uppercase mb-3 text-sm" style={{ color: 'var(--text-primary)' }}>{t('treasures_stats')}</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {Object.entries(rarityCounts).map(([rarity, count]) => (
                   <div 
@@ -243,7 +243,7 @@ export default function TreasuresPage() {
                     style={{
                       backgroundColor: rarityColors[rarity].bg,
                       color: rarityColors[rarity].text,
-                      border: '3px solid #000'
+                      border: '3px solid var(--border-primary)'
                     }}
                   >
                     <p className="text-2xl font-black">{count}</p>
@@ -261,13 +261,13 @@ export default function TreasuresPage() {
                   className="px-4 py-2 font-black uppercase text-sm"
                   style={{
                     backgroundColor: rarityFilter === rarity 
-                      ? (rarity === 'all' ? '#4ECDC4' : rarityColors[rarity].bg)
-                      : '#FFF',
+                      ? (rarity === 'all' ? 'var(--color-cyan)' : rarityColors[rarity].bg)
+                      : 'var(--bg-secondary)',
                     color: rarityFilter === rarity && ['Epic', 'Legendary'].includes(rarity) 
                       ? rarityColors[rarity].text 
-                      : '#000',
-                    border: '3px solid #000',
-                    boxShadow: rarityFilter === rarity ? '4px 4px 0px #000' : '2px 2px 0px #000'
+                      : 'var(--text-primary)',
+                    border: '3px solid var(--border-primary)',
+                    boxShadow: rarityFilter === rarity ? '4px 4px 0px var(--border-primary)' : '2px 2px 0px var(--border-primary)'
                   }}
                 >
                   <Filter className="w-4 h-4 inline mr-1" strokeWidth={3} />
@@ -288,8 +288,8 @@ export default function TreasuresPage() {
                     style={{
                       backgroundColor: rarityColors[loot.rarity].bg,
                       color: rarityColors[loot.rarity].text,
-                      border: '4px solid #000',
-                      boxShadow: '4px 4px 0px #000'
+                      border: '4px solid var(--border-primary)',
+                      boxShadow: '4px 4px 0px var(--border-primary)'
                     }}
                   >
                     {/* 左侧：图标和稀有度 */}
@@ -298,9 +298,9 @@ export default function TreasuresPage() {
                       <div 
                         className="px-2 py-1 font-black uppercase text-xs"
                         style={{
-                          backgroundColor: '#000',
-                          color: '#FFE66D',
-                          border: '2px solid #FFE66D'
+                          backgroundColor: 'var(--bg-black)',
+                          color: 'var(--color-yellow)',
+                          border: '2px solid var(--color-yellow)'
                         }}
                       >
                         {t(`rarity_${loot.rarity.toLowerCase()}`)}
@@ -318,8 +318,8 @@ export default function TreasuresPage() {
                         className="p-2 mb-2 cursor-pointer hover:opacity-90 transition-opacity"
                         style={{
                           backgroundColor: 'rgba(255,255,255,0.9)',
-                          color: '#000',
-                          border: '2px solid #000'
+                          color: 'var(--text-primary)',
+                          border: '2px solid var(--border-primary)'
                         }}
                       >
                         <p 
@@ -357,9 +357,9 @@ export default function TreasuresPage() {
               <div 
                 className="flex items-center justify-between p-4"
                 style={{
-                  backgroundColor: '#FFF',
-                  border: '4px solid #000',
-                  boxShadow: '6px 6px 0px #000'
+                  backgroundColor: 'var(--bg-secondary)',
+                  border: '4px solid var(--border-primary)',
+                  boxShadow: '6px 6px 0px var(--border-primary)'
                 }}
               >
                 <button
@@ -367,9 +367,10 @@ export default function TreasuresPage() {
                   disabled={currentPage === 1}
                   className="px-4 py-2 font-black uppercase text-sm flex items-center gap-2"
                   style={{
-                    backgroundColor: currentPage === 1 ? '#E0E0E0' : '#4ECDC4',
-                    border: '3px solid #000',
-                    boxShadow: '3px 3px 0px #000',
+                    backgroundColor: currentPage === 1 ? '#E0E0E0' : 'var(--color-cyan)',
+                    color: 'var(--text-primary)',
+                    border: '3px solid var(--border-primary)',
+                    boxShadow: '3px 3px 0px var(--border-primary)',
                     opacity: currentPage === 1 ? 0.5 : 1,
                     cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
                   }}
@@ -378,7 +379,7 @@ export default function TreasuresPage() {
                   {t('treasures_prev')}
                 </button>
 
-                <div className="font-black text-sm">
+                <div className="font-black text-sm" style={{ color: 'var(--text-primary)' }}>
                   {t('treasures_page')} {currentPage} {t('treasures_page_of')} {totalPages}
                 </div>
 
@@ -387,9 +388,10 @@ export default function TreasuresPage() {
                   disabled={currentPage === totalPages}
                   className="px-4 py-2 font-black uppercase text-sm flex items-center gap-2"
                   style={{
-                    backgroundColor: currentPage === totalPages ? '#E0E0E0' : '#4ECDC4',
-                    border: '3px solid #000',
-                    boxShadow: '3px 3px 0px #000',
+                    backgroundColor: currentPage === totalPages ? '#E0E0E0' : 'var(--color-cyan)',
+                    color: 'var(--text-primary)',
+                    border: '3px solid var(--border-primary)',
+                    boxShadow: '3px 3px 0px var(--border-primary)',
                     opacity: currentPage === totalPages ? 0.5 : 1,
                     cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
                   }}
@@ -424,8 +426,8 @@ export default function TreasuresPage() {
               className="relative max-w-2xl w-full p-6 transform rotate-1"
               style={{
                 backgroundColor: '#9B59B6',
-                border: '6px solid #000',
-                boxShadow: '15px 15px 0px #000',
+                border: '6px solid var(--border-primary)',
+                boxShadow: '15px 15px 0px var(--border-primary)',
                 maxHeight: '90vh',
                 overflowY: 'auto'
               }}
@@ -440,16 +442,16 @@ export default function TreasuresPage() {
               <div 
                 className="mb-6 p-4"
                 style={{
-                  backgroundColor: '#FFF',
-                  border: '4px solid #000'
+                  backgroundColor: 'var(--bg-secondary)',
+                  border: '4px solid var(--border-primary)'
                 }}
               >
-                <p className="font-bold text-sm mb-3">
+                <p className="font-bold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>
                   {language === 'zh' 
                     ? '📜 兑换规则：选择2个传说宝物，可兑换1张冻结券'
                     : '📜 Exchange Rule: Select 2 Legendary items to exchange for 1 Freeze Token'}
                 </p>
-                <p className="font-bold text-sm text-gray-600">
+                <p className="font-bold text-sm" style={{ color: 'var(--text-secondary)' }}>
                   {language === 'zh' 
                     ? `✨ 已选择：${selectedLegendaries.length}/2`
                     : `✨ Selected: ${selectedLegendaries.length}/2`}
@@ -466,16 +468,16 @@ export default function TreasuresPage() {
                       onClick={() => toggleLegendarySelection(loot.id)}
                       className="p-4 flex items-center gap-4 cursor-pointer transition-all"
                       style={{
-                        backgroundColor: isSelected ? '#FFE66D' : '#FFF',
-                        border: isSelected ? '5px solid #000' : '3px solid #000',
-                        boxShadow: isSelected ? '6px 6px 0px #000' : '3px 3px 0px #000',
+                        backgroundColor: isSelected ? 'var(--color-yellow)' : 'var(--bg-secondary)',
+                        border: isSelected ? '5px solid var(--border-primary)' : '3px solid var(--border-primary)',
+                        boxShadow: isSelected ? '6px 6px 0px var(--border-primary)' : '3px 3px 0px var(--border-primary)',
                         transform: isSelected ? 'scale(1.02)' : 'scale(1)'
                       }}
                     >
                       <div className="text-5xl">{loot.icon}</div>
                       <div className="flex-1">
-                        <h3 className="font-black uppercase text-lg mb-1">{loot.name}</h3>
-                        <p className="text-xs font-bold text-gray-600 line-clamp-2">
+                        <h3 className="font-black uppercase text-lg mb-1" style={{ color: 'var(--text-primary)' }}>{loot.name}</h3>
+                        <p className="text-xs font-bold line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
                           {loot.flavorText}
                         </p>
                       </div>
@@ -483,8 +485,8 @@ export default function TreasuresPage() {
                         <div 
                           className="flex-shrink-0 w-10 h-10 flex items-center justify-center font-black text-xl"
                           style={{
-                            backgroundColor: '#4ECDC4',
-                            border: '3px solid #000',
+                            backgroundColor: 'var(--color-cyan)',
+                            border: '3px solid var(--border-primary)',
                             borderRadius: '50%'
                           }}
                         >
@@ -504,9 +506,10 @@ export default function TreasuresPage() {
                   }}
                   className="flex-1 py-3 font-black uppercase"
                   style={{
-                    backgroundColor: '#FFF',
-                    border: '4px solid #000',
-                    boxShadow: '4px 4px 0px #000'
+                    backgroundColor: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    border: '4px solid var(--border-primary)',
+                    boxShadow: '4px 4px 0px var(--border-primary)'
                   }}
                 >
                   {t('common_cancel')}
@@ -516,9 +519,10 @@ export default function TreasuresPage() {
                   disabled={selectedLegendaries.length !== 2 || exchangeMutation.isLoading}
                   className="flex-1 py-3 font-black uppercase flex items-center justify-center gap-2"
                   style={{
-                    backgroundColor: selectedLegendaries.length === 2 ? '#4ECDC4' : '#E0E0E0',
-                    border: '4px solid #000',
-                    boxShadow: '4px 4px 0px #000',
+                    backgroundColor: selectedLegendaries.length === 2 ? 'var(--color-cyan)' : '#E0E0E0',
+                    color: 'var(--text-primary)',
+                    border: '4px solid var(--border-primary)',
+                    boxShadow: '4px 4px 0px var(--border-primary)',
                     opacity: selectedLegendaries.length === 2 ? 1 : 0.5,
                     cursor: selectedLegendaries.length === 2 ? 'pointer' : 'not-allowed'
                   }}

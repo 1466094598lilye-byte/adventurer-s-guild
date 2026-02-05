@@ -148,7 +148,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                     </span>
                   )}
                   <h3 
-                    className="font-black text-base uppercase leading-tight break-words flex-1"
+                    className="font-black text-sm uppercase leading-tight break-words flex-1"
                     style={{ 
                       textDecoration: isDone ? 'line-through' : 'none',
                       color: isDone ? '#999' : 'var(--text-primary)',

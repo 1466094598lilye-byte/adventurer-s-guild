@@ -16,7 +16,7 @@ export default function Profile() {
     if (saved !== null) {
       return saved === 'true';
     }
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return false; // 默认浅色模式
   });
 
   // 应用深色模式到 DOM
@@ -393,7 +393,7 @@ export default function Profile() {
                 onClick={() => switchLanguage('zh')}
                 className="py-3 font-black uppercase"
                 style={{
-                  backgroundColor: language === 'zh' ? 'var(--color-cyan)' : 'var(--color-yellow)',
+                  backgroundColor: language === 'zh' ? 'var(--color-cyan)' : '#F0F0F0',
                   color: 'var(--text-primary)',
                   border: '3px solid var(--border-primary)',
                   boxShadow: language === 'zh' ? '4px 4px 0px var(--border-primary)' : '2px 2px 0px var(--border-primary)',
@@ -406,7 +406,7 @@ export default function Profile() {
                 onClick={() => switchLanguage('en')}
                 className="py-3 font-black uppercase"
                 style={{
-                  backgroundColor: language === 'en' ? 'var(--color-cyan)' : 'var(--color-yellow)',
+                  backgroundColor: language === 'en' ? 'var(--color-cyan)' : '#F0F0F0',
                   color: 'var(--text-primary)',
                   border: '3px solid var(--border-primary)',
                   boxShadow: language === 'en' ? '4px 4px 0px var(--border-primary)' : '2px 2px 0px var(--border-primary)',

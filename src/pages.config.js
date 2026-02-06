@@ -51,6 +51,7 @@ import Journal from './pages/Journal';
 import Profile from './pages/Profile';
 import QuestBoard from './pages/QuestBoard';
 import Treasures from './pages/Treasures';
+import LongTermCalendarPage from './pages/LongTermCalendarPage';
 import __Layout from './Layout.jsx';
 
 
@@ -59,6 +60,7 @@ export const PAGES = {
     "Profile": Profile,
     "QuestBoard": QuestBoard,
     "Treasures": Treasures,
+    "LongTermCalendarPage": LongTermCalendarPage,
 }
 
 export const pagesConfig = {

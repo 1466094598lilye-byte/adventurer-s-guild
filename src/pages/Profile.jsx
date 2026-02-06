@@ -41,7 +41,42 @@ export default function Profile() {
   };
 
   const handleDeleteAccount = async () => {
-...
+    const requiredText = 'DELETE MY ACCOUNT';
+    
+    if (deleteConfirmText !== requiredText) {
+      alert(language === 'zh' 
+        ? `❌ 请输入"${requiredText}"以确认删除` 
+        : `❌ Please type "${requiredText}" to confirm`);
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const { data } = await base44.functions.invoke('deleteUserData');
+      
+      if (data.success) {
+        alert(language === 'zh' 
+          ? `✅ 账户数据已成功删除（共删除 ${data.totalDeleted} 条记录）。即将退出登录...` 
+          : `✅ Account data successfully deleted (${data.totalDeleted} records). Logging out...`);
+        
+        // 延迟1秒后退出登录
+        setTimeout(() => {
+          base44.auth.logout();
+        }, 1000);
+      } else {
+        alert(language === 'zh' 
+          ? `❌ 删除失败：${data.message}` 
+          : `❌ Deletion failed: ${data.message}`);
+        setIsDeleting(false);
+      }
+    } catch (error) {
+      console.error('Delete account error:', error);
+      alert(language === 'zh' 
+        ? `❌ 删除账户时发生错误：${error.message}` 
+        : `❌ Error deleting account: ${error.message}`);
+      setIsDeleting(false);
+    }
+    setShowDeleteConfirm(false);
     setDeleteConfirmText('');
   };
 

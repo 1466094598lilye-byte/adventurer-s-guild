@@ -48,6 +48,10 @@ export default function QuestBoard() {
   const [isAddingDeepRest, setIsAddingDeepRest] = useState(false);
   const [fromChestOpen, setFromChestOpen] = useState(false);
   const [rolloverLoadingSeconds, setRolloverLoadingSeconds] = useState(0);
+  const [pullStartY, setPullStartY] = useState(0);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isPulling, setIsPulling] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const queryClient = useQueryClient();
   const { language, t } = useLanguage();
 
@@ -1872,8 +1876,72 @@ export default function QuestBoard() {
     R: 'linear-gradient(135deg, #FFE66D 0%, #FFA94D 100%)'
   };
 
+  // Pull-to-refresh handlers
+  const handleTouchStart = (e) => {
+    if (window.scrollY === 0 && !isRefreshing) {
+      setPullStartY(e.touches[0].clientY);
+      setIsPulling(true);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isPulling || isRefreshing) return;
+    
+    const currentY = e.touches[0].clientY;
+    const distance = currentY - pullStartY;
+    
+    if (distance > 0 && window.scrollY === 0) {
+      setPullDistance(Math.min(distance, 120));
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (!isPulling || isRefreshing) return;
+    
+    if (pullDistance > 80) {
+      setIsRefreshing(true);
+      await queryClient.invalidateQueries(['quests']);
+      setTimeout(() => {
+        setIsRefreshing(false);
+        setPullDistance(0);
+      }, 500);
+    } else {
+      setPullDistance(0);
+    }
+    
+    setIsPulling(false);
+  };
+
   return (
-    <div className="min-h-screen p-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div 
+      className="min-h-screen p-4" 
+      style={{ backgroundColor: 'var(--bg-primary)' }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull-to-refresh indicator */}
+      {(isPulling || isRefreshing) && (
+        <div 
+          className="fixed top-0 left-0 right-0 flex items-center justify-center transition-all duration-200"
+          style={{
+            height: `${pullDistance}px`,
+            backgroundColor: 'var(--color-cyan)',
+            opacity: pullDistance / 100,
+            zIndex: 40
+          }}
+        >
+          <Loader2 
+            className={`w-8 h-8 ${isRefreshing ? 'animate-spin' : ''}`}
+            strokeWidth={3}
+            style={{
+              transform: `rotate(${pullDistance * 3}deg)`,
+              transition: isRefreshing ? 'none' : 'transform 0.1s'
+            }}
+          />
+        </div>
+      )}
+      
       <div className="max-w-2xl mx-auto">
         <div 
           className="mb-6 p-4 transform -rotate-1"

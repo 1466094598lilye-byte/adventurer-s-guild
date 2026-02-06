@@ -482,18 +482,31 @@ export default function CalendarModal({ isOpen, onClose }) {
                   })}
                 </div>
 
-                <button
-                  onClick={() => setShowAddLaterForm(true)}
-                  className="w-full mt-4 mb-4 py-3 font-black uppercase flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: 'var(--color-cyan)',
-                    border: '4px solid var(--border-primary)',
-                    boxShadow: '5px 5px 0px var(--border-primary)'
-                  }}
-                >
-                  <Plus className="w-5 h-5" strokeWidth={3} />
-                  {language === 'zh' ? '📅 添加更晚日期任务' : '📅 Add Task to Later Date'}
-                </button>
+                <div className="flex gap-3 mt-4 mb-4">
+                  <button
+                    onClick={() => setShowAddLaterForm(true)}
+                    className="flex-shrink-0 w-16 h-16 flex items-center justify-center"
+                    style={{
+                      backgroundColor: 'var(--color-orange)',
+                      border: '4px solid var(--border-primary)',
+                      boxShadow: '5px 5px 0px var(--border-primary)'
+                    }}
+                  >
+                    <CalendarIcon className="w-8 h-8" strokeWidth={3} style={{ color: 'var(--text-inverse)' }} />
+                  </button>
+                  <button
+                    onClick={() => setShowAddLaterForm(true)}
+                    className="flex-1 py-3 font-black uppercase flex items-center justify-center gap-2"
+                    style={{
+                      backgroundColor: 'var(--color-cyan)',
+                      border: '4px solid var(--border-primary)',
+                      boxShadow: '5px 5px 0px var(--border-primary)'
+                    }}
+                  >
+                    <Plus className="w-5 h-5" strokeWidth={3} />
+                    {language === 'zh' ? '📅 添加更晚日期任务' : '📅 Add Task to Later Date'}
+                  </button>
+                </div>
 
                 <button
                   onClick={() => setShowDeleteConfirm(true)}

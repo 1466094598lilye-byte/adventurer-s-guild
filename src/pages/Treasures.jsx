@@ -4,15 +4,15 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Gem, Filter, ChevronLeft, ChevronRight, Hammer, ChevronDown, ChevronUp, Snowflake } from 'lucide-react';
 import { format } from 'date-fns';
 import { useLanguage } from '@/components/LanguageContext';
-import CraftingDialog from '@/components/treasure/CraftingDialog';
 import { playSound } from '@/components/AudioManager';
 import { getGuestData } from '@/components/utils/guestData';
+import { useNavigate } from 'react-router-dom';
 
 export default function TreasuresPage() {
+  const navigate = useNavigate();
   const { t, language } = useLanguage();
   const [rarityFilter, setRarityFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [showCraftingDialog, setShowCraftingDialog] = useState(false);
   const [expandedLoot, setExpandedLoot] = useState(new Set());
   const [showExchangeDialog, setShowExchangeDialog] = useState(false);
   const [selectedLegendaries, setSelectedLegendaries] = useState([]);
@@ -107,10 +107,6 @@ export default function TreasuresPage() {
     setExpandedLoot(new Set());
   };
 
-  const handleCraftSuccess = () => {
-    queryClient.invalidateQueries(['loot']);
-  };
-
   const toggleExpand = (lootId) => {
     const newExpanded = new Set(expandedLoot);
     if (newExpanded.has(lootId)) {
@@ -167,7 +163,7 @@ export default function TreasuresPage() {
           <button
             onClick={() => {
               playSound('enterWorkshop');
-              setShowCraftingDialog(true);
+              navigate('/crafting');
             }}
             className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
             style={{
@@ -403,14 +399,6 @@ export default function TreasuresPage() {
             )}
           </>
         )}
-
-        {/* 合成对话框 */}
-        <CraftingDialog
-          isOpen={showCraftingDialog}
-          onClose={() => setShowCraftingDialog(false)}
-          userLoot={allLoot}
-          onCraftSuccess={handleCraftSuccess}
-        />
 
         {/* 兑换冻结券对话框 */}
         {showExchangeDialog && (

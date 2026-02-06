@@ -7,8 +7,6 @@ import PraiseDialog from '../components/quest/PraiseDialog';
 import ChestOpening from '../components/treasure/ChestOpening';
 import QuestEditFormModal from '../components/quest/QuestEditFormModal';
 import EndOfDaySummaryAndPlanning from '../components/quest/EndOfDaySummaryAndPlanning';
-import LongTermProjectDialog from '../components/quest/LongTermProjectDialog';
-import LongTermCalendar from '../components/quest/LongTermCalendar';
 import JointPraiseDialog from '../components/quest/JointPraiseDialog';
 import StreakBreakDialog from '../components/streak/StreakBreakDialog';
 import BootstrapModeDialog from '../components/quest/BootstrapModeDialog';
@@ -19,8 +17,10 @@ import { useLanguage } from '@/components/LanguageContext';
 import { getTaskNamingPrompt, getBootstrapModePrompt } from '@/components/prompts';
 import { getGuestData, setGuestData, addGuestEntity, updateGuestEntity, deleteGuestEntity } from '@/components/utils/guestData';
 import { playSound, stopSound } from '@/components/AudioManager';
+import { useNavigate } from 'react-router-dom';
 
 export default function QuestBoard() {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState('all');
   const [selectedQuest, setSelectedQuest] = useState(null);
   const [showChest, setShowChest] = useState(false);
@@ -34,8 +34,6 @@ export default function QuestBoard() {
   const [showRestDayDialog, setShowRestDayDialog] = useState(false);
   const [showPlanningDialog, setShowPlanningDialog] = useState(false);
   const [showCelebrationInPlanning, setShowCelebrationInPlanning] = useState(false);
-  const [showLongTermDialog, setShowLongTermDialog] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false);
   const [isConfirmingPending, setIsConfirmingPending] = useState(false);
   const [showJointPraise, setShowJointPraise] = useState(false);
   const [completedProject, setCompletedProject] = useState(null);
@@ -1710,16 +1708,7 @@ export default function QuestBoard() {
     setShowPlanningDialog(true);
   };
 
-  const handleLongTermQuestsCreated = (count) => {
-    batchInvalidateQueries(['quests', 'hasLongTermQuests']);
-    setToast(t('questboard_toast_longterm_quests_added_success', { count: count }));
-    setTimeout(() => setToast(null), 3000);
-  };
 
-  const handleCalendarUpdate = () => {
-    batchInvalidateQueries(['quests', 'hasLongTermQuests']);
-    queryClient.refetchQueries({ queryKey: ['hasLongTermQuests'] });
-  };
 
   const handleKickstart = async (quest, { minimalAction, duration }) => {
     try {
@@ -2055,9 +2044,7 @@ export default function QuestBoard() {
           </div>
 
           <Button
-            onClick={() => {
-              setShowLongTermDialog(true);
-            }}
+            onClick={() => navigate('/long-term-project')}
             className="w-full py-3 font-black uppercase flex items-center justify-center gap-2"
             style={{
               backgroundColor: '#9B59B6',
@@ -2228,7 +2215,7 @@ export default function QuestBoard() {
                     : 'Cannot view calendar in guest mode (login required)');
                   return;
                 }
-                setShowCalendar(true);
+                navigate('/calendar');
               }}
               disabled={isLoadingLongTermQuests || !user}
               className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3 text-white"
@@ -2456,20 +2443,6 @@ export default function QuestBoard() {
               setFromChestOpen(false);
             }}
             onPlanSaved={handlePlanSaved}
-          />
-        )}
-
-        {showLongTermDialog && (
-          <LongTermProjectDialog
-            onClose={() => setShowLongTermDialog(false)}
-            onQuestsCreated={handleLongTermQuestsCreated}
-          />
-        )}
-
-        {showCalendar && (
-          <LongTermCalendar
-            onClose={() => setShowCalendar(false)}
-            onQuestsUpdated={handleCalendarUpdate}
           />
         )}
 

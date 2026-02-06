@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar as CalendarIcon, Trash2, Plus, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { X, Trash2, Plus, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, isSameDay } from 'date-fns';
@@ -374,7 +374,7 @@ export default function CalendarModal({ isOpen, onClose }) {
                   boxShadow: '8px 8px 0px var(--border-primary)'
                 }}
               >
-                <CalendarIcon className="w-16 h-16 mx-auto mb-4" strokeWidth={3} style={{ color: 'var(--text-secondary)' }} />
+                <span className="text-6xl mb-4 block">📅</span>
                 <h3 className="text-xl font-black uppercase mb-2">{t('calendar_empty_title')}</h3>
                 <p className="font-bold" style={{ color: 'var(--text-secondary)' }}>{t('calendar_empty_hint')}</p>
               </div>
@@ -401,7 +401,7 @@ export default function CalendarModal({ isOpen, onClose }) {
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <CalendarIcon className="w-6 h-6" strokeWidth={3} />
+                              <span className="text-2xl">📅</span>
                               <div>
                                 <p className="font-black text-lg">
                                   {formatDateDisplay(dateStr)}

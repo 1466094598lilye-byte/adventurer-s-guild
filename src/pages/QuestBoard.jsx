@@ -2229,7 +2229,7 @@ export default function QuestBoard() {
                 </>
               ) : (
                 <>
-                  <CalendarIcon className="w-6 h-6" strokeWidth={3} />
+                  <span className="text-2xl">📅</span>
                   {t('questboard_calendar_btn')}
                 </>
               )}
@@ -2260,7 +2260,7 @@ export default function QuestBoard() {
                   boxShadow: '4px 4px 0px #000'
                 }}
               >
-                <CalendarIcon className="w-5 h-5" strokeWidth={3} />
+                <span className="text-xl">📅</span>
                 {t('questboard_planned_quests')} {nextDayPlannedCount} {t('common_items')}{language === 'zh' ? '委托' : ' quests'}
               </Button>
             )}
@@ -2275,7 +2275,7 @@ export default function QuestBoard() {
                   boxShadow: '4px 4px 0px #000'
                 }}
               >
-                <CalendarIcon className="w-5 h-5" strokeWidth={3} />
+                <span className="text-xl">📅</span>
                 {t('questboard_plan_tomorrow')}
               </Button>
             )}

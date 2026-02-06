@@ -47,30 +47,30 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import CraftingPage from './pages/CraftingPage';
 import Journal from './pages/Journal';
+import LongTermCalendarPage from './pages/LongTermCalendarPage';
+import LongTermProjectPage from './pages/LongTermProjectPage';
 import Profile from './pages/Profile';
 import QuestBoard from './pages/QuestBoard';
 import Treasures from './pages/Treasures';
-import LongTermCalendarPage from './pages/LongTermCalendarPage';
-import LongTermProjectPage from './pages/LongTermProjectPage';
-import CraftingPage from './pages/CraftingPage';
-import longTermProject from './pages/long-term-project';
 import calendar from './pages/calendar';
 import crafting from './pages/crafting';
+import longTermProject from './pages/long-term-project';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "CraftingPage": CraftingPage,
     "Journal": Journal,
+    "LongTermCalendarPage": LongTermCalendarPage,
+    "LongTermProjectPage": LongTermProjectPage,
     "Profile": Profile,
     "QuestBoard": QuestBoard,
     "Treasures": Treasures,
-    "LongTermCalendarPage": LongTermCalendarPage,
-    "LongTermProjectPage": LongTermProjectPage,
-    "CraftingPage": CraftingPage,
-    "long-term-project": longTermProject,
     "calendar": calendar,
     "crafting": crafting,
+    "long-term-project": longTermProject,
 }
 
 export const pagesConfig = {

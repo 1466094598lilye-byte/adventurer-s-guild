@@ -1,13 +1,15 @@
 import React from 'react'; // Added React import
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { LogOut, Award, Flame, Shield, Settings, Trash2, Moon, Sun } from 'lucide-react';
 import StreakDisplay from '../components/profile/StreakDisplay';
 import { useLanguage } from '@/components/LanguageContext';
+import StreakRecoveryDialog from '@/components/StreakRecoveryDialog';
 
 export default function Profile() {
   const { t, language, switchLanguage } = useLanguage();
-  const [showRestoreButton, setShowRestoreButton] = React.useState(false);
+  const queryClient = useQueryClient();
+  const [showRecoveryDialog, setShowRecoveryDialog] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = React.useState('');
@@ -39,74 +41,13 @@ export default function Profile() {
   };
 
   const handleDeleteAccount = async () => {
-    const requiredText = 'DELETE MY ACCOUNT';
-    
-    if (deleteConfirmText !== requiredText) {
-      alert(language === 'zh' 
-        ? `❌ 请输入"${requiredText}"以确认删除` 
-        : `❌ Please type "${requiredText}" to confirm`);
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
-      const { data } = await base44.functions.invoke('deleteUserData');
-      
-      if (data.success) {
-        alert(language === 'zh' 
-          ? `✅ 账户数据已成功删除（共删除 ${data.totalDeleted} 条记录）。即将退出登录...` 
-          : `✅ Account data successfully deleted (${data.totalDeleted} records). Logging out...`);
-        
-        // 延迟1秒后退出登录
-        setTimeout(() => {
-          base44.auth.logout();
-        }, 1000);
-      } else {
-        alert(language === 'zh' 
-          ? `❌ 删除失败：${data.message}` 
-          : `❌ Deletion failed: ${data.message}`);
-        setIsDeleting(false);
-      }
-    } catch (error) {
-      console.error('Delete account error:', error);
-      alert(language === 'zh' 
-        ? `❌ 删除账户时发生错误：${error.message}` 
-        : `❌ Error deleting account: ${error.message}`);
-      setIsDeleting(false);
-    }
-    setShowDeleteConfirm(false);
+...
     setDeleteConfirmText('');
   };
 
-  // 🔥 临时修复：帮助用户恢复丢失的连胜数据
-  const handleRestoreStreak = async () => {
-    if (!confirm(language === 'zh' 
-      ? '确认恢复您的13天连胜和3个freeze tokens吗？' 
-      : 'Confirm to restore your 13-day streak and 3 freeze tokens?')) {
-      return;
-    }
-    
-    try {
-      await base44.functions.invoke('restoreUserStreak');
-      alert(language === 'zh' 
-        ? '✅ 已成功恢复您的连胜！非常抱歉给您带来的困扰。' 
-        : '✅ Successfully restored your streak! Sorry for the inconvenience.');
-      window.location.reload();
-    } catch (error) {
-      alert(language === 'zh' 
-        ? '❌ 恢复失败，请联系支持' 
-        : '❌ Restore failed, please contact support');
-    }
+  const handleRecoverySuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['user'] });
   };
-
-  // 检测是否需要显示恢复按钮（连胜为0且最长连胜大于0，且不是用户主动重置的）
-  React.useEffect(() => {
-    if (user && user.streakCount === 0 && user.longestStreak > 0 && !user.streakManuallyReset) {
-      setShowRestoreButton(true);
-    } else {
-      setShowRestoreButton(false);
-    }
-  }, [user]);
 
   const milestones = [
     { days: 7, title: language === 'zh' ? '新秀冒险家' : 'Rising Adventurer', tokens: 1, icon: '🌟' },
@@ -137,35 +78,20 @@ export default function Profile() {
           </h1>
         </div>
 
-        {/* 🔥 临时恢复按钮 - 只在连胜为0且最长连胜>0时显示 */}
-        {showRestoreButton && (
-          <div 
-            className="mb-6 p-4"
-            style={{
-              backgroundColor: '#FF6B35',
-              border: '5px solid #000',
-              boxShadow: '8px 8px 0px #000',
-              animation: 'pulse 2s infinite'
-            }}
-          >
-            <h3 className="text-xl font-black uppercase text-white text-center mb-3">
-              {language === 'zh' ? '⚠️ 检测到数据异常 ⚠️' : '⚠️ Data Anomaly Detected ⚠️'}
-            </h3>
-            <p className="font-bold text-white text-center mb-4 text-sm">
-              {language === 'zh' 
-                ? '系统检测到您的连胜数据可能因bug丢失。我们深感抱歉！点击下方按钮可立即恢复您的13天连胜，并获得3个freeze tokens作为补偿。' 
-                : 'System detected your streak data may have been lost due to a bug. We sincerely apologize! Click below to restore your 13-day streak and receive 3 freeze tokens as compensation.'}
-            </p>
+        {/* 连胜恢复按钮 - 当最长连胜<=1时显示 */}
+        {user && user.longestStreak <= 1 && (
+          <div className="mb-6">
             <button
-              onClick={handleRestoreStreak}
+              onClick={() => setShowRecoveryDialog(true)}
               className="w-full py-4 font-black uppercase text-lg"
               style={{
-                backgroundColor: '#FFE66D',
+                backgroundColor: '#FF6B35',
+                color: '#FFF',
                 border: '4px solid #000',
-                boxShadow: '5px 5px 0px #000'
+                boxShadow: '6px 6px 0px #000'
               }}
             >
-              {language === 'zh' ? '🔧 立即恢复我的连胜' : '🔧 Restore My Streak Now'}
+              {t('profile_restore_streak')}
             </button>
           </div>
         )}
@@ -489,6 +415,13 @@ export default function Profile() {
             ? (language === 'zh' ? '删除中...' : 'Deleting...') 
             : (language === 'zh' ? '永久删除账户' : 'Delete Account Permanently')}
         </button>
+
+        {/* Streak Recovery Dialog */}
+        <StreakRecoveryDialog
+          isOpen={showRecoveryDialog}
+          onClose={() => setShowRecoveryDialog(false)}
+          onSuccess={handleRecoverySuccess}
+        />
 
         {/* Delete Confirmation Dialog */}
         {showDeleteConfirm && (

@@ -175,6 +175,7 @@ export function LanguageProvider({ children }) {
       profile_chest_pity_desc: '连续开启60个宝箱必得1张冻结券',
       profile_chest_counter: '当前进度',
       profile_logout: '退出登录',
+      profile_restore_streak: '🔧 恢复连胜数据',
       
       // Praise Dialog
       praise_title: '协会表彰',
@@ -466,6 +467,7 @@ questboard_toast_quest_added_rest_canceled: 'Quest added, rest day automatically
       profile_chest_pity_desc: 'Guaranteed 1 Freeze Token every 60 chests',
       profile_chest_counter: 'Current Progress',
       profile_logout: 'Logout',
+      profile_restore_streak: '🔧 Restore Streak Data',
       
       // Praise Dialog
       praise_title: 'Guild Recognition',

@@ -492,7 +492,7 @@ export default function CalendarModal({ isOpen, onClose }) {
                   }}
                 >
                   <Plus className="w-5 h-5" strokeWidth={3} />
-                  <CalendarIcon className="w-5 h-5" strokeWidth={3} style={{ color: 'var(--color-orange)' }} />
+                  <CalendarIcon className="w-5 h-5" strokeWidth={3} style={{ color: '#FFF' }} />
                   {language === 'zh' ? '添加更晚日期任务' : 'Add Task to Later Date'}
                 </button>
 

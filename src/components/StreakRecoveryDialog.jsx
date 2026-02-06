@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useLanguage } from '@/components/LanguageContext';
 import { X } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function StreakRecoveryDialog({ isOpen, onClose, onSuccess }) {
   const { t } = useLanguage();
+  const { toast } = useToast();
   const [currentStreak, setCurrentStreak] = useState('');
   const [longestStreak, setLongestStreak] = useState('');
   const [isRestoring, setIsRestoring] = useState(false);
@@ -16,17 +17,17 @@ export default function StreakRecoveryDialog({ isOpen, onClose, onSuccess }) {
     const longest = parseInt(longestStreak);
 
     if (!currentStreak || !longestStreak) {
-      toast.error(t('streak_recovery_empty_error'));
+      toast({ description: t('streak_recovery_empty_error'), variant: 'destructive' });
       return;
     }
 
     if (isNaN(current) || isNaN(longest) || current < 0 || longest < 0) {
-      toast.error(t('streak_recovery_invalid_error'));
+      toast({ description: t('streak_recovery_invalid_error'), variant: 'destructive' });
       return;
     }
 
     if (current > longest) {
-      toast.error(t('streak_recovery_logic_error'));
+      toast({ description: t('streak_recovery_logic_error'), variant: 'destructive' });
       return;
     }
 
@@ -39,17 +40,17 @@ export default function StreakRecoveryDialog({ isOpen, onClose, onSuccess }) {
       });
 
       if (response.data.success) {
-        toast.success(t('streak_recovery_success'));
+        toast({ description: t('streak_recovery_success') });
         setCurrentStreak('');
         setLongestStreak('');
         onSuccess();
         onClose();
       } else {
-        toast.error(response.data.error || t('streak_recovery_failed'));
+        toast({ description: response.data.error || t('streak_recovery_failed'), variant: 'destructive' });
       }
     } catch (error) {
       console.error('恢复连胜失败:', error);
-      toast.error(t('streak_recovery_failed'));
+      toast({ description: t('streak_recovery_failed'), variant: 'destructive' });
     } finally {
       setIsRestoring(false);
     }

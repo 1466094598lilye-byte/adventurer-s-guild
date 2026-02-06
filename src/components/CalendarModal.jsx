@@ -492,15 +492,7 @@ export default function CalendarModal({ isOpen, onClose }) {
                   }}
                 >
                   <Plus className="w-5 h-5" strokeWidth={3} />
-                  <div 
-                    className="flex items-center justify-center px-2 py-1"
-                    style={{
-                      backgroundColor: 'var(--color-orange)',
-                      border: '3px solid var(--border-primary)'
-                    }}
-                  >
-                    <CalendarIcon className="w-5 h-5" strokeWidth={3} style={{ color: 'var(--text-inverse)' }} />
-                  </div>
+                  <CalendarIcon className="w-5 h-5" strokeWidth={3} style={{ color: 'var(--color-orange)' }} />
                   {language === 'zh' ? '添加更晚日期任务' : 'Add Task to Later Date'}
                 </button>
 

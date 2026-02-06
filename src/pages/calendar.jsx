@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Calendar as CalendarIcon, Trash2, Plus, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, Trash2, Plus, ChevronDown, ChevronUp, Loader2, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, isSameDay, startOfDay } from 'date-fns';
@@ -21,6 +21,9 @@ export default function Calendar() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [user, setUser] = useState(undefined);
+  const [showAddLaterForm, setShowAddLaterForm] = useState(false);
+  const [laterTaskInput, setLaterTaskInput] = useState('');
+  const [selectedLaterDate, setSelectedLaterDate] = useState('');
 
   useEffect(() => {
     const checkUser = async () => {
@@ -91,6 +94,7 @@ export default function Calendar() {
   }, {});
 
   const sortedDates = Object.keys(questsByDate).sort((a, b) => new Date(a) - new Date(b));
+  const latestDate = sortedDates.length > 0 ? sortedDates[sortedDates.length - 1] : null;
 
   const handleAddTask = async () => {
     if (!newTaskInput.trim() || !selectedDate || isAddingTask) return;
@@ -196,6 +200,70 @@ export default function Calendar() {
     setIsDeleting(false);
   };
 
+  const handleAddLaterTask = async () => {
+    if (!laterTaskInput.trim() || !selectedLaterDate || isAddingTask) return;
+
+    setIsAddingTask(true);
+
+    try {
+      const { prompt, schema } = getCalendarAddTaskPrompt(language, laterTaskInput.trim());
+
+      const { data: result } = await base44.functions.invoke('callDeepSeek', {
+        prompt: prompt,
+        response_json_schema: schema
+      });
+
+      let user = null;
+      try {
+        user = await base44.auth.me();
+      } catch {
+        // 访客模式
+      }
+
+      if (!user) {
+        addGuestEntity('quests', {
+          title: result.title,
+          actionHint: laterTaskInput.trim(),
+          date: selectedLaterDate,
+          difficulty: 'S',
+          rarity: 'Epic',
+          status: 'todo',
+          source: 'longterm',
+          isLongTermProject: true,
+          tags: []
+        });
+      } else {
+        const { data: encryptedData } = await base44.functions.invoke('encryptQuestData', {
+          title: result.title,
+          actionHint: laterTaskInput.trim()
+        });
+
+        await base44.entities.Quest.create({
+          title: encryptedData.encryptedTitle,
+          actionHint: encryptedData.encryptedActionHint,
+          date: selectedLaterDate,
+          difficulty: 'S',
+          rarity: 'Epic',
+          status: 'todo',
+          source: 'longterm',
+          isLongTermProject: true,
+          tags: []
+        });
+      }
+
+      await playSound('projectAdded');
+      queryClient.invalidateQueries(['quests']);
+      setShowAddLaterForm(false);
+      setLaterTaskInput('');
+      setSelectedLaterDate('');
+    } catch (error) {
+      console.error('添加任务失败:', error);
+      alert(t('calendar_add_task_failed'));
+    }
+
+    setIsAddingTask(false);
+  };
+
   const isToday = (dateStr) => {
     return isSameDay(new Date(dateStr), new Date());
   };
@@ -223,7 +291,7 @@ export default function Calendar() {
         {/* Header */}
         <div className="mb-6">
           <button
-            onClick={() => navigate('/quest-board')}
+            onClick={() => navigate('/questboard')}
             className="mb-4 px-4 py-2 font-black uppercase flex items-center gap-2"
             style={{
               backgroundColor: 'var(--color-cyan)',
@@ -274,6 +342,19 @@ export default function Calendar() {
           </div>
         ) : (
           <>
+            <button
+              onClick={() => setShowAddLaterForm(true)}
+              className="w-full mb-4 py-3 font-black uppercase flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: 'var(--color-cyan)',
+                border: '4px solid var(--border-primary)',
+                boxShadow: '5px 5px 0px var(--border-primary)'
+              }}
+            >
+              <Plus className="w-5 h-5" strokeWidth={3} />
+              {language === 'zh' ? '📅 添加更晚日期任务' : '📅 Add Task to Later Date'}
+            </button>
+
             {longTermQuests.length > 0 && (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
@@ -438,6 +519,123 @@ export default function Calendar() {
                   border: '3px solid var(--border-primary)',
                   boxShadow: '3px 3px 0px var(--border-primary)',
                   opacity: (!newTaskInput.trim() || isAddingTask) ? 0.5 : 1
+                }}
+              >
+                {isAddingTask ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" strokeWidth={3} />
+                    {t('calendar_adding')}
+                  </>
+                ) : (
+                  t('calendar_confirm_add')
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Later Task Form */}
+      {showAddLaterForm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+          onClick={() => {
+            setShowAddLaterForm(false);
+            setLaterTaskInput('');
+            setSelectedLaterDate('');
+          }}
+        >
+          <div
+            className="w-full max-w-md p-6"
+            style={{
+              backgroundColor: 'var(--bg-secondary)',
+              border: '5px solid var(--border-primary)',
+              boxShadow: '10px 10px 0px var(--border-primary)'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-2xl font-black uppercase mb-4">
+              {language === 'zh' ? '📅 添加更晚日期任务 📅' : '📅 Add Task to Later Date 📅'}
+            </h3>
+
+            <div
+              className="mb-4 p-3"
+              style={{
+                backgroundColor: 'var(--color-yellow)',
+                border: '3px solid var(--border-primary)'
+              }}
+            >
+              <p className="font-bold mb-2">
+                💡 {language === 'zh' 
+                  ? `当前最晚日期：${latestDate ? format(new Date(latestDate), 'yyyy年MM月dd日') : '无'}`
+                  : `Current latest date: ${latestDate ? format(new Date(latestDate), 'MMMM dd, yyyy') : 'None'}`}
+              </p>
+              <p className="font-bold text-sm" style={{ color: 'var(--text-secondary)' }}>
+                {language === 'zh' 
+                  ? '适用于项目延期等场景，可添加到更远的日期'
+                  : 'Suitable for project delays, add tasks to later dates'}
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block font-black uppercase mb-2">
+                {t('common_date')}
+              </label>
+              <input
+                type="date"
+                value={selectedLaterDate}
+                onChange={(e) => setSelectedLaterDate(e.target.value)}
+                className="w-full px-3 py-2 font-bold"
+                style={{
+                  border: '3px solid var(--border-primary)',
+                  backgroundColor: 'var(--bg-primary)'
+                }}
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block font-black uppercase mb-2">
+                {t('calendar_task_content_label')}
+              </label>
+              <textarea
+                value={laterTaskInput}
+                onChange={(e) => setLaterTaskInput(e.target.value)}
+                placeholder={t('calendar_task_placeholder')}
+                rows={3}
+                className="w-full px-3 py-2 font-bold resize-none"
+                style={{
+                  border: '3px solid var(--border-primary)',
+                  backgroundColor: 'var(--bg-primary)'
+                }}
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowAddLaterForm(false);
+                  setLaterTaskInput('');
+                  setSelectedLaterDate('');
+                }}
+                disabled={isAddingTask}
+                className="flex-1 py-3 font-black uppercase"
+                style={{
+                  backgroundColor: 'var(--bg-primary)',
+                  border: '3px solid var(--border-primary)'
+                }}
+              >
+                {t('common_cancel')}
+              </button>
+              <button
+                onClick={handleAddLaterTask}
+                disabled={!laterTaskInput.trim() || !selectedLaterDate || isAddingTask}
+                className="flex-1 py-3 font-black uppercase flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: 'var(--color-cyan)',
+                  border: '3px solid var(--border-primary)',
+                  boxShadow: '3px 3px 0px var(--border-primary)',
+                  opacity: (!laterTaskInput.trim() || !selectedLaterDate || isAddingTask) ? 0.5 : 1
                 }}
               >
                 {isAddingTask ? (

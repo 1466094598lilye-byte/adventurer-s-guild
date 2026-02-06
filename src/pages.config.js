@@ -54,6 +54,9 @@ import Treasures from './pages/Treasures';
 import LongTermCalendarPage from './pages/LongTermCalendarPage';
 import LongTermProjectPage from './pages/LongTermProjectPage';
 import CraftingPage from './pages/CraftingPage';
+import Calendar from './pages/Calendar';
+import LongTermProject from './pages/LongTermProject';
+import Crafting from './pages/Crafting';
 import __Layout from './Layout.jsx';
 
 
@@ -65,6 +68,9 @@ export const PAGES = {
     "LongTermCalendarPage": LongTermCalendarPage,
     "LongTermProjectPage": LongTermProjectPage,
     "CraftingPage": CraftingPage,
+    "Calendar": Calendar,
+    "LongTermProject": LongTermProject,
+    "Crafting": Crafting,
 }
 
 export const pagesConfig = {

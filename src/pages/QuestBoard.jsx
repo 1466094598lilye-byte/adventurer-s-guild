@@ -182,7 +182,6 @@ export default function QuestBoard() {
   const { data: quests = [], isLoading } = useQuery({
     queryKey: ['quests', today],
     enabled: !!user || user === null,
-    staleTime: 0,
     cacheTime: 0,
     queryFn: async () => {
       // 访客模式：从 localStorage 读取

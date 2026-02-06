@@ -161,6 +161,29 @@ export default function Calendar() {
     setIsAddingTask(false);
   };
 
+  const handleDeleteQuest = async (questId) => {
+    try {
+      let user = null;
+      try {
+        user = await base44.auth.me();
+      } catch {
+        // 访客模式
+      }
+
+      if (!user) {
+        deleteGuestEntity('quests', questId);
+      } else {
+        await base44.entities.Quest.delete(questId);
+      }
+
+      await playSound('projectDeleted');
+      queryClient.invalidateQueries(['quests']);
+    } catch (error) {
+      console.error('删除任务失败:', error);
+      alert(language === 'zh' ? '删除失败，请重试' : 'Delete failed, please retry');
+    }
+  };
+
   const handleDeleteAll = async () => {
     if (isDeleting) return;
 
@@ -342,34 +365,6 @@ export default function Calendar() {
           </div>
         ) : (
           <>
-            <button
-              onClick={() => setShowAddLaterForm(true)}
-              className="w-full mb-4 py-3 font-black uppercase flex items-center justify-center gap-2"
-              style={{
-                backgroundColor: 'var(--color-cyan)',
-                border: '4px solid var(--border-primary)',
-                boxShadow: '5px 5px 0px var(--border-primary)'
-              }}
-            >
-              <Plus className="w-5 h-5" strokeWidth={3} />
-              {language === 'zh' ? '📅 添加更晚日期任务' : '📅 Add Task to Later Date'}
-            </button>
-
-            {longTermQuests.length > 0 && (
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="w-full mb-4 py-3 font-black uppercase flex items-center justify-center gap-2"
-                style={{
-                  backgroundColor: 'var(--color-orange)',
-                  color: 'var(--text-inverse)',
-                  border: '4px solid var(--border-primary)',
-                  boxShadow: '5px 5px 0px var(--border-primary)'
-                }}
-              >
-                <Trash2 className="w-5 h-5" strokeWidth={3} />
-                {t('calendar_delete_all')}
-              </button>
-            )}
 
             <div className="space-y-4">
               {sortedDates.map(dateStr => {
@@ -441,13 +436,27 @@ export default function Calendar() {
                                   border: '3px solid var(--border-primary)'
                                 }}
                               >
-                                <p className="font-black mb-1">{quest.title}</p>
-                                <p className="font-bold text-sm" style={{ color: 'var(--text-secondary)' }}>
-                                  {quest.actionHint}
-                                </p>
-                                <p className="font-bold text-sm mt-2">
-                                  {quest.status === 'done' ? t('calendar_status_done') : t('calendar_status_pending')}
-                                </p>
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1">
+                                    <p className="font-black mb-1">{quest.title}</p>
+                                    <p className="font-bold text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                      {quest.actionHint}
+                                    </p>
+                                    <p className="font-bold text-sm mt-2">
+                                      {quest.status === 'done' ? t('calendar_status_done') : t('calendar_status_pending')}
+                                    </p>
+                                  </div>
+                                  <button
+                                    onClick={() => handleDeleteQuest(quest.id)}
+                                    className="p-2 flex-shrink-0"
+                                    style={{
+                                      backgroundColor: 'var(--color-orange)',
+                                      border: '2px solid var(--border-primary)'
+                                    }}
+                                  >
+                                    <Trash2 className="w-4 h-4" strokeWidth={3} style={{ color: 'var(--text-inverse)' }} />
+                                  </button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -458,6 +467,33 @@ export default function Calendar() {
                 );
               })}
             </div>
+
+            <button
+              onClick={() => setShowAddLaterForm(true)}
+              className="w-full mt-4 mb-4 py-3 font-black uppercase flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: 'var(--color-cyan)',
+                border: '4px solid var(--border-primary)',
+                boxShadow: '5px 5px 0px var(--border-primary)'
+              }}
+            >
+              <Plus className="w-5 h-5" strokeWidth={3} />
+              {language === 'zh' ? '📅 添加更晚日期任务' : '📅 Add Task to Later Date'}
+            </button>
+
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="w-full mb-4 py-3 font-black uppercase flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: 'var(--color-orange)',
+                color: 'var(--text-inverse)',
+                border: '4px solid var(--border-primary)',
+                boxShadow: '5px 5px 0px var(--border-primary)'
+              }}
+            >
+              <Trash2 className="w-5 h-5" strokeWidth={3} />
+              {t('calendar_delete_all')}
+            </button>
           </>
         )}
       </div>

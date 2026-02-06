@@ -177,6 +177,19 @@ export function LanguageProvider({ children }) {
       profile_logout: '退出登录',
       profile_restore_streak: '🔧 恢复连胜数据',
       
+      // Streak Recovery Dialog
+      streak_recovery_title: '恢复连胜数据',
+      streak_recovery_current_label: '当前连胜',
+      streak_recovery_longest_label: '最长连胜',
+      streak_recovery_tokens_label: '补偿冻结券',
+      streak_recovery_confirm: '确认恢复',
+      streak_recovery_restoring: '恢复中...',
+      streak_recovery_empty_error: '请输入连胜数据',
+      streak_recovery_invalid_error: '请输入有效的数字',
+      streak_recovery_logic_error: '当前连胜不能大于最长连胜',
+      streak_recovery_success: '✅ 连胜数据已恢复',
+      streak_recovery_failed: '❌ 恢复失败，请重试',
+      
       // Praise Dialog
       praise_title: '协会表彰',
       praise_guild_reviewing: '协会正在审阅你的委托报告...',
@@ -468,6 +481,19 @@ questboard_toast_quest_added_rest_canceled: 'Quest added, rest day automatically
       profile_chest_counter: 'Current Progress',
       profile_logout: 'Logout',
       profile_restore_streak: '🔧 Restore Streak Data',
+      
+      // Streak Recovery Dialog
+      streak_recovery_title: 'Restore Streak Data',
+      streak_recovery_current_label: 'Current Streak',
+      streak_recovery_longest_label: 'Longest Streak',
+      streak_recovery_tokens_label: 'Compensation Tokens',
+      streak_recovery_confirm: 'Confirm Restore',
+      streak_recovery_restoring: 'Restoring...',
+      streak_recovery_empty_error: 'Please enter streak data',
+      streak_recovery_invalid_error: 'Please enter valid numbers',
+      streak_recovery_logic_error: 'Current streak cannot exceed longest streak',
+      streak_recovery_success: '✅ Streak data restored',
+      streak_recovery_failed: '❌ Restore failed, please retry',
       
       // Praise Dialog
       praise_title: 'Guild Recognition',

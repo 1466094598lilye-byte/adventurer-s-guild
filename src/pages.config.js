@@ -52,7 +52,6 @@ import Profile from './pages/Profile';
 import QuestBoard from './pages/QuestBoard';
 import Treasures from './pages/Treasures';
 import LongTermCalendarPage from './pages/LongTermCalendarPage';
-import LongTermProjectPage from './pages/LongTermProjectPage';
 import __Layout from './Layout.jsx';
 
 
@@ -62,7 +61,6 @@ export const PAGES = {
     "QuestBoard": QuestBoard,
     "Treasures": Treasures,
     "LongTermCalendarPage": LongTermCalendarPage,
-    "LongTermProjectPage": LongTermProjectPage,
 }
 
 export const pagesConfig = {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar as CalendarIcon, Trash2, Edit2, AlertTriangle, ChevronRight, ChevronDown, Plus, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { format, parseISO, isSameDay, isValid } from 'date-fns';
@@ -7,7 +8,6 @@ import { useLanguage } from '@/components/LanguageContext';
 import { getCalendarAddTaskPrompt } from '@/components/prompts';
 import { getGuestData, setGuestData, addGuestEntity, updateGuestEntity, deleteGuestEntity } from '@/components/utils/guestData';
 import { playSound, stopSound } from '@/components/AudioManager';
-import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 
 export default function LongTermCalendarPage() {
@@ -107,6 +107,7 @@ export default function LongTermCalendarPage() {
       return finalQuests;
     } catch (error) {
       if (loadingAudio) stopSound(loadingAudio);
+      
       console.error('❌ 加载大项目任务失败:', error);
       setLoadError(error.message || '加载失败');
       setIsLoading(false);
@@ -197,7 +198,7 @@ export default function LongTermCalendarPage() {
         console.log('✅ 所有LongTermProject记录已删除');
       }
       
-      // 刷新委托板数据
+      // 使用 queryClient 刷新数据，替代 onQuestsUpdated 回调
       queryClient.invalidateQueries(['quests']);
       
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -482,759 +483,764 @@ export default function LongTermCalendarPage() {
   };
 
   return (
-    <div className="min-h-screen p-4" style={{ backgroundColor: 'var(--bg-primary)', paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}>
+    <div className="min-h-screen p-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className="max-w-2xl mx-auto">
-        {/* Header with back button */}
-        <div className="mb-6">
-          <button
-            onClick={() => navigate(-1)}
-            className="mb-4 px-4 py-2 font-black uppercase flex items-center gap-2"
-            style={{
-              backgroundColor: 'var(--color-cyan)',
-              border: '4px solid var(--border-primary)',
-              boxShadow: '4px 4px 0px var(--border-primary)'
-            }}
-          >
-            <ArrowLeft className="w-5 h-5" strokeWidth={3} />
-            {language === 'zh' ? '返回' : 'Back'}
-          </button>
+        {/* 返回按钮 */}
+        <button
+          onClick={() => navigate('/questboard')}
+          className="mb-4 px-4 py-2 font-black uppercase flex items-center gap-2"
+          style={{
+            backgroundColor: '#FFF',
+            border: '4px solid #000',
+            boxShadow: '4px 4px 0px #000'
+          }}
+        >
+          <ArrowLeft className="w-5 h-5" strokeWidth={3} />
+          {language === 'zh' ? '返回委托板' : 'Back to Quest Board'}
+        </button>
 
-          <div className="text-center">
-            <h1 className="text-3xl font-black uppercase mb-2" style={{ color: 'var(--text-primary)' }}>
+        {/* 主内容卡片 */}
+        <div
+          className="p-6"
+          style={{
+            backgroundColor: '#9B59B6',
+            border: '5px solid #000',
+            boxShadow: '12px 12px 0px #000'
+          }}
+        >
+          <div className="text-center mb-6">
+            <h2 className="text-3xl font-black uppercase text-white mb-2">
               📅 {t('calendar_title')} 📅
-            </h1>
-            <p className="font-bold" style={{ color: 'var(--text-secondary)' }}>
+            </h2>
+            <p className="font-bold text-white">
               {t('calendar_total_quests')} {longTermQuests.length} {t('calendar_epic_quests')}
             </p>
           </div>
-        </div>
 
-        {isLoading ? (
-          <div
-            className="p-8 text-center"
-            style={{
-              backgroundColor: 'var(--color-yellow)',
-              border: '4px solid var(--border-primary)'
-            }}
-          >
-            <Loader2 className="w-16 h-16 mx-auto mb-4 animate-spin" strokeWidth={3} />
-            <p className="font-black text-xl">
-              {language === 'zh' ? '加载中...' : 'Loading...'}
-            </p>
-          </div>
-        ) : loadError ? (
-          <div
-            className="p-8 text-center"
-            style={{
-              backgroundColor: 'var(--color-orange)',
-              border: '4px solid var(--border-primary)'
-            }}
-          >
-            <p className="font-black text-xl mb-2 text-white">
-              {language === 'zh' ? '加载失败' : 'Loading Failed'}
-            </p>
-            <p className="font-bold text-sm text-white mb-4">
-              {loadError}
-            </p>
-            <button
-              onClick={loadLongTermQuests}
-              className="px-4 py-2 font-black uppercase"
-              style={{
-                backgroundColor: '#FFF',
-                border: '3px solid var(--border-primary)',
-                boxShadow: '3px 3px 0px var(--border-primary)'
-              }}
-            >
-              {language === 'zh' ? '重试' : 'Retry'}
-            </button>
-          </div>
-        ) : longTermQuests.length === 0 ? (
-          <div
-            className="p-8 text-center"
-            style={{
-              backgroundColor: 'var(--color-yellow)',
-              border: '4px solid var(--border-primary)'
-            }}
-          >
-            <CalendarIcon className="w-16 h-16 mx-auto mb-4" strokeWidth={3} />
-            <p className="font-black text-xl mb-2">{t('calendar_empty_title')}</p>
-            <p className="font-bold">
-              {t('calendar_empty_hint')}
-            </p>
-          </div>
-        ) : (
-          <>
+          {isLoading ? (
             <div
-              className="mb-4 max-h-[500px] overflow-y-auto"
+              className="p-8 text-center"
               style={{
-                backgroundColor: 'var(--bg-secondary)',
-                border: '4px solid var(--border-primary)'
+                backgroundColor: '#FFE66D',
+                border: '4px solid #000'
               }}
             >
-              {sortedDates.map((date, index) => {
-                const quests = groupedByDate[date];
-                const status = getDateStatus(quests);
-                const parsedDate = parseISO(date);
-                const isToday = isValid(parsedDate) && isSameDay(parsedDate, new Date());
-                const isExpanded = expandedDates.includes(date);
+              <Loader2 className="w-16 h-16 mx-auto mb-4 animate-spin" strokeWidth={3} />
+              <p className="font-black text-xl">
+                {language === 'zh' ? '加载中...' : 'Loading...'}
+              </p>
+            </div>
+          ) : loadError ? (
+            <div
+              className="p-8 text-center"
+              style={{
+                backgroundColor: '#FF6B35',
+                border: '4px solid #000'
+              }}
+            >
+              <p className="font-black text-xl mb-2 text-white">
+                {language === 'zh' ? '加载失败' : 'Loading Failed'}
+              </p>
+              <p className="font-bold text-sm text-white mb-4">
+                {loadError}
+              </p>
+              <button
+                onClick={loadLongTermQuests}
+                className="px-4 py-2 font-black uppercase"
+                style={{
+                  backgroundColor: '#FFF',
+                  border: '3px solid #000',
+                  boxShadow: '3px 3px 0px #000'
+                }}
+              >
+                {language === 'zh' ? '重试' : 'Retry'}
+              </button>
+            </div>
+          ) : longTermQuests.length === 0 ? (
+            <div
+              className="p-8 text-center"
+              style={{
+                backgroundColor: '#FFE66D',
+                border: '4px solid #000'
+              }}
+            >
+              <CalendarIcon className="w-16 h-16 mx-auto mb-4" strokeWidth={3} />
+              <p className="font-black text-xl mb-2">{t('calendar_empty_title')}</p>
+              <p className="font-bold">
+                {t('calendar_empty_hint')}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div
+                className="mb-4 max-h-[500px] overflow-y-auto"
+                style={{
+                  backgroundColor: '#FFF',
+                  border: '4px solid #000'
+                }}
+              >
+                {sortedDates.map((date, index) => {
+                  const quests = groupedByDate[date];
+                  const status = getDateStatus(quests);
+                  const parsedDate = parseISO(date);
+                  const isToday = isValid(parsedDate) && isSameDay(parsedDate, new Date());
+                  const isExpanded = expandedDates.includes(date);
 
-                return (
-                  <div
-                    key={date}
-                    style={{
-                      borderBottom: index < sortedDates.length - 1 ? '3px solid var(--border-primary)' : 'none'
-                    }}
-                  >
-                    <button
-                      onClick={() => toggleDateExpansion(date)}
-                      className="w-full p-4 text-left transition-all"
+                  return (
+                    <div
+                      key={date}
                       style={{
-                        backgroundColor: isExpanded ? 'var(--bg-primary)' : 'transparent'
+                        borderBottom: index < sortedDates.length - 1 ? '3px solid #000' : 'none'
                       }}
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <CalendarIcon className="w-5 h-5 flex-shrink-0" strokeWidth={3} />
-                            <span className="font-black text-lg">
-                              {language === 'zh' 
-                                ? safeFormatDate(date, 'MM月dd日')
-                                : safeFormatDate(date, 'MMM dd')}
-                            </span>
-                            {isToday && (
-                              <span
-                                className="px-2 py-0.5 font-black"
+                      <button
+                        onClick={() => toggleDateExpansion(date)}
+                        className="w-full p-4 text-left transition-all hover:bg-gray-50"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <CalendarIcon className="w-5 h-5 flex-shrink-0" strokeWidth={3} />
+                              <span className="font-black text-lg">
+                                {language === 'zh' 
+                                  ? safeFormatDate(date, 'MM月dd日')
+                                  : safeFormatDate(date, 'MMM dd')}
+                              </span>
+                              {isToday && (
+                                <span
+                                  className="px-2 py-0.5 font-black"
+                                  style={{
+                                    backgroundColor: '#4ECDC4',
+                                    border: '2px solid #000',
+                                    borderRadius: '4px'
+                                  }}
+                                >
+                                  {t('calendar_today')}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <div
+                                className="px-3 py-1 font-black"
                                 style={{
-                                  backgroundColor: 'var(--color-cyan)',
-                                  border: '2px solid var(--border-primary)',
+                                  backgroundColor: status.allDone ? '#4ECDC4' : '#FFE66D',
+                                  border: '2px solid #000',
                                   borderRadius: '4px'
                                 }}
                               >
-                                {t('calendar_today')}
-                              </span>
-                            )}
+                                {status.done}/{status.total} {t('calendar_items')}
+                              </div>
+
+                              {status.allDone && (
+                                <span className="font-bold" style={{ color: '#4ECDC4' }}>
+                                  ✓ {t('calendar_completed')}
+                                </span>
+                              )}
+                            </div>
                           </div>
 
-                          <div className="flex items-center gap-3">
+                          {isExpanded ? (
+                            <ChevronDown className="w-6 h-6 flex-shrink-0" strokeWidth={3} />
+                          ) : (
+                            <ChevronRight className="w-6 h-6 flex-shrink-0" strokeWidth={3} />
+                          )}
+                        </div>
+                      </button>
+
+                      {isExpanded && (
+                        <div className="px-4 pb-4 space-y-2" style={{ backgroundColor: '#F9FAFB' }}>
+                          {quests.map((quest, i) => (
                             <div
-                              className="px-3 py-1 font-black"
+                              key={quest.id || i}
+                              className="p-3"
                               style={{
-                                backgroundColor: status.allDone ? 'var(--color-cyan)' : 'var(--color-yellow)',
-                                border: '2px solid var(--border-primary)',
-                                borderRadius: '4px'
+                                backgroundColor: '#FFF',
+                                border: '3px solid #000'
                               }}
                             >
-                              {status.done}/{status.total} {t('calendar_items')}
-                            </div>
-
-                            {status.allDone && (
-                              <span className="font-bold" style={{ color: 'var(--color-cyan)' }}>
-                                ✓ {t('calendar_completed')}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {isExpanded ? (
-                          <ChevronDown className="w-6 h-6 flex-shrink-0" strokeWidth={3} />
-                        ) : (
-                          <ChevronRight className="w-6 h-6 flex-shrink-0" strokeWidth={3} />
-                        )}
-                      </div>
-                    </button>
-
-                    {isExpanded && (
-                      <div className="px-4 pb-4 space-y-2" style={{ backgroundColor: 'var(--bg-primary)' }}>
-                        {quests.map((quest, i) => (
-                          <div
-                            key={quest.id || i}
-                            className="p-3"
-                            style={{
-                              backgroundColor: 'var(--bg-secondary)',
-                              border: '3px solid var(--border-primary)'
-                            }}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <div
-                                    className="px-2 py-0.5 font-black"
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div
+                                      className="px-2 py-0.5 font-black"
+                                      style={{
+                                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)',
+                                        color: '#FFF',
+                                        border: '2px solid #000',
+                                        textShadow: '1px 1px 0px #000'
+                                      }}
+                                    >
+                                      S
+                                    </div>
+                                    {quest.status === 'done' && (
+                                      <span className="font-bold" style={{ color: '#4ECDC4' }}>
+                                        ✓ {t('calendar_completed')}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p
+                                    className="font-black mb-1"
                                     style={{
-                                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)',
-                                      color: '#FFF',
-                                      border: '2px solid var(--border-primary)',
-                                      textShadow: '1px 1px 0px var(--border-primary)'
+                                      color: quest.status === 'done' ? '#999' : '#9B59B6',
+                                      textDecoration: quest.status === 'done' ? 'line-through' : 'none'
                                     }}
                                   >
-                                    S
-                                  </div>
-                                  {quest.status === 'done' && (
-                                    <span className="font-bold" style={{ color: 'var(--color-cyan)' }}>
-                                      ✓ {t('calendar_completed')}
-                                    </span>
-                                  )}
+                                    {quest.title}
+                                  </p>
+                                  <p
+                                    className="font-bold"
+                                    style={{ color: quest.status === 'done' ? '#999' : '#666' }}
+                                  >
+                                    {quest.actionHint}
+                                  </p>
                                 </div>
-                                <p
-                                  className="font-black mb-1"
-                                  style={{
-                                    color: quest.status === 'done' ? '#999' : '#9B59B6',
-                                    textDecoration: quest.status === 'done' ? 'line-through' : 'none'
-                                  }}
-                                >
-                                  {quest.title}
-                                </p>
-                                <p
-                                  className="font-bold"
-                                  style={{ color: quest.status === 'done' ? '#999' : 'var(--text-secondary)' }}
-                                >
-                                  {quest.actionHint}
-                                </p>
-                              </div>
-                              <div className="flex gap-1 flex-shrink-0">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingQuest(quest.id);
-                                    handleDateClick(date, quests);
-                                  }}
-                                  className="p-1.5"
-                                  style={{
-                                    backgroundColor: 'var(--color-yellow)',
-                                    border: '2px solid var(--border-primary)'
-                                  }}
-                                >
-                                  <Edit2 className="w-3 h-3" strokeWidth={3} />
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteQuest(quest.id);
-                                  }}
-                                  className="p-1.5"
-                                  style={{
-                                    backgroundColor: 'var(--color-orange)',
-                                    border: '2px solid var(--border-primary)'
-                                  }}
-                                >
-                                  <Trash2 className="w-3 h-3 text-white" strokeWidth={3} />
-                                </button>
+                                <div className="flex gap-1 flex-shrink-0">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingQuest(quest.id);
+                                      handleDateClick(date, quests);
+                                    }}
+                                    className="p-1.5"
+                                    style={{
+                                      backgroundColor: '#FFE66D',
+                                      border: '2px solid #000'
+                                    }}
+                                  >
+                                    <Edit2 className="w-3 h-3" strokeWidth={3} />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteQuest(quest.id);
+                                    }}
+                                    className="p-1.5"
+                                    style={{
+                                      backgroundColor: '#FF6B35',
+                                      border: '2px solid #000'
+                                    }}
+                                  >
+                                    <Trash2 className="w-3 h-3 text-white" strokeWidth={3} />
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
 
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAddTask(date);
-                          }}
-                          className="w-full py-2 font-bold uppercase flex items-center justify-center gap-2"
-                          style={{
-                            backgroundColor: 'var(--color-cyan)',
-                            border: '3px solid var(--border-primary)',
-                            boxShadow: '3px 3px 0px var(--border-primary)'
-                          }}
-                        >
-                          <Plus className="w-4 h-4" strokeWidth={3} />
-                          {t('calendar_add_task')}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddTask(date);
+                            }}
+                            className="w-full py-2 font-bold uppercase flex items-center justify-center gap-2"
+                            style={{
+                              backgroundColor: '#4ECDC4',
+                              border: '3px solid #000',
+                              boxShadow: '3px 3px 0px #000'
+                            }}
+                          >
+                            <Plus className="w-4 h-4" strokeWidth={3} />
+                            {t('calendar_add_task')}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
 
-            <button
-              onClick={() => setShowAddLaterForm(true)}
-              className="w-full py-3 mb-3 font-black uppercase flex items-center justify-center gap-2"
-              style={{
-                backgroundColor: 'var(--color-cyan)',
-                color: 'var(--text-primary)',
-                border: '4px solid var(--border-primary)',
-                boxShadow: '6px 6px 0px var(--border-primary)'
-              }}
-            >
-              <Plus className="w-5 h-5" strokeWidth={3} />
-              {language === 'zh' ? '添加更晚日期任务' : 'Add Task to Later Date'}
-            </button>
-
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              disabled={isDeleting}
-              className="w-full py-3 font-black uppercase flex items-center justify-center gap-2"
-              style={{
-                backgroundColor: 'var(--color-orange)',
-                color: '#FFF',
-                border: '4px solid var(--border-primary)',
-                boxShadow: '6px 6px 0px var(--border-primary)',
-                opacity: isDeleting ? 0.5 : 1
-              }}
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" strokeWidth={3} />
-                  {language === 'zh' ? '工会成员正在擦除委托板...' : 'Guild members erasing quest board...'}
-                </>
-              ) : (
-                <>
-                  <Trash2 className="w-5 h-5" strokeWidth={3} />
-                  {t('calendar_delete_all')}
-                </>
-              )}
-            </button>
-          </>
-        )}
-
-        {/* Date Detail Dialog */}
-        {showDateDetail && selectedDate && isValid(selectedDate) && (
-          <div
-            className="fixed inset-0 z-60 flex items-center justify-center p-4"
-            style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
-            onClick={() => {
-              setShowDateDetail(false);
-              setEditingQuest(null);
-            }}
-          >
-            <div
-              className="relative max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto"
-              style={{
-                backgroundColor: 'var(--color-cyan)',
-                border: '5px solid var(--border-primary)',
-                boxShadow: '12px 12px 0px var(--border-primary)'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
               <button
-                onClick={() => {
-                  setShowDateDetail(false);
-                  setEditingQuest(null);
-                }}
-                className="absolute -top-4 -right-4 w-12 h-12 flex items-center justify-center"
+                onClick={() => setShowAddLaterForm(true)}
+                className="w-full py-3 mb-3 font-black uppercase flex items-center justify-center gap-2"
                 style={{
-                  backgroundColor: 'var(--color-orange)',
-                  border: '4px solid var(--border-primary)',
-                  boxShadow: '5px 5px 0px var(--border-primary)'
+                  backgroundColor: '#4ECDC4',
+                  color: '#000',
+                  border: '4px solid #000',
+                  boxShadow: '6px 6px 0px #000'
                 }}
               >
-                <X className="w-7 h-7" strokeWidth={4} />
+                <Plus className="w-5 h-5" strokeWidth={3} />
+                {language === 'zh' ? '添加更晚日期任务' : 'Add Task to Later Date'}
               </button>
 
-              <h3 className="text-2xl font-black uppercase text-center mb-4">
-                📅 {language === 'zh' 
-                  ? format(selectedDate, 'MM月dd日') 
-                  : format(selectedDate, 'MMM dd')} {t('calendar_date_tasks')}
-              </h3>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isDeleting}
+                className="w-full py-3 font-black uppercase flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: '#FF6B35',
+                  color: '#FFF',
+                  border: '4px solid #000',
+                  boxShadow: '6px 6px 0px #000',
+                  opacity: isDeleting ? 0.5 : 1
+                }}
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" strokeWidth={3} />
+                    {language === 'zh' ? '工会成员正在擦除委托板...' : 'Guild members erasing quest board...'}
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-5 h-5" strokeWidth={3} />
+                    {t('calendar_delete_all')}
+                  </>
+                )}
+              </button>
+            </>
+          )}
 
-              <div className="space-y-3">
-                {selectedDateQuests.map((quest) => (
-                  <div
-                    key={quest.id}
-                    className="p-4"
-                    style={{
-                      backgroundColor: 'var(--bg-secondary)',
-                      border: '4px solid var(--border-primary)'
-                    }}
-                  >
-                    {editingQuest === quest.id ? (
-                      <div className="space-y-3">
-                        <input
-                          type="text"
-                          defaultValue={quest.actionHint}
-                          onBlur={(e) => {
-                            if (e.target.value.trim()) {
-                              handleEditQuest(quest, e.target.value.trim());
-                            } else {
-                              setEditingQuest(null);
-                            }
-                          }}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              e.target.blur();
-                            }
-                          }}
-                          autoFocus
-                          className="w-full px-3 py-2 font-bold"
-                          style={{ border: '3px solid var(--border-primary)' }}
-                        />
-                        <button
-                          onClick={() => setEditingQuest(null)}
-                          className="text-sm font-bold underline"
-                        >
-                          {t('common_cancel')}
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div
-                                className="px-2 py-1 text-base font-black"
+          {/* Date Detail Dialog */}
+          {showDateDetail && selectedDate && isValid(selectedDate) && (
+            <div
+              className="fixed inset-0 z-60 flex items-center justify-center p-4"
+              style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
+              onClick={() => {
+                setShowDateDetail(false);
+                setEditingQuest(null);
+              }}
+            >
+              <div
+                className="relative max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto"
+                style={{
+                  backgroundColor: '#4ECDC4',
+                  border: '5px solid #000',
+                  boxShadow: '12px 12px 0px #000'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => {
+                    setShowDateDetail(false);
+                    setEditingQuest(null);
+                  }}
+                  className="absolute -top-4 -right-4 w-12 h-12 flex items-center justify-center"
+                  style={{
+                    backgroundColor: '#FF6B35',
+                    border: '4px solid #000',
+                    boxShadow: '5px 5px 0px #000'
+                  }}
+                >
+                  <X className="w-7 h-7" strokeWidth={4} />
+                </button>
+
+                <h3 className="text-2xl font-black uppercase text-center mb-4">
+                  📅 {language === 'zh' 
+                    ? format(selectedDate, 'MM月dd日') 
+                    : format(selectedDate, 'MMM dd')} {t('calendar_date_tasks')}
+                </h3>
+
+                <div className="space-y-3">
+                  {selectedDateQuests.map((quest) => (
+                    <div
+                      key={quest.id}
+                      className="p-4"
+                      style={{
+                        backgroundColor: '#FFF',
+                        border: '4px solid #000'
+                      }}
+                    >
+                      {editingQuest === quest.id ? (
+                        <div className="space-y-3">
+                          <input
+                            type="text"
+                            defaultValue={quest.actionHint}
+                            onBlur={(e) => {
+                              if (e.target.value.trim()) {
+                                handleEditQuest(quest, e.target.value.trim());
+                              } else {
+                                setEditingQuest(null);
+                              }
+                            }}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                e.target.blur();
+                              }
+                            }}
+                            autoFocus
+                            className="w-full px-3 py-2 font-bold"
+                            style={{ border: '3px solid #000' }}
+                          />
+                          <button
+                            onClick={() => setEditingQuest(null)}
+                            className="text-sm font-bold underline"
+                          >
+                            {t('common_cancel')}
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div
+                                  className="px-2 py-1 text-base font-black"
+                                  style={{
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)',
+                                    color: '#FFF',
+                                    border: '2px solid #000',
+                                    textShadow: '1px 1px 0px #000'
+                                  }}
+                                >
+                                  S
+                                </div>
+                              </div>
+                              <p className="font-black mb-1 text-purple-800">
+                                {quest.title}
+                              </p>
+                              <p className="font-bold text-gray-600">
+                                {quest.actionHint}
+                              </p>
+                              <p className="font-bold mt-2" style={{ color: '#999' }}>
+                                {t('calendar_status')}：{quest.status === 'done' ? t('calendar_status_done') : t('calendar_status_pending')}
+                              </p>
+                            </div>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => setEditingQuest(quest.id)}
+                                className="p-2"
                                 style={{
-                                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)',
-                                  color: '#FFF',
-                                  border: '2px solid var(--border-primary)',
-                                  textShadow: '1px 1px 0px var(--border-primary)'
+                                  backgroundColor: '#FFE66D',
+                                  border: '3px solid #000'
                                 }}
                               >
-                                S
-                              </div>
+                                <Edit2 className="w-4 h-4" strokeWidth={3} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteQuest(quest.id)}
+                                className="p-2"
+                                style={{
+                                  backgroundColor: '#FF6B35',
+                                  border: '3px solid #000'
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4 text-white" strokeWidth={3} />
+                              </button>
                             </div>
-                            <p className="font-black mb-1 text-purple-800">
-                              {quest.title}
-                            </p>
-                            <p className="font-bold text-gray-600">
-                              {quest.actionHint}
-                            </p>
-                            <p className="font-bold mt-2" style={{ color: '#999' }}>
-                              {t('calendar_status')}：{quest.status === 'done' ? t('calendar_status_done') : t('calendar_status_pending')}
-                            </p>
                           </div>
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => setEditingQuest(quest.id)}
-                              className="p-2"
-                              style={{
-                                backgroundColor: 'var(--color-yellow)',
-                                border: '3px solid var(--border-primary)'
-                              }}
-                            >
-                              <Edit2 className="w-4 h-4" strokeWidth={3} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteQuest(quest.id)}
-                              className="p-2"
-                              style={{
-                                backgroundColor: 'var(--color-orange)',
-                                border: '3px solid var(--border-primary)'
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4 text-white" strokeWidth={3} />
-                            </button>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Add Task Form Dialog */}
-        {showAddForm && addingToDate && (
-          <div
-            className="fixed inset-0 z-60 flex items-center justify-center p-4"
-            style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
-            onClick={() => {
-              setShowAddForm(false);
-              setNewTaskInput('');
-              setAddingToDate(null);
-            }}
-          >
+          {/* Add Task Form */}
+          {showAddForm && addingToDate && (
             <div
-              className="relative max-w-md w-full p-6"
-              style={{
-                backgroundColor: 'var(--color-cyan)',
-                border: '5px solid var(--border-primary)',
-                boxShadow: '12px 12px 0px var(--border-primary)'
+              className="fixed inset-0 z-60 flex items-center justify-center p-4"
+              style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
+              onClick={() => {
+                setShowAddForm(false);
+                setNewTaskInput('');
+                setAddingToDate(null);
               }}
-              onClick={(e) => e.stopPropagation()}
             >
-              <button
-                onClick={() => {
-                  setShowAddForm(false);
-                  setNewTaskInput('');
-                  setAddingToDate(null);
-                }}
-                className="absolute -top-4 -right-4 w-12 h-12 flex items-center justify-center"
-                style={{
-                  backgroundColor: 'var(--color-orange)',
-                  border: '4px solid var(--border-primary)',
-                  boxShadow: '5px 5px 0px var(--border-primary)'
-                }}
-              >
-                <X className="w-7 h-7" strokeWidth={4} />
-              </button>
-
-              <h3 className="text-2xl font-black uppercase text-center mb-4">
-                {t('calendar_add_task_title')}
-              </h3>
-
               <div
-                className="mb-4 p-3"
+                className="relative max-w-md w-full p-6"
                 style={{
-                  backgroundColor: 'var(--color-yellow)',
-                  border: '3px solid var(--border-primary)'
+                  backgroundColor: '#4ECDC4',
+                  border: '5px solid #000',
+                  boxShadow: '12px 12px 0px #000'
                 }}
+                onClick={(e) => e.stopPropagation()}
               >
-                <p className="font-bold">
-                  📅 {t('common_date')}：{language === 'zh' 
-                    ? safeFormatDate(addingToDate, 'yyyy年MM月dd日')
-                    : safeFormatDate(addingToDate, 'MMMM dd, yyyy')}
-                </p>
-              </div>
-
-              <div className="mb-4">
-                <label className="block font-black uppercase mb-2">
-                  {t('calendar_task_content_label')}
-                </label>
-                <textarea
-                  value={newTaskInput}
-                  onChange={(e) => setNewTaskInput(e.target.value)}
-                  placeholder={t('calendar_task_placeholder')}
-                  rows={3}
-                  className="w-full px-3 py-2 font-bold resize-none"
-                  style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    border: '3px solid var(--border-primary)'
-                  }}
-                />
-              </div>
-
-              <div className="flex gap-3">
                 <button
                   onClick={() => {
                     setShowAddForm(false);
                     setNewTaskInput('');
                     setAddingToDate(null);
                   }}
-                  disabled={isProcessing}
-                  className="flex-1 py-3 font-black uppercase"
+                  className="absolute -top-4 -right-4 w-12 h-12 flex items-center justify-center"
                   style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    border: '4px solid var(--border-primary)',
-                    boxShadow: '4px 4px 0px var(--border-primary)',
-                    opacity: isProcessing ? 0.5 : 1
+                    backgroundColor: '#FF6B35',
+                    border: '4px solid #000',
+                    boxShadow: '5px 5px 0px #000'
                   }}
                 >
-                  {t('common_cancel')}
+                  <X className="w-7 h-7" strokeWidth={4} />
                 </button>
-                <button
-                  onClick={handleSaveNewTask}
-                  disabled={!newTaskInput.trim() || isProcessing}
-                  className="flex-1 py-3 font-black uppercase"
+
+                <h3 className="text-2xl font-black uppercase text-center mb-4">
+                  {t('calendar_add_task_title')}
+                </h3>
+
+                <div
+                  className="mb-4 p-3"
                   style={{
-                    backgroundColor: 'var(--color-yellow)',
-                    border: '4px solid var(--border-primary)',
-                    boxShadow: '4px 4px 0px var(--border-primary)',
-                    opacity: (!newTaskInput.trim() || isProcessing) ? 0.5 : 1
+                    backgroundColor: '#FFE66D',
+                    border: '3px solid #000'
                   }}
                 >
-                  {isProcessing ? t('calendar_adding') : t('calendar_confirm_add')}
-                </button>
+                  <p className="font-bold">
+                    📅 {t('common_date')}：{language === 'zh' 
+                      ? safeFormatDate(addingToDate, 'yyyy年MM月dd日')
+                      : safeFormatDate(addingToDate, 'MMMM dd, yyyy')}
+                  </p>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block font-black uppercase mb-2">
+                    {t('calendar_task_content_label')}
+                  </label>
+                  <textarea
+                    value={newTaskInput}
+                    onChange={(e) => setNewTaskInput(e.target.value)}
+                    placeholder={t('calendar_task_placeholder')}
+                    rows={3}
+                    className="w-full px-3 py-2 font-bold resize-none"
+                    style={{
+                      backgroundColor: '#FFF',
+                      border: '3px solid #000'
+                    }}
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowAddForm(false);
+                      setNewTaskInput('');
+                      setAddingToDate(null);
+                    }}
+                    disabled={isProcessing}
+                    className="flex-1 py-3 font-black uppercase"
+                    style={{
+                      backgroundColor: '#FFF',
+                      border: '4px solid #000',
+                      boxShadow: '4px 4px 0px #000',
+                      opacity: isProcessing ? 0.5 : 1
+                    }}
+                  >
+                    {t('common_cancel')}
+                  </button>
+                  <button
+                    onClick={handleSaveNewTask}
+                    disabled={!newTaskInput.trim() || isProcessing}
+                    className="flex-1 py-3 font-black uppercase"
+                    style={{
+                      backgroundColor: '#FFE66D',
+                      border: '4px solid #000',
+                      boxShadow: '4px 4px 0px #000',
+                      opacity: (!newTaskInput.trim() || isProcessing) ? 0.5 : 1
+                    }}
+                  >
+                    {isProcessing ? t('calendar_adding') : t('calendar_confirm_add')}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Add Later Task Form Dialog */}
-        {showAddLaterForm && (
-          <div
-            className="fixed inset-0 z-60 flex items-center justify-center p-4"
-            style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
-            onClick={() => {
-              setShowAddLaterForm(false);
-              setLaterTaskInput('');
-              setSelectedLaterDate('');
-            }}
-          >
+          {/* Add Later Task Form */}
+          {showAddLaterForm && (
             <div
-              className="relative max-w-md w-full p-6"
-              style={{
-                backgroundColor: 'var(--color-cyan)',
-                border: '5px solid var(--border-primary)',
-                boxShadow: '12px 12px 0px var(--border-primary)'
+              className="fixed inset-0 z-60 flex items-center justify-center p-4"
+              style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
+              onClick={() => {
+                setShowAddLaterForm(false);
+                setLaterTaskInput('');
+                setSelectedLaterDate('');
               }}
-              onClick={(e) => e.stopPropagation()}
             >
-              <button
-                onClick={() => {
-                  setShowAddLaterForm(false);
-                  setLaterTaskInput('');
-                  setSelectedLaterDate('');
-                }}
-                className="absolute -top-4 -right-4 w-12 h-12 flex items-center justify-center"
-                style={{
-                  backgroundColor: 'var(--color-orange)',
-                  border: '4px solid var(--border-primary)',
-                  boxShadow: '5px 5px 0px var(--border-primary)'
-                }}
-              >
-                <X className="w-7 h-7" strokeWidth={4} />
-              </button>
-
-              <h3 className="text-2xl font-black uppercase text-center mb-4">
-                {language === 'zh' ? '📅 添加更晚日期任务 📅' : '📅 Add Task to Later Date 📅'}
-              </h3>
-
               <div
-                className="mb-4 p-3"
+                className="relative max-w-md w-full p-6"
                 style={{
-                  backgroundColor: 'var(--color-yellow)',
-                  border: '3px solid var(--border-primary)'
+                  backgroundColor: '#4ECDC4',
+                  border: '5px solid #000',
+                  boxShadow: '12px 12px 0px #000'
                 }}
+                onClick={(e) => e.stopPropagation()}
               >
-                <p className="font-bold mb-2">
-                  💡 {language === 'zh' 
-                    ? `当前最晚日期：${latestDate ? safeFormatDate(latestDate, 'yyyy年MM月dd日') : '无'}`
-                    : `Current latest date: ${latestDate ? safeFormatDate(latestDate, 'MMMM dd, yyyy') : 'None'}`}
-                </p>
-                <p className="font-bold" style={{ color: '#666' }}>
-                  {language === 'zh' 
-                    ? '适用于项目延期等场景，可添加到更远的日期'
-                    : 'Suitable for project delays, add tasks to later dates'}
-                </p>
-              </div>
-
-              <div className="mb-4">
-                <label className="block font-black uppercase mb-2">
-                  {t('common_date')}
-                </label>
-                <input
-                  type="date"
-                  value={selectedLaterDate}
-                  onChange={(e) => setSelectedLaterDate(e.target.value)}
-                  className="w-full px-3 py-2 font-bold"
-                  style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    border: '3px solid var(--border-primary)'
-                  }}
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="block font-black uppercase mb-2">
-                  {t('calendar_task_content_label')}
-                </label>
-                <textarea
-                  value={laterTaskInput}
-                  onChange={(e) => setLaterTaskInput(e.target.value)}
-                  placeholder={t('calendar_task_placeholder')}
-                  rows={3}
-                  className="w-full px-3 py-2 font-bold resize-none"
-                  style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    border: '3px solid var(--border-primary)'
-                  }}
-                />
-              </div>
-
-              <div className="flex gap-3">
                 <button
                   onClick={() => {
                     setShowAddLaterForm(false);
                     setLaterTaskInput('');
                     setSelectedLaterDate('');
                   }}
-                  disabled={isProcessing}
-                  className="flex-1 py-3 font-black uppercase"
+                  className="absolute -top-4 -right-4 w-12 h-12 flex items-center justify-center"
                   style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    border: '4px solid var(--border-primary)',
-                    boxShadow: '4px 4px 0px var(--border-primary)',
-                    opacity: isProcessing ? 0.5 : 1
+                    backgroundColor: '#FF6B35',
+                    border: '4px solid #000',
+                    boxShadow: '5px 5px 0px #000'
                   }}
                 >
-                  {t('common_cancel')}
+                  <X className="w-7 h-7" strokeWidth={4} />
                 </button>
-                <button
-                  onClick={handleAddLaterTask}
-                  disabled={!laterTaskInput.trim() || !selectedLaterDate || isProcessing}
-                  className="flex-1 py-3 font-black uppercase"
-                  style={{
-                    backgroundColor: 'var(--color-yellow)',
-                    border: '4px solid var(--border-primary)',
-                    boxShadow: '4px 4px 0px var(--border-primary)',
-                    opacity: (!laterTaskInput.trim() || !selectedLaterDate || isProcessing) ? 0.5 : 1
-                  }}
-                >
-                  {isProcessing ? t('calendar_adding') : t('calendar_confirm_add')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Delete Confirmation Dialog */}
-        {showDeleteConfirm && (
-          <div
-            className="fixed inset-0 z-60 flex items-center justify-center p-4"
-            style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
-            onClick={() => !isDeleting && setShowDeleteConfirm(false)}
-          >
-            <div
-              className="relative max-w-md w-full p-6"
-              style={{
-                backgroundColor: 'var(--color-orange)',
-                border: '5px solid var(--border-primary)',
-                boxShadow: '12px 12px 0px var(--border-primary)'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="text-center">
-                <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-white" strokeWidth={3} />
-
-                <h3 className="text-2xl font-black uppercase text-white mb-4">
-                  {t('calendar_confirm_delete_title')}
+                <h3 className="text-2xl font-black uppercase text-center mb-4">
+                  {language === 'zh' ? '📅 添加更晚日期任务 📅' : '📅 Add Task to Later Date 📅'}
                 </h3>
 
                 <div
-                  className="mb-6 p-4 text-left"
+                  className="mb-4 p-3"
                   style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    border: '3px solid var(--border-primary)'
+                    backgroundColor: '#FFE66D',
+                    border: '3px solid #000'
                   }}
                 >
                   <p className="font-bold mb-2">
-                    {t('calendar_delete_warning')} {longTermQuests.length} {language === 'zh' ? '项大项目任务' : 'long-term project tasks'}
+                    💡 {language === 'zh' 
+                      ? `当前最晚日期：${latestDate ? safeFormatDate(latestDate, 'yyyy年MM月dd日') : '无'}`
+                      : `Current latest date: ${latestDate ? safeFormatDate(latestDate, 'MMMM dd, yyyy') : 'None'}`}
                   </p>
-                  <p className="font-bold" style={{ color: '#C44569' }}>
-                    {t('calendar_delete_cannot_undo')}
+                  <p className="font-bold" style={{ color: '#666' }}>
+                    {language === 'zh' 
+                      ? '适用于项目延期等场景，可添加到更远的日期'
+                      : 'Suitable for project delays, add tasks to later dates'}
                   </p>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block font-black uppercase mb-2">
+                    {t('common_date')}
+                  </label>
+                  <input
+                    type="date"
+                    value={selectedLaterDate}
+                    onChange={(e) => setSelectedLaterDate(e.target.value)}
+                    className="w-full px-3 py-2 font-bold"
+                    style={{
+                      backgroundColor: '#FFF',
+                      border: '3px solid #000'
+                    }}
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block font-black uppercase mb-2">
+                    {t('calendar_task_content_label')}
+                  </label>
+                  <textarea
+                    value={laterTaskInput}
+                    onChange={(e) => setLaterTaskInput(e.target.value)}
+                    placeholder={t('calendar_task_placeholder')}
+                    rows={3}
+                    className="w-full px-3 py-2 font-bold resize-none"
+                    style={{
+                      backgroundColor: '#FFF',
+                      border: '3px solid #000'
+                    }}
+                  />
                 </div>
 
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setShowDeleteConfirm(false)}
-                    disabled={isDeleting}
+                    onClick={() => {
+                      setShowAddLaterForm(false);
+                      setLaterTaskInput('');
+                      setSelectedLaterDate('');
+                    }}
+                    disabled={isProcessing}
                     className="flex-1 py-3 font-black uppercase"
                     style={{
-                      backgroundColor: 'var(--bg-secondary)',
-                      border: '4px solid var(--border-primary)',
-                      boxShadow: '4px 4px 0px var(--border-primary)',
-                      opacity: isDeleting ? 0.5 : 1
+                      backgroundColor: '#FFF',
+                      border: '4px solid #000',
+                      boxShadow: '4px 4px 0px #000',
+                      opacity: isProcessing ? 0.5 : 1
                     }}
                   >
                     {t('common_cancel')}
                   </button>
                   <button
-                    onClick={handleDeleteAllProjects}
-                    disabled={isDeleting}
-                    className="flex-1 py-3 font-black uppercase text-white flex items-center justify-center gap-2"
+                    onClick={handleAddLaterTask}
+                    disabled={!laterTaskInput.trim() || !selectedLaterDate || isProcessing}
+                    className="flex-1 py-3 font-black uppercase"
                     style={{
-                      backgroundColor: '#000',
-                      border: '4px solid #FFF',
-                      boxShadow: '4px 4px 0px #FFF',
-                      opacity: isDeleting ? 0.5 : 1
+                      backgroundColor: '#FFE66D',
+                      border: '4px solid #000',
+                      boxShadow: '4px 4px 0px #000',
+                      opacity: (!laterTaskInput.trim() || !selectedLaterDate || isProcessing) ? 0.5 : 1
                     }}
                   >
-                    {isDeleting ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" strokeWidth={3} />
-                        {language === 'zh' ? '擦除中...' : 'Erasing...'}
-                      </>
-                    ) : (
-                      t('common_confirm')
-                    )}
+                    {isProcessing ? t('calendar_adding') : t('calendar_confirm_add')}
                   </button>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Delete Confirm Dialog */}
+          {showDeleteConfirm && (
+            <div
+              className="fixed inset-0 z-60 flex items-center justify-center p-4"
+              style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
+              onClick={() => !isDeleting && setShowDeleteConfirm(false)}
+            >
+              <div
+                className="relative max-w-md w-full p-6"
+                style={{
+                  backgroundColor: '#FF6B35',
+                  border: '5px solid #000',
+                  boxShadow: '12px 12px 0px #000'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="text-center">
+                  <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-white" strokeWidth={3} />
+
+                  <h3 className="text-2xl font-black uppercase text-white mb-4">
+                    {t('calendar_confirm_delete_title')}
+                  </h3>
+
+                  <div
+                    className="mb-6 p-4 text-left"
+                    style={{
+                      backgroundColor: '#FFF',
+                      border: '3px solid #000'
+                    }}
+                  >
+                    <p className="font-bold mb-2">
+                      {t('calendar_delete_warning')} {longTermQuests.length} {language === 'zh' ? '项大项目任务' : 'long-term project tasks'}
+                    </p>
+                    <p className="font-bold" style={{ color: '#C44569' }}>
+                      {t('calendar_delete_cannot_undo')}
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowDeleteConfirm(false)}
+                      disabled={isDeleting}
+                      className="flex-1 py-3 font-black uppercase"
+                      style={{
+                        backgroundColor: '#FFF',
+                        border: '4px solid #000',
+                        boxShadow: '4px 4px 0px #000',
+                        opacity: isDeleting ? 0.5 : 1
+                      }}
+                    >
+                      {t('common_cancel')}
+                    </button>
+                    <button
+                      onClick={handleDeleteAllProjects}
+                      disabled={isDeleting}
+                      className="flex-1 py-3 font-black uppercase text-white flex items-center justify-center gap-2"
+                      style={{
+                        backgroundColor: '#000',
+                        border: '4px solid #FFF',
+                        boxShadow: '4px 4px 0px #FFF',
+                        opacity: isDeleting ? 0.5 : 1
+                      }}
+                    >
+                      {isDeleting ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" strokeWidth={3} />
+                          {language === 'zh' ? '擦除中...' : 'Erasing...'}
+                        </>
+                      ) : (
+                        t('common_confirm')
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

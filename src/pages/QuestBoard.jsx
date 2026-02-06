@@ -10,6 +10,7 @@ import EndOfDaySummaryAndPlanning from '../components/quest/EndOfDaySummaryAndPl
 import JointPraiseDialog from '../components/quest/JointPraiseDialog';
 import StreakBreakDialog from '../components/streak/StreakBreakDialog';
 import BootstrapModeDialog from '../components/quest/BootstrapModeDialog';
+import CalendarModal from '../components/CalendarModal';
 import { format, subDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +47,7 @@ export default function QuestBoard() {
   const [isAddingDeepRest, setIsAddingDeepRest] = useState(false);
   const [fromChestOpen, setFromChestOpen] = useState(false);
   const [rolloverLoadingSeconds, setRolloverLoadingSeconds] = useState(0);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [pullStartY, setPullStartY] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
@@ -2214,7 +2216,7 @@ export default function QuestBoard() {
                     : 'Cannot view calendar in guest mode (login required)');
                   return;
                 }
-                navigate('/calendar');
+                setShowCalendarModal(true);
               }}
               disabled={isLoadingLongTermQuests || !user}
               className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3 text-white"
@@ -2466,6 +2468,12 @@ export default function QuestBoard() {
             isAdding={isAddingDeepRest}
           />
         )}
+
+        {/* Calendar Modal */}
+        <CalendarModal
+          isOpen={showCalendarModal}
+          onClose={() => setShowCalendarModal(false)}
+        />
 
         {milestoneReward && (
           <div 

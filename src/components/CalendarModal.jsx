@@ -1,16 +1,14 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Calendar as CalendarIcon, Trash2, Plus, ChevronDown, ChevronUp, Loader2, X } from 'lucide-react';
+import { X, Calendar as CalendarIcon, Trash2, Plus, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { format, isSameDay, startOfDay } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { useLanguage } from '@/components/LanguageContext';
 import { getCalendarAddTaskPrompt } from '@/components/prompts';
 import { playSound, stopSound } from '@/components/AudioManager';
 import { getGuestData, addGuestEntity, deleteGuestEntity } from '@/components/utils/guestData';
-import { useNavigate } from 'react-router-dom';
 
-export default function Calendar() {
-  const navigate = useNavigate();
+export default function CalendarModal({ isOpen, onClose }) {
   const queryClient = useQueryClient();
   const { language, t } = useLanguage();
   
@@ -79,7 +77,7 @@ export default function Calendar() {
       }
     },
     staleTime: 30000,
-    enabled: user !== undefined
+    enabled: user !== undefined && isOpen
   });
 
   const longTermQuests = quests.filter(q => q.isLongTermProject);
@@ -151,6 +149,7 @@ export default function Calendar() {
 
       await playSound('projectAdded');
       queryClient.invalidateQueries(['quests']);
+      queryClient.invalidateQueries(['hasLongTermQuests']);
       setShowAddTaskModal(false);
       setNewTaskInput('');
     } catch (error) {
@@ -178,6 +177,7 @@ export default function Calendar() {
 
       await playSound('projectDeleted');
       queryClient.invalidateQueries(['quests']);
+      queryClient.invalidateQueries(['hasLongTermQuests']);
     } catch (error) {
       console.error('删除任务失败:', error);
       alert(language === 'zh' ? '删除失败，请重试' : 'Delete failed, please retry');
@@ -213,6 +213,7 @@ export default function Calendar() {
       await playSound('projectDeleted');
 
       queryClient.invalidateQueries(['quests']);
+      queryClient.invalidateQueries(['hasLongTermQuests']);
       setShowDeleteConfirm(false);
     } catch (error) {
       if (loadingAudio) stopSound(loadingAudio);
@@ -276,6 +277,7 @@ export default function Calendar() {
 
       await playSound('projectAdded');
       queryClient.invalidateQueries(['quests']);
+      queryClient.invalidateQueries(['hasLongTermQuests']);
       setShowAddLaterForm(false);
       setLaterTaskInput('');
       setSelectedLaterDate('');
@@ -300,208 +302,222 @@ export default function Calendar() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-primary)' }}>
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    );
-  }
+  if (!isOpen) return null;
 
   return (
-    <div className="min-h-screen p-4 pb-24" style={{ backgroundColor: 'var(--bg-primary)' }}>
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <button
-            onClick={() => navigate('/questboard')}
-            className="mb-4 px-4 py-2 font-black uppercase flex items-center gap-2"
-            style={{
-              backgroundColor: 'var(--color-cyan)',
-              border: '4px solid var(--border-primary)',
-              boxShadow: '4px 4px 0px var(--border-primary)'
-            }}
-          >
-            <ArrowLeft className="w-5 h-5" strokeWidth={3} />
-            {language === 'zh' ? '返回委托板' : 'Back to Quest Board'}
-          </button>
-
-          <div className="text-center">
-            <h1 className="text-3xl font-black uppercase mb-2">{t('calendar_title')}</h1>
-            <p className="font-bold" style={{ color: 'var(--text-secondary)' }}>
+    <>
+      {/* Modal Backdrop */}
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}
+        onClick={onClose}
+      >
+        {/* Modal Content */}
+        <div
+          className="w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+          style={{
+            backgroundColor: 'var(--bg-primary)',
+            border: '5px solid var(--border-primary)',
+            boxShadow: '10px 10px 0px var(--border-primary)'
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="sticky top-0 z-10 p-4" style={{ backgroundColor: 'var(--bg-primary)', borderBottom: '4px solid var(--border-primary)' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-2xl font-black uppercase">{t('calendar_title')}</h1>
+              <button
+                onClick={onClose}
+                className="p-2 font-black"
+                style={{
+                  backgroundColor: 'var(--color-orange)',
+                  border: '3px solid var(--border-primary)',
+                  boxShadow: '3px 3px 0px var(--border-primary)'
+                }}
+              >
+                <X className="w-6 h-6" strokeWidth={3} style={{ color: 'var(--text-inverse)' }} />
+              </button>
+            </div>
+            <p className="font-bold text-center" style={{ color: 'var(--text-secondary)' }}>
               {t('calendar_total_quests')} {longTermQuests.length} {t('calendar_epic_quests')}
             </p>
           </div>
-        </div>
 
-        {!user && (
-          <div 
-            className="mb-4 p-3 animate-pulse"
-            style={{
-              backgroundColor: 'var(--color-yellow)',
-              border: '3px solid var(--border-primary)'
-            }}
-          >
-            <p className="font-black text-center" style={{ color: 'var(--text-primary)' }}>
-              ⚠️ {language === 'zh' 
-                ? '游客模式：刷新页面后数据会丢失，建议登录保存' 
-                : 'Guest Mode: Data will be lost on refresh, please login to save'}
-            </p>
-          </div>
-        )}
+          {/* Content */}
+          <div className="p-4">
+            {!user && (
+              <div 
+                className="mb-4 p-3 animate-pulse"
+                style={{
+                  backgroundColor: 'var(--color-yellow)',
+                  border: '3px solid var(--border-primary)'
+                }}
+              >
+                <p className="font-black text-center" style={{ color: 'var(--text-primary)' }}>
+                  ⚠️ {language === 'zh' 
+                    ? '游客模式：刷新页面后数据会丢失，建议登录保存' 
+                    : 'Guest Mode: Data will be lost on refresh, please login to save'}
+                </p>
+              </div>
+            )}
 
-        {longTermQuests.length === 0 ? (
-          <div
-            className="p-8 text-center"
-            style={{
-              backgroundColor: 'var(--bg-secondary)',
-              border: '5px solid var(--border-primary)',
-              boxShadow: '8px 8px 0px var(--border-primary)'
-            }}
-          >
-            <CalendarIcon className="w-16 h-16 mx-auto mb-4" strokeWidth={3} style={{ color: 'var(--text-secondary)' }} />
-            <h3 className="text-xl font-black uppercase mb-2">{t('calendar_empty_title')}</h3>
-            <p className="font-bold" style={{ color: 'var(--text-secondary)' }}>{t('calendar_empty_hint')}</p>
-          </div>
-        ) : (
-          <>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin" />
+              </div>
+            ) : longTermQuests.length === 0 ? (
+              <div
+                className="p-8 text-center"
+                style={{
+                  backgroundColor: 'var(--bg-secondary)',
+                  border: '5px solid var(--border-primary)',
+                  boxShadow: '8px 8px 0px var(--border-primary)'
+                }}
+              >
+                <CalendarIcon className="w-16 h-16 mx-auto mb-4" strokeWidth={3} style={{ color: 'var(--text-secondary)' }} />
+                <h3 className="text-xl font-black uppercase mb-2">{t('calendar_empty_title')}</h3>
+                <p className="font-bold" style={{ color: 'var(--text-secondary)' }}>{t('calendar_empty_hint')}</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  {sortedDates.map(dateStr => {
+                    const tasksForDate = questsByDate[dateStr];
+                    const completedCount = tasksForDate.filter(q => q.status === 'done').length;
+                    const isExpanded = selectedDate && format(selectedDate, 'yyyy-MM-dd') === dateStr;
 
-            <div className="space-y-4">
-              {sortedDates.map(dateStr => {
-                const tasksForDate = questsByDate[dateStr];
-                const completedCount = tasksForDate.filter(q => q.status === 'done').length;
-                const isExpanded = selectedDate && format(selectedDate, 'yyyy-MM-dd') === dateStr;
-
-                return (
-                  <div
-                    key={dateStr}
-                    style={{
-                      backgroundColor: isToday(dateStr) ? 'var(--color-yellow)' : 'var(--bg-secondary)',
-                      border: '5px solid var(--border-primary)',
-                      boxShadow: '6px 6px 0px var(--border-primary)'
-                    }}
-                  >
-                    <div
-                      className="p-4 cursor-pointer"
-                      onClick={() => setSelectedDate(isExpanded ? null : new Date(dateStr))}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <CalendarIcon className="w-6 h-6" strokeWidth={3} />
-                          <div>
-                            <p className="font-black text-lg">
-                              {formatDateDisplay(dateStr)}
-                              {isToday(dateStr) && (
-                                <span className="ml-2 px-2 py-1 text-sm" style={{ backgroundColor: 'var(--color-orange)', color: 'var(--text-inverse)' }}>
-                                  {t('calendar_today')}
-                                </span>
-                              )}
-                            </p>
-                            <p className="font-bold text-sm" style={{ color: 'var(--text-secondary)' }}>
-                              {t('calendar_completed')} {completedCount}/{tasksForDate.length} {t('calendar_items')}
-                            </p>
+                    return (
+                      <div
+                        key={dateStr}
+                        style={{
+                          backgroundColor: isToday(dateStr) ? 'var(--color-yellow)' : 'var(--bg-secondary)',
+                          border: '5px solid var(--border-primary)',
+                          boxShadow: '6px 6px 0px var(--border-primary)'
+                        }}
+                      >
+                        <div
+                          className="p-4 cursor-pointer"
+                          onClick={() => setSelectedDate(isExpanded ? null : new Date(dateStr))}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <CalendarIcon className="w-6 h-6" strokeWidth={3} />
+                              <div>
+                                <p className="font-black text-lg">
+                                  {formatDateDisplay(dateStr)}
+                                  {isToday(dateStr) && (
+                                    <span className="ml-2 px-2 py-1 text-sm" style={{ backgroundColor: 'var(--color-orange)', color: 'var(--text-inverse)' }}>
+                                      {t('calendar_today')}
+                                    </span>
+                                  )}
+                                </p>
+                                <p className="font-bold text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                  {t('calendar_completed')} {completedCount}/{tasksForDate.length} {t('calendar_items')}
+                                </p>
+                              </div>
+                            </div>
+                            {isExpanded ? (
+                              <ChevronUp className="w-6 h-6" strokeWidth={3} />
+                            ) : (
+                              <ChevronDown className="w-6 h-6" strokeWidth={3} />
+                            )}
                           </div>
                         </div>
-                        {isExpanded ? (
-                          <ChevronUp className="w-6 h-6" strokeWidth={3} />
-                        ) : (
-                          <ChevronDown className="w-6 h-6" strokeWidth={3} />
-                        )}
-                      </div>
-                    </div>
 
-                    {isExpanded && (
-                      <div style={{ borderTop: '4px solid var(--border-primary)', backgroundColor: 'var(--bg-primary)' }}>
-                        <div className="p-4">
-                          <button
-                            onClick={() => setShowAddTaskModal(true)}
-                            className="w-full mb-4 py-3 font-black uppercase flex items-center justify-center gap-2"
-                            style={{
-                              backgroundColor: 'var(--color-cyan)',
-                              border: '3px solid var(--border-primary)',
-                              boxShadow: '3px 3px 0px var(--border-primary)'
-                            }}
-                          >
-                            <Plus className="w-5 h-5" strokeWidth={3} />
-                            {t('calendar_add_task')}
-                          </button>
-
-                          <div className="space-y-3">
-                            {tasksForDate.map(quest => (
-                              <div
-                                key={quest.id}
-                                className="p-3"
+                        {isExpanded && (
+                          <div style={{ borderTop: '4px solid var(--border-primary)', backgroundColor: 'var(--bg-primary)' }}>
+                            <div className="p-4">
+                              <button
+                                onClick={() => setShowAddTaskModal(true)}
+                                className="w-full mb-4 py-3 font-black uppercase flex items-center justify-center gap-2"
                                 style={{
-                                  backgroundColor: 'var(--bg-secondary)',
-                                  border: '3px solid var(--border-primary)'
+                                  backgroundColor: 'var(--color-cyan)',
+                                  border: '3px solid var(--border-primary)',
+                                  boxShadow: '3px 3px 0px var(--border-primary)'
                                 }}
                               >
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="flex-1">
-                                    <p className="font-black mb-1">{quest.title}</p>
-                                    <p className="font-bold text-sm" style={{ color: 'var(--text-secondary)' }}>
-                                      {quest.actionHint}
-                                    </p>
-                                    <p className="font-bold text-sm mt-2">
-                                      {quest.status === 'done' ? t('calendar_status_done') : t('calendar_status_pending')}
-                                    </p>
-                                  </div>
-                                  <button
-                                    onClick={() => handleDeleteQuest(quest.id)}
-                                    className="p-2 flex-shrink-0"
+                                <Plus className="w-5 h-5" strokeWidth={3} />
+                                {t('calendar_add_task')}
+                              </button>
+
+                              <div className="space-y-3">
+                                {tasksForDate.map(quest => (
+                                  <div
+                                    key={quest.id}
+                                    className="p-3"
                                     style={{
-                                      backgroundColor: 'var(--color-orange)',
-                                      border: '2px solid var(--border-primary)'
+                                      backgroundColor: 'var(--bg-secondary)',
+                                      border: '3px solid var(--border-primary)'
                                     }}
                                   >
-                                    <Trash2 className="w-4 h-4" strokeWidth={3} style={{ color: 'var(--text-inverse)' }} />
-                                  </button>
-                                </div>
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1">
+                                        <p className="font-black mb-1">{quest.title}</p>
+                                        <p className="font-bold text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                          {quest.actionHint}
+                                        </p>
+                                        <p className="font-bold text-sm mt-2">
+                                          {quest.status === 'done' ? t('calendar_status_done') : t('calendar_status_pending')}
+                                        </p>
+                                      </div>
+                                      <button
+                                        onClick={() => handleDeleteQuest(quest.id)}
+                                        className="p-2 flex-shrink-0"
+                                        style={{
+                                          backgroundColor: 'var(--color-orange)',
+                                          border: '2px solid var(--border-primary)'
+                                        }}
+                                      >
+                                        <Trash2 className="w-4 h-4" strokeWidth={3} style={{ color: 'var(--text-inverse)' }} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
 
-            <button
-              onClick={() => setShowAddLaterForm(true)}
-              className="w-full mt-4 mb-4 py-3 font-black uppercase flex items-center justify-center gap-2"
-              style={{
-                backgroundColor: 'var(--color-cyan)',
-                border: '4px solid var(--border-primary)',
-                boxShadow: '5px 5px 0px var(--border-primary)'
-              }}
-            >
-              <Plus className="w-5 h-5" strokeWidth={3} />
-              {language === 'zh' ? '📅 添加更晚日期任务' : '📅 Add Task to Later Date'}
-            </button>
+                <button
+                  onClick={() => setShowAddLaterForm(true)}
+                  className="w-full mt-4 mb-4 py-3 font-black uppercase flex items-center justify-center gap-2"
+                  style={{
+                    backgroundColor: 'var(--color-cyan)',
+                    border: '4px solid var(--border-primary)',
+                    boxShadow: '5px 5px 0px var(--border-primary)'
+                  }}
+                >
+                  <Plus className="w-5 h-5" strokeWidth={3} />
+                  {language === 'zh' ? '📅 添加更晚日期任务' : '📅 Add Task to Later Date'}
+                </button>
 
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="w-full mb-4 py-3 font-black uppercase flex items-center justify-center gap-2"
-              style={{
-                backgroundColor: 'var(--color-orange)',
-                color: 'var(--text-inverse)',
-                border: '4px solid var(--border-primary)',
-                boxShadow: '5px 5px 0px var(--border-primary)'
-              }}
-            >
-              <Trash2 className="w-5 h-5" strokeWidth={3} />
-              {t('calendar_delete_all')}
-            </button>
-          </>
-        )}
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="w-full mb-4 py-3 font-black uppercase flex items-center justify-center gap-2"
+                  style={{
+                    backgroundColor: 'var(--color-orange)',
+                    color: 'var(--text-inverse)',
+                    border: '4px solid var(--border-primary)',
+                    boxShadow: '5px 5px 0px var(--border-primary)'
+                  }}
+                >
+                  <Trash2 className="w-5 h-5" strokeWidth={3} />
+                  {t('calendar_delete_all')}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Add Task Modal */}
       {showAddTaskModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
           style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
           onClick={() => setShowAddTaskModal(false)}
         >
@@ -574,7 +590,7 @@ export default function Calendar() {
       {/* Add Later Task Form */}
       {showAddLaterForm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
           style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
           onClick={() => {
             setShowAddLaterForm(false);
@@ -691,7 +707,7 @@ export default function Calendar() {
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
           style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
           onClick={() => setShowDeleteConfirm(false)}
         >
@@ -750,6 +766,6 @@ export default function Calendar() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

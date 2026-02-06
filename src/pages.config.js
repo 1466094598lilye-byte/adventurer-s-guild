@@ -54,7 +54,6 @@ import LongTermProjectPage from './pages/LongTermProjectPage';
 import Profile from './pages/Profile';
 import QuestBoard from './pages/QuestBoard';
 import Treasures from './pages/Treasures';
-import calendar from './pages/calendar';
 import crafting from './pages/crafting';
 import longTermProject from './pages/long-term-project';
 import __Layout from './Layout.jsx';
@@ -68,7 +67,6 @@ export const PAGES = {
     "Profile": Profile,
     "QuestBoard": QuestBoard,
     "Treasures": Treasures,
-    "calendar": calendar,
     "crafting": crafting,
     "long-term-project": longTermProject,
 }

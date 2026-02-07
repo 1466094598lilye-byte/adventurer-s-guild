@@ -193,7 +193,7 @@ export default function TreasuresPage() {
               className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3 text-white"
             >
               <Snowflake className="w-7 h-7" strokeWidth={3} />
-              {language === 'zh' ? '🎁 传说宝物兑换冻结券 🎁' : '🎁 Exchange Legendary for Freeze Token 🎁'}
+              {language === 'zh' ? ' 传说宝物兑换冻结券 ' : ' Exchange Legendary for Freeze Token '}
             </button>
             <p className="text-center text-sm font-bold mt-3 text-white">
               {language === 'zh' 

@@ -981,10 +981,11 @@ export default function QuestBoard() {
       // 🔧 标记开始执行
       isRolloverRunningRef.current = true;
 
-      console.log('=== 开始执行日更逻辑 (Initial Check) ===');
+      try {
+        console.log('=== 开始执行日更逻辑 (Initial Check) ===');
 
-      // 步骤 0：检查昨天是否有未完成任务，处理连胜中断
-      console.log('=== 步骤 0: 检查连胜中断 ===');
+        // 步骤 0：检查昨天是否有未完成任务，处理连胜中断
+        console.log('=== 步骤 0: 检查连胜中断 ===');
       const restDays = currentUser?.restDays || [];
       const lastClearDate = currentUser?.lastClearDate;
 

@@ -982,7 +982,8 @@ export default function QuestBoard() {
       await base44.auth.updateMe({
         lastRolloverCompletedDate: today
       });
-      console.log('✅ 已在服务端标记日更开始（防止跨设备重复）');
+      markRolloverComplete(currentUser.id);
+      console.log('✅ 已在服务端和本地提前标记日更完成（防止跨设备/跨标签页重复）');
 
       // 🔧 标记开始执行
       isRolloverRunningRef.current = true;

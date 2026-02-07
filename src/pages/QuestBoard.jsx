@@ -931,6 +931,7 @@ export default function QuestBoard() {
         // 发生错误时也要关闭加载状态和并发锁
         setIsDayRolloverInProgress(false);
         isRolloverRunningRef.current = false;
+        releaseLock(currentUser.id);
         }
         };
 

@@ -1208,6 +1208,30 @@ export default function QuestBoard() {
       console.log('任务创建成功');
       return result;
     },
+    onMutate: async (newQuest) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['quests', today] });
+
+      // Snapshot previous value
+      const previousQuests = queryClient.getQueryData(['quests', today]);
+
+      // Optimistically update
+      queryClient.setQueryData(['quests', today], (old = []) => [
+        ...old,
+        {
+          ...newQuest,
+          id: `temp_${Date.now()}`,
+          created_date: new Date().toISOString(),
+          updated_date: new Date().toISOString(),
+          created_by: user?.email || 'guest'
+        }
+      ]);
+
+      return { previousQuests };
+    },
+    onError: (err, newQuest, context) => {
+      queryClient.setQueryData(['quests', today], context.previousQuests);
+    },
     onSuccess: async () => {
       batchInvalidateQueries(['quests', 'user']);
 
@@ -1259,6 +1283,24 @@ export default function QuestBoard() {
       }
 
       return base44.entities.Quest.update(id, updateData);
+    },
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['quests', today] });
+
+      const previousQuests = queryClient.getQueryData(['quests', today]);
+
+      queryClient.setQueryData(['quests', today], (old = []) =>
+        old.map(quest => 
+          quest.id === id 
+            ? { ...quest, ...data, updated_date: new Date().toISOString() }
+            : quest
+        )
+      );
+
+      return { previousQuests };
+    },
+    onError: (err, variables, context) => {
+      queryClient.setQueryData(['quests', today], context.previousQuests);
     },
     onSuccess: () => {
       batchInvalidateQueries(['quests']);
@@ -2048,6 +2090,7 @@ export default function QuestBoard() {
                   setTimeout(() => setToast(null), 2000);
                 }
               }}
+              aria-label={language === 'zh' ? '打开每日宝箱' : 'Open daily chest'}
               className="flex-shrink-0 flex items-center justify-center font-black overflow-visible"
               style={{
                 width: '64px',
@@ -2058,7 +2101,7 @@ export default function QuestBoard() {
                 opacity: canOpenChest ? 1 : 0.6
               }}
             >
-              <Gift className="w-16 h-16" strokeWidth={3} style={{ color: '#FFF', width: '48px', height: '48px' }} />
+              <Gift className="w-16 h-16" strokeWidth={3} aria-hidden="true" style={{ color: '#FFF', width: '48px', height: '48px' }} />
             </Button>
 
             <Input
@@ -2084,6 +2127,7 @@ export default function QuestBoard() {
             <Button
               onClick={handleTextSubmit}
               disabled={isProcessing || !textInput.trim()}
+              aria-label={language === 'zh' ? '添加任务' : 'Add quest'}
               className="flex-shrink-0 w-16 h-16 flex items-center justify-center font-black"
               style={{
                 backgroundColor: 'var(--color-pink)',
@@ -2093,15 +2137,16 @@ export default function QuestBoard() {
               }}
             >
               {isProcessing ? (
-                <Loader2 className="w-12 h-12 animate-spin" style={{ color: '#FFF' }} />
+                <Loader2 className="w-12 h-12 animate-spin" aria-hidden="true" style={{ color: '#FFF' }} />
               ) : (
-                <Sparkles className="w-14 h-14" strokeWidth={3} style={{ color: '#FFF', fill: 'none' }} />
+                <Sparkles className="w-14 h-14" strokeWidth={3} aria-hidden="true" style={{ color: '#FFF', fill: 'none' }} />
               )}
             </Button>
           </div>
 
           <Button
             onClick={() => navigate('/long-term-project')}
+            aria-label={t('questboard_longterm_btn')}
             className="w-full py-3 font-black uppercase flex items-center justify-center gap-2"
             style={{
               backgroundColor: '#9B59B6',
@@ -2110,7 +2155,7 @@ export default function QuestBoard() {
               boxShadow: '5px 5px 0px var(--border-primary)'
             }}
           >
-            <Briefcase className="w-5 h-5" strokeWidth={3} />
+            <Briefcase className="w-5 h-5" strokeWidth={3} aria-hidden="true" />
             {t('questboard_longterm_btn')}
           </Button>
           

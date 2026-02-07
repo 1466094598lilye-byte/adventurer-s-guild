@@ -2,18 +2,22 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Scroll, BookOpen, Gem, User, LogIn } from "lucide-react";
 import { LanguageProvider, useLanguage } from "@/components/LanguageContext";
+import { ScrollPositionProvider, useScrollPosition } from "@/components/ScrollPositionProvider";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { initAudioManager } from "@/components/AudioManager";
 import TermsAndPrivacyDialog from "@/components/TermsAndPrivacyDialog";
+import { AnimatePresence, motion } from "framer-motion";
 
 function LayoutContent({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { t, language } = useLanguage();
+  const { saveScrollPosition, restoreScrollPosition } = useScrollPosition();
   const [showTerms, setShowTerms] = useState(false);
+  const [direction, setDirection] = useState(0);
 
   // 初始化音频系统
   useEffect(() => {
@@ -40,15 +44,24 @@ function LayoutContent({ children }) {
   });
 
   const tabs = [
-    { name: 'QuestBoard', label: t('nav_questboard'), icon: Scroll },
-    { name: 'Journal', label: t('nav_journal'), icon: BookOpen },
-    { name: 'Treasures', label: t('nav_treasures'), icon: Gem },
-    { name: 'Profile', label: t('nav_profile'), icon: User }
+    { name: 'QuestBoard', label: t('nav_questboard'), icon: Scroll, index: 0 },
+    { name: 'Journal', label: t('nav_journal'), icon: BookOpen, index: 1 },
+    { name: 'Treasures', label: t('nav_treasures'), icon: Gem, index: 2 },
+    { name: 'Profile', label: t('nav_profile'), icon: User, index: 3 }
   ];
 
   const isActive = (pageName) => {
     return location.pathname === createPageUrl(pageName);
   };
+
+  const getCurrentTabIndex = () => {
+    const currentTab = tabs.find(tab => isActive(tab.name));
+    return currentTab ? currentTab.index : 0;
+  };
+
+  useEffect(() => {
+    restoreScrollPosition(location.pathname);
+  }, [location.pathname]);
 
   const handleLogin = () => {
     base44.auth.redirectToLogin(window.location.href);
@@ -125,7 +138,18 @@ function LayoutContent({ children }) {
 
         {/* Main Content */}
         <div className="flex-1 pb-20">
-          {children}
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={location.pathname}
+              custom={direction}
+              initial={{ x: direction > 0 ? '100%' : '-100%', opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: direction > 0 ? '-100%' : '100%', opacity: 0 }}
+              transition={{ type: 'tween', duration: 0.3 }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Bottom Navigation */}
@@ -151,6 +175,10 @@ function LayoutContent({ children }) {
                       e.preventDefault();
                       window.scrollTo(0, 0);
                       navigate(createPageUrl(tab.name), { replace: true });
+                    } else {
+                      saveScrollPosition(location.pathname);
+                      const currentIndex = getCurrentTabIndex();
+                      setDirection(tab.index > currentIndex ? 1 : -1);
                     }
                   }}
                   className="flex-1 py-3 flex flex-col items-center gap-1 transition-all"
@@ -163,6 +191,7 @@ function LayoutContent({ children }) {
                   <Icon 
                     className="w-6 h-6" 
                     strokeWidth={3}
+                    aria-label={tab.label}
                     style={{ color: active ? 'var(--text-primary)' : 'var(--color-yellow)' }}
                   />
                   <span 
@@ -325,7 +354,9 @@ function LayoutContent({ children }) {
 export default function Layout({ children }) {
   return (
     <LanguageProvider>
-      <LayoutContent children={children} />
+      <ScrollPositionProvider>
+        <LayoutContent children={children} />
+      </ScrollPositionProvider>
     </LanguageProvider>
   );
 }

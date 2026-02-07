@@ -174,7 +174,7 @@ export default function TreasuresPage() {
             }}
           >
             <Hammer className="w-7 h-7" strokeWidth={3} />
-            🔨 {t('crafting_title')} 🔨
+             {t('crafting_title')} 
           </button>
         </div>
 

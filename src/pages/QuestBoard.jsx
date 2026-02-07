@@ -20,6 +20,10 @@ import { getGuestData, setGuestData, addGuestEntity, updateGuestEntity, deleteGu
 import { playSound, stopSound } from '@/components/AudioManager';
 import { useNavigate } from 'react-router-dom';
 
+// 🔒 跨标签页锁常量
+const LOCK_TIMEOUT = 60000; // 60秒超时
+const getLockKey = (userId, date) => `dayRollover_lock_${userId}_${date}`;
+
 export default function QuestBoard() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState('all');

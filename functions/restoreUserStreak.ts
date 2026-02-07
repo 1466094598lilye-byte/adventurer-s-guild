@@ -40,12 +40,13 @@ Deno.serve(async (req) => {
     const yesterdayStr = yesterday.toISOString().split('T')[0];
 
     // 恢复连胜数据
-    // 固定补偿3个freeze tokens
+    // 补偿3个freeze tokens（在现有基础上增加）
     // 🔥 关键：设置 lastClearDate 为昨天，这样今天就不会触发连胜中断警告
+    const currentTokens = user.freezeTokenCount || 0;
     await base44.auth.updateMe({
       streakCount: streakCount,
       longestStreak: longestStreak,
-      freezeTokenCount: 3,
+      freezeTokenCount: currentTokens + 3,
       lastClearDate: yesterdayStr  // 设置为昨天，表示昨天已完成所有任务
     });
 

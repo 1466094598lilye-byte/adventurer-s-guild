@@ -978,6 +978,12 @@ export default function QuestBoard() {
         return;
       }
 
+      // 🔥 【关键】获取锁成功后立即在服务端标记，防止其他设备重复执行
+      await base44.auth.updateMe({
+        lastRolloverCompletedDate: today
+      });
+      console.log('✅ 已在服务端标记日更开始（防止跨设备重复）');
+
       // 🔧 标记开始执行
       isRolloverRunningRef.current = true;
 

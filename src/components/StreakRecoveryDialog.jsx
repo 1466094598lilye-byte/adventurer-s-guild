@@ -40,6 +40,7 @@ export default function StreakRecoveryDialog({ isOpen, onClose, onSuccess }) {
       });
 
       if (response.data.success) {
+        setIsRestoring(false);
         toast({ description: t('streak_recovery_success') });
         setCurrentStreak('');
         setLongestStreak('');

@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Scroll, BookOpen, Gem, User, LogIn } from "lucide-react";
 import { LanguageProvider, useLanguage } from "@/components/LanguageContext";
@@ -11,6 +11,7 @@ import TermsAndPrivacyDialog from "@/components/TermsAndPrivacyDialog";
 
 function LayoutContent({ children }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { t, language } = useLanguage();
   const [showTerms, setShowTerms] = useState(false);
 

@@ -986,107 +986,107 @@ export default function QuestBoard() {
 
         // 步骤 0：检查昨天是否有未完成任务，处理连胜中断
         console.log('=== 步骤 0: 检查连胜中断 ===');
-      const restDays = currentUser?.restDays || [];
-      const lastClearDate = currentUser?.lastClearDate;
+        const restDays = currentUser?.restDays || [];
+        const lastClearDate = currentUser?.lastClearDate;
 
-      console.log('今天日期:', today);
-      console.log('昨天日期:', yesterday);
-      console.log('上次完成日期:', lastClearDate);
-      console.log('昨天是否为休息日:', restDays.includes(yesterday));
+        console.log('今天日期:', today);
+        console.log('昨天日期:', yesterday);
+        console.log('上次完成日期:', lastClearDate);
+        console.log('昨天是否为休息日:', restDays.includes(yesterday));
 
-      // 只有在昨天不是休息日 AND 上次完成日期不是昨天 AND 今天也没完成时才检查
-      const shouldCheckForStreakBreak = !restDays.includes(yesterday) && lastClearDate !== yesterday && lastClearDate !== today;
+        // 只有在昨天不是休息日 AND 上次完成日期不是昨天 AND 今天也没完成时才检查
+        const shouldCheckForStreakBreak = !restDays.includes(yesterday) && lastClearDate !== yesterday && lastClearDate !== today;
 
-      if (shouldCheckForStreakBreak) {
-        console.log('昨天不是休息日，且上次完成日期不是昨天或今天');
+        if (shouldCheckForStreakBreak) {
+          console.log('昨天不是休息日，且上次完成日期不是昨天或今天');
 
-        const yesterdayQuests = await base44.entities.Quest.filter({ date: yesterday });
-        console.log('昨天的任务数量:', yesterdayQuests.length);
+          const yesterdayQuests = await base44.entities.Quest.filter({ date: yesterday });
+          console.log('昨天的任务数量:', yesterdayQuests.length);
 
-        if (yesterdayQuests.length > 0) {
-          const allDoneYesterday = yesterdayQuests.every(q => q.status === 'done');
-          console.log('昨天任务是否全部完成:', allDoneYesterday);
+          if (yesterdayQuests.length > 0) {
+            const allDoneYesterday = yesterdayQuests.every(q => q.status === 'done');
+            console.log('昨天任务是否全部完成:', allDoneYesterday);
 
-          if (!allDoneYesterday) {
-            console.log('昨天有未完成任务，需要处理连胜中断');
-            const currentStreak = currentUser?.streakCount || 0;
-            const freezeTokenCount = currentUser?.freezeTokenCount || 0;
+            if (!allDoneYesterday) {
+              console.log('昨天有未完成任务，需要处理连胜中断');
+              const currentStreak = currentUser?.streakCount || 0;
+              const freezeTokenCount = currentUser?.freezeTokenCount || 0;
 
-            if (currentStreak > 0) {
-              setStreakBreakInfo({
-                incompleteDays: 1,
-                currentStreak: currentStreak,
-                freezeTokenCount: freezeTokenCount
-              });
+              if (currentStreak > 0) {
+                setStreakBreakInfo({
+                  incompleteDays: 1,
+                  currentStreak: currentStreak,
+                  freezeTokenCount: freezeTokenCount
+                });
 
-              console.log('弹出连胜中断对话框，暂停其他日更逻辑');
-              setIsDayRolloverInProgress(false);
-              return;
+                console.log('弹出连胜中断对话框，暂停其他日更逻辑');
+                setIsDayRolloverInProgress(false);
+                return;
+              } else {
+                console.log('当前没有连胜（为0），无需触发连胜中断对话框');
+              }
             } else {
-              console.log('当前没有连胜（为0），无需触发连胜中断对话框');
-            }
-          } else {
-            console.log('昨天所有任务都完成了，更新连胜数据');
+              console.log('昨天所有任务都完成了，更新连胜数据');
 
-            // 🔥 昨天任务全部完成，更新连胜
-            let newStreak = 1;
-            const lastClearDate = currentUser?.lastClearDate;
-            const restDays = currentUser?.restDays || [];
+              // 🔥 昨天任务全部完成，更新连胜
+              let newStreak = 1;
+              const lastClearDate = currentUser?.lastClearDate;
+              const restDays = currentUser?.restDays || [];
 
-            if (lastClearDate) {
-              // 从前天开始往回找第一个工作日
-              let checkDate = new Date();
-              checkDate.setDate(checkDate.getDate() - 2); // 前天
+              if (lastClearDate) {
+                // 从前天开始往回找第一个工作日
+                let checkDate = new Date();
+                checkDate.setDate(checkDate.getDate() - 2); // 前天
 
-              let daysBack = 0;
-              let foundLastWorkDay = false;
+                let daysBack = 0;
+                let foundLastWorkDay = false;
 
-              while (daysBack < 365 && !foundLastWorkDay) {
-                const checkDateStr = format(checkDate, 'yyyy-MM-dd');
+                while (daysBack < 365 && !foundLastWorkDay) {
+                  const checkDateStr = format(checkDate, 'yyyy-MM-dd');
 
-                if (!restDays.includes(checkDateStr)) {
-                  if (checkDateStr === lastClearDate) {
-                    newStreak = (currentUser?.streakCount || 0) + 1;
-                    console.log('连续完成（跳过了休息日），连胜 +1，新连胜:', newStreak);
-                  } else {
-                    console.log('之前有中断，连胜重置为1');
-                    newStreak = 1;
+                  if (!restDays.includes(checkDateStr)) {
+                    if (checkDateStr === lastClearDate) {
+                      newStreak = (currentUser?.streakCount || 0) + 1;
+                      console.log('连续完成（跳过了休息日），连胜 +1，新连胜:', newStreak);
+                    } else {
+                      console.log('之前有中断，连胜重置为1');
+                      newStreak = 1;
+                    }
+                    foundLastWorkDay = true;
                   }
-                  foundLastWorkDay = true;
+
+                  daysBack++;
+                  checkDate.setDate(checkDate.getDate() - 1);
                 }
 
-                daysBack++;
-                checkDate.setDate(checkDate.getDate() - 1);
-              }
-
-              if (!foundLastWorkDay) {
-                console.log('未找到上一个工作日，连胜设为1');
+                if (!foundLastWorkDay) {
+                  console.log('未找到上一个工作日，连胜设为1');
+                  newStreak = 1;
+                }
+              } else {
+                console.log('第一次完成所有任务，连胜设为1');
                 newStreak = 1;
               }
-            } else {
-              console.log('第一次完成所有任务，连胜设为1');
-              newStreak = 1;
+
+              const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
+              console.log('新的最长连胜:', newLongestStreak);
+
+              await base44.auth.updateMe({
+                streakCount: newStreak,
+                longestStreak: newLongestStreak,
+                lastClearDate: yesterday
+              });
+              console.log('用户连胜数据已更新');
+
+              batchInvalidateQueries(['user']);
+              await checkAndAwardMilestone(newStreak);
             }
-
-            const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
-            console.log('新的最长连胜:', newLongestStreak);
-
-            await base44.auth.updateMe({
-              streakCount: newStreak,
-              longestStreak: newLongestStreak,
-              lastClearDate: yesterday
-            });
-            console.log('用户连胜数据已更新');
-
-            batchInvalidateQueries(['user']);
-            await checkAndAwardMilestone(newStreak);
+          } else {
+            console.log('昨天没有任务');
           }
         } else {
-          console.log('昨天没有任务');
+          console.log('昨天是休息日或已完成所有任务，无需检查连胜中断');
         }
-      } else {
-        console.log('昨天是休息日或已完成所有任务，无需检查连胜中断');
-      }
 
         // 立即显示加载弹窗
         setIsDayRolloverInProgress(true);

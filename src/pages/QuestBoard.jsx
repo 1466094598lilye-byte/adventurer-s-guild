@@ -97,6 +97,14 @@ export default function QuestBoard() {
       return true; // localStorage 失败时允许继续（降级处理）
     }
   };
+
+  // 🔒 释放跨标签页锁
+  const releaseLock = (userId) => {
+    try {
+      const lockKey = getLockKey(userId, today);
+      localStorage.removeItem(lockKey);
+    } catch {}
+  };
   const invalidationTimeoutRef = useRef(null);
   const rolloverTimerRef = useRef(null);
 

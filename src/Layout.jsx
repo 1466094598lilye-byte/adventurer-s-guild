@@ -142,9 +142,9 @@ function LayoutContent({ children }) {
             <motion.div
               key={location.pathname}
               custom={direction}
-              initial={{ x: direction > 0 ? '100%' : '-100%', opacity: 1, scale: 1 }}
+              initial={{ x: direction > 0 ? '100%' : '-100%', opacity: 0, scale: 0.95 }}
               animate={{ x: 0, opacity: 1, scale: 1 }}
-              exit={{ x: direction > 0 ? '-100%' : '100%', opacity: 1, scale: 1 }}
+              exit={{ x: direction > 0 ? '-100%' : '100%', opacity: 0, scale: 0.95 }}
               transition={{ type: 'tween', duration: 0.2, ease: 'easeInOut' }}
             >
               {children}

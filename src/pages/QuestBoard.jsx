@@ -18,6 +18,7 @@ import { useLanguage } from '@/components/LanguageContext';
 import { getTaskNamingPrompt, getBootstrapModePrompt } from '@/components/prompts';
 import { getGuestData, setGuestData, addGuestEntity, updateGuestEntity, deleteGuestEntity } from '@/components/utils/guestData';
 import { playSound, stopSound } from '@/components/AudioManager';
+import { isSameDate, normalizeDate, getPreviousWorkday } from '@/components/utils/dateUtils';
 import { useNavigate } from 'react-router-dom';
 
 // 🔒 跨标签页锁常量
@@ -997,7 +998,7 @@ export default function QuestBoard() {
         console.log('昨天是否为休息日:', restDays.includes(yesterday));
 
         // 只有在昨天不是休息日 AND 上次完成日期不是昨天 AND 今天也没完成时才检查
-        const shouldCheckForStreakBreak = !restDays.includes(yesterday) && lastClearDate !== yesterday && lastClearDate !== today;
+        const shouldCheckForStreakBreak = !restDays.includes(yesterday) && !isSameDate(lastClearDate, yesterday) && !isSameDate(lastClearDate, today);
 
         if (shouldCheckForStreakBreak) {
           console.log('昨天不是休息日，且上次完成日期不是昨天或今天');

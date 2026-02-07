@@ -76,6 +76,27 @@ export default function QuestBoard() {
       localStorage.setItem(getRolloverKey(userId), 'done');
     } catch {}
   };
+
+  // 🔒 获取跨标签页锁
+  const acquireLock = (userId) => {
+    try {
+      const lockKey = getLockKey(userId, today);
+      const lockData = localStorage.getItem(lockKey);
+      
+      if (lockData) {
+        const { timestamp } = JSON.parse(lockData);
+        if (Date.now() - timestamp < LOCK_TIMEOUT) {
+          return false; // 锁被其他标签页持有且未超时
+        }
+      }
+      
+      // 获取锁
+      localStorage.setItem(lockKey, JSON.stringify({ timestamp: Date.now() }));
+      return true;
+    } catch {
+      return true; // localStorage 失败时允许继续（降级处理）
+    }
+  };
   const invalidationTimeoutRef = useRef(null);
   const rolloverTimerRef = useRef(null);
 

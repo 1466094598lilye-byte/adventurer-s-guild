@@ -901,13 +901,6 @@ export default function QuestBoard() {
         // 🔧 核心任务完成后立即关闭加载弹窗
         setIsDayRolloverInProgress(false);
 
-        // 🔧 标记日更完成（服务端 + 本地）
-        await base44.auth.updateMe({
-          lastRolloverCompletedDate: today
-        });
-        markRolloverComplete(currentUser.id);
-        console.log('✅ 日更完成标记已保存（服务端 + 本地）');
-
         // 🔥 清理任务：延迟执行，不阻塞用户体验
         console.log('=== 开始异步清理任务 ===');
 

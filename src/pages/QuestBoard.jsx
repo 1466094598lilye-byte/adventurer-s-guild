@@ -1088,13 +1088,17 @@ export default function QuestBoard() {
         console.log('昨天是休息日或已完成所有任务，无需检查连胜中断');
       }
 
-      // 立即显示加载弹窗
-      setIsDayRolloverInProgress(true);
-      await executeDayRolloverLogic(currentUser, currentTodayQuests);
+        // 立即显示加载弹窗
+        setIsDayRolloverInProgress(true);
+        await executeDayRolloverLogic(currentUser, currentTodayQuests);
 
-      // 🔧 执行完成后释放并发锁
-      isRolloverRunningRef.current = false;
-      };
+      } finally {
+        // 🔧 执行完成后释放并发锁和跨标签页锁
+        isRolloverRunningRef.current = false;
+        releaseLock(currentUser.id);
+        console.log('✅ 日更锁已释放');
+      }
+    };
 
       // 🔧 无论是否有用户都执行（游客模式下会快速返回并关闭加载状态）
       if (user && quests) {

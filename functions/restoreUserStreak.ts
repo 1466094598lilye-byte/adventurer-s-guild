@@ -33,21 +33,16 @@ Deno.serve(async (req) => {
     // 获取今天的日期（格式：yyyy-MM-dd）
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
-    
-    // 获取昨天的日期
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
 
     // 恢复连胜数据
     // 补偿3个freeze tokens（在现有基础上增加）
-    // 🔥 关键：设置 lastClearDate 为昨天，这样今天就不会触发连胜中断警告
+    // 🔥 关键：设置 lastClearDate 为今天，避免明天跨天时因今天任务未完成而触发连胜中断
     const currentTokens = user.freezeTokenCount || 0;
     await base44.auth.updateMe({
       streakCount: streakCount,
       longestStreak: longestStreak,
       freezeTokenCount: currentTokens + 3,
-      lastClearDate: yesterdayStr  // 设置为昨天，表示昨天已完成所有任务
+      lastClearDate: todayStr  // 设置为今天，表示恢复连胜当天视为已完成
     });
 
     return Response.json({ 

@@ -972,6 +972,12 @@ export default function QuestBoard() {
         return;
       }
 
+      // 🔒 【跨标签页防重复】尝试获取锁
+      if (!acquireLock(currentUser.id)) {
+        console.log('⚠️ 无法获取锁（其他标签页正在执行日更），跳过');
+        return;
+      }
+
       // 🔧 标记开始执行
       isRolloverRunningRef.current = true;
 

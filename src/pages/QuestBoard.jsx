@@ -1095,7 +1095,7 @@ export default function QuestBoard() {
         await executeDayRolloverLogic(currentUser, currentTodayQuests);
 
       } finally {
-        // 🔧 执行完成后释放并发锁和跨标签页锁
+        // 🔧 执行完成后释放并发锁
         isRolloverRunningRef.current = false;
         releaseLock(currentUser.id);
         console.log('✅ 日更锁已释放');

@@ -196,9 +196,7 @@ export default function TreasuresPage() {
               {language === 'zh' ? ' 传说宝物兑换冻结券 ' : ' Exchange Legendary for Freeze Token '}
             </button>
             <p className="text-center text-sm font-bold mt-3 text-white">
-              {language === 'zh' 
-                ? `💎 你有 ${legendaryLoot.length} 个传说宝物，可用3个兑换1张冻结券` 
-                : `💎 You have ${legendaryLoot.length} Legendary items, exchange 3 for 1 Freeze Token`}
+              {t('exchange_legendary_count')} {legendaryLoot.length}
             </p>
           </div>
         )}
@@ -435,14 +433,10 @@ export default function TreasuresPage() {
                 }}
               >
                 <p className="font-bold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>
-                  {language === 'zh' 
-                    ? '📜 兑换规则：选择3个传说宝物，可兑换1张冻结券'
-                    : '📜 Exchange Rule: Select 3 Legendary items to exchange for 1 Freeze Token'}
+                  {t('exchange_ratio_hint')}
                 </p>
                 <p className="font-bold text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  {language === 'zh' 
-                    ? `✨ 已选择：${selectedLegendaries.length}/3`
-                    : `✨ Selected: ${selectedLegendaries.length}/3`}
+                  {t('exchange_selected')} {selectedLegendaries.length}/3
                 </p>
               </div>
 

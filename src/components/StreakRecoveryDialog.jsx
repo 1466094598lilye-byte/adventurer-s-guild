@@ -40,19 +40,11 @@ export default function StreakRecoveryDialog({ isOpen, onClose, onSuccess }) {
       });
 
       if (response.data.success) {
-        // Toast 会自动关闭，然后关闭对话框
-        toast({ 
-          description: t('streak_recovery_success'),
-          duration: 2000
-        });
-        
-        // 延迟关闭对话框，让用户看到成功提示
-        setTimeout(() => {
-          setCurrentStreak('');
-          setLongestStreak('');
-          onSuccess();
-          onClose();
-        }, 2000);
+        toast({ description: t('streak_recovery_success') });
+        setCurrentStreak('');
+        setLongestStreak('');
+        onSuccess();
+        onClose();
       } else {
         toast({ description: response.data.error || t('streak_recovery_failed'), variant: 'destructive' });
       }

@@ -992,13 +992,29 @@ export default function QuestBoard() {
         const restDays = currentUser?.restDays || [];
         const lastClearDate = currentUser?.lastClearDate;
 
-        console.log('今天日期:', today);
-        console.log('昨天日期:', yesterday);
-        console.log('上次完成日期:', lastClearDate);
-        console.log('昨天是否为休息日:', restDays.includes(yesterday));
+        // 🔍 详细日志：原始日期值
+        console.log('📅 原始日期值:');
+        console.log('  - today (原始):', today, typeof today);
+        console.log('  - yesterday (原始):', yesterday, typeof yesterday);
+        console.log('  - lastClearDate (原始):', lastClearDate, typeof lastClearDate);
+        
+        // 🔍 详细日志：标准化后的日期值
+        console.log('📅 标准化后的日期值:');
+        console.log('  - today (标准化):', normalizeDate(today));
+        console.log('  - yesterday (标准化):', normalizeDate(yesterday));
+        console.log('  - lastClearDate (标准化):', normalizeDate(lastClearDate));
+        
+        // 🔍 详细日志：日期比较结果
+        console.log('🔍 日期比较结果:');
+        console.log('  - isSameDate(lastClearDate, yesterday):', isSameDate(lastClearDate, yesterday));
+        console.log('  - isSameDate(lastClearDate, today):', isSameDate(lastClearDate, today));
+        console.log('  - 昨天是否为休息日:', restDays.includes(yesterday));
 
         // 只有在昨天不是休息日 AND 上次完成日期不是昨天 AND 今天也没完成时才检查
         const shouldCheckForStreakBreak = !restDays.includes(yesterday) && !isSameDate(lastClearDate, yesterday) && !isSameDate(lastClearDate, today);
+        
+        console.log('🎯 最终判断: shouldCheckForStreakBreak =', shouldCheckForStreakBreak);
+        console.log('  判断依据: 昨天不是休息日(' + !restDays.includes(yesterday) + ') AND lastClearDate不是昨天(' + !isSameDate(lastClearDate, yesterday) + ') AND lastClearDate不是今天(' + !isSameDate(lastClearDate, today) + ')');
 
         if (shouldCheckForStreakBreak) {
           console.log('昨天不是休息日，且上次完成日期不是昨天或今天');
@@ -1032,38 +1048,31 @@ export default function QuestBoard() {
               console.log('昨天所有任务都完成了，更新连胜数据');
 
               // 🔥 昨天任务全部完成，更新连胜
+              console.log('=== 开始计算连胜 ===');
               let newStreak = 1;
               const lastClearDate = currentUser?.lastClearDate;
               const restDays = currentUser?.restDays || [];
 
+              console.log('📅 连胜计算输入:');
+              console.log('  - lastClearDate (原始):', lastClearDate);
+              console.log('  - lastClearDate (标准化):', normalizeDate(lastClearDate));
+              console.log('  - 当前连胜:', currentUser?.streakCount || 0);
+              console.log('  - 休息日列表:', restDays);
+
               if (lastClearDate) {
-                // 从前天开始往回找第一个工作日
-                let checkDate = new Date();
-                checkDate.setDate(checkDate.getDate() - 2); // 前天
-
-                let daysBack = 0;
-                let foundLastWorkDay = false;
-
-                while (daysBack < 365 && !foundLastWorkDay) {
-                  const checkDateStr = format(checkDate, 'yyyy-MM-dd');
-
-                  if (!restDays.includes(checkDateStr)) {
-                    if (checkDateStr === lastClearDate) {
-                      newStreak = (currentUser?.streakCount || 0) + 1;
-                      console.log('连续完成（跳过了休息日），连胜 +1，新连胜:', newStreak);
-                    } else {
-                      console.log('之前有中断，连胜重置为1');
-                      newStreak = 1;
-                    }
-                    foundLastWorkDay = true;
-                  }
-
-                  daysBack++;
-                  checkDate.setDate(checkDate.getDate() - 1);
-                }
-
-                if (!foundLastWorkDay) {
-                  console.log('未找到上一个工作日，连胜设为1');
+                // 使用 getPreviousWorkday 获取上一个工作日
+                const previousWorkday = getPreviousWorkday(today, restDays);
+                console.log('🔍 上一个工作日 (getPreviousWorkday):', previousWorkday);
+                console.log('🔍 lastClearDate 标准化:', normalizeDate(lastClearDate));
+                
+                if (previousWorkday && isSameDate(lastClearDate, previousWorkday)) {
+                  newStreak = (currentUser?.streakCount || 0) + 1;
+                  console.log('✅ 连续完成（跳过了休息日），连胜 +1');
+                  console.log('  - 判断依据: lastClearDate(' + normalizeDate(lastClearDate) + ') === previousWorkday(' + previousWorkday + ')');
+                  console.log('  - 新连胜:', newStreak);
+                } else {
+                  console.log('❌ 之前有中断，连胜重置为1');
+                  console.log('  - 判断依据: lastClearDate(' + normalizeDate(lastClearDate) + ') !== previousWorkday(' + previousWorkday + ')');
                   newStreak = 1;
                 }
               } else {

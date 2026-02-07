@@ -281,7 +281,9 @@ export default function CraftingPage() {
             style={{
               backgroundColor: rarityColors[targetRarity].bg,
               border: '4px solid #000',
-              boxShadow: '4px 4px 0px #000'
+              boxShadow: '4px 4px 0px #000',
+              userSelect: 'text',
+              WebkitUserSelect: 'text'
             }}
           >
             <h3 

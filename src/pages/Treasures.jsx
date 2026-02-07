@@ -51,7 +51,7 @@ export default function TreasuresPage() {
 
   const exchangeMutation = useMutation({
     mutationFn: async (lootIds) => {
-      // 删除选中的2个传说宝物
+      // 删除选中的3个传说宝物
       await Promise.all(lootIds.map(id => base44.entities.Loot.delete(id)));
       
       // 增加1张冻结券
@@ -121,7 +121,7 @@ export default function TreasuresPage() {
     setSelectedLegendaries(prev => {
       if (prev.includes(lootId)) {
         return prev.filter(id => id !== lootId);
-      } else if (prev.length < 2) {
+      } else if (prev.length < 3) {
         return [...prev, lootId];
       }
       return prev;
@@ -129,7 +129,7 @@ export default function TreasuresPage() {
   };
 
   const handleExchange = () => {
-    if (selectedLegendaries.length === 2) {
+    if (selectedLegendaries.length === 3) {
       exchangeMutation.mutate(selectedLegendaries);
     }
   };
@@ -179,7 +179,7 @@ export default function TreasuresPage() {
         </div>
 
         {/* 传说宝物兑换冻结券 */}
-        {legendaryLoot.length >= 2 && user && (
+        {legendaryLoot.length >= 3 && user && (
           <div 
             className="mb-6 p-4"
             style={{
@@ -197,8 +197,8 @@ export default function TreasuresPage() {
             </button>
             <p className="text-center text-sm font-bold mt-3 text-white">
               {language === 'zh' 
-                ? `💎 你有 ${legendaryLoot.length} 个传说宝物，可用2个兑换1张冻结券` 
-                : `💎 You have ${legendaryLoot.length} Legendary items, exchange 2 for 1 Freeze Token`}
+                ? `💎 你有 ${legendaryLoot.length} 个传说宝物，可用3个兑换1张冻结券` 
+                : `💎 You have ${legendaryLoot.length} Legendary items, exchange 3 for 1 Freeze Token`}
             </p>
           </div>
         )}
@@ -436,13 +436,13 @@ export default function TreasuresPage() {
               >
                 <p className="font-bold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>
                   {language === 'zh' 
-                    ? '📜 兑换规则：选择2个传说宝物，可兑换1张冻结券'
-                    : '📜 Exchange Rule: Select 2 Legendary items to exchange for 1 Freeze Token'}
+                    ? '📜 兑换规则：选择3个传说宝物，可兑换1张冻结券'
+                    : '📜 Exchange Rule: Select 3 Legendary items to exchange for 1 Freeze Token'}
                 </p>
                 <p className="font-bold text-sm" style={{ color: 'var(--text-secondary)' }}>
                   {language === 'zh' 
-                    ? `✨ 已选择：${selectedLegendaries.length}/2`
-                    : `✨ Selected: ${selectedLegendaries.length}/2`}
+                    ? `✨ 已选择：${selectedLegendaries.length}/3`
+                    : `✨ Selected: ${selectedLegendaries.length}/3`}
                 </p>
               </div>
 
@@ -504,15 +504,15 @@ export default function TreasuresPage() {
                 </button>
                 <button
                   onClick={handleExchange}
-                  disabled={selectedLegendaries.length !== 2 || exchangeMutation.isLoading}
+                  disabled={selectedLegendaries.length !== 3 || exchangeMutation.isLoading}
                   className="flex-1 py-3 font-black uppercase flex items-center justify-center gap-2"
                   style={{
-                    backgroundColor: selectedLegendaries.length === 2 ? 'var(--color-cyan)' : '#E0E0E0',
+                    backgroundColor: selectedLegendaries.length === 3 ? 'var(--color-cyan)' : '#E0E0E0',
                     color: 'var(--text-primary)',
                     border: '4px solid var(--border-primary)',
                     boxShadow: '4px 4px 0px var(--border-primary)',
-                    opacity: selectedLegendaries.length === 2 ? 1 : 0.5,
-                    cursor: selectedLegendaries.length === 2 ? 'pointer' : 'not-allowed'
+                    opacity: selectedLegendaries.length === 3 ? 1 : 0.5,
+                    cursor: selectedLegendaries.length === 3 ? 'pointer' : 'not-allowed'
                   }}
                 >
                   <Snowflake className="w-5 h-5" strokeWidth={3} />

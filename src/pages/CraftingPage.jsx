@@ -59,7 +59,7 @@ export default function CraftingPage() {
   const recipes = {
     Rare: { from: 'Common', count: 5 },
     Epic: { from: 'Rare', count: 7 },
-    Legendary: { from: 'Epic', count: 3 }
+    Legendary: { from: 'Epic', count: 9 }
   };
 
   const allLoot = userLoot || [];

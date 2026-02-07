@@ -146,6 +146,13 @@ function LayoutContent({ children }) {
                 <Link
                   key={tab.name}
                   to={createPageUrl(tab.name)}
+                  onClick={(e) => {
+                    if (active) {
+                      e.preventDefault();
+                      window.scrollTo(0, 0);
+                      navigate(createPageUrl(tab.name), { replace: true });
+                    }
+                  }}
                   className="flex-1 py-3 flex flex-col items-center gap-1 transition-all"
                   style={{
                     backgroundColor: active ? 'var(--color-yellow)' : 'transparent',

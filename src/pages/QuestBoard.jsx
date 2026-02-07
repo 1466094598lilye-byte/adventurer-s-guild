@@ -925,6 +925,7 @@ export default function QuestBoard() {
         }, 100); // 延迟100ms执行清理任务
 
         console.log('=== 日更逻辑执行完成 ===');
+        releaseLock(currentUser.id);
         } catch (error) {
         console.error('❌ 日更逻辑执行失败:', error);
         // 发生错误时也要关闭加载状态和并发锁

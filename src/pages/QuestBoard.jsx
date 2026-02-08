@@ -1622,19 +1622,14 @@ export default function QuestBoard() {
       // 🔥 关键修复：完成所有任务时立即更新连胜（移除 setTimeout，防止应用挂起时丢失更新）
       if (user) {
         try {
-          // 🔥 安全性修复：从后端重新获取今日任务，确保检查的是最新、最完整的列表
-          console.log('检查是否所有任务都已完成...');
-          const todayQuests = await base44.entities.Quest.filter({ date: today });
-          
-          // 模拟当前任务和关联任务都已完成的状态
-          const updatedQuests = todayQuests.map(q => {
+          // 1. 本地乐观计算：模拟当前任务和关联任务都已完成的状态
+          const localUpdatedQuests = quests.map(q => {
             if (q.id === quest.id) return { ...q, status: 'done' };
             if (relatedKickstartTasks.some(kt => kt.id === q.id)) return { ...q, status: 'done' };
             return q;
           });
           
-          const allDone = updatedQuests.length > 0 && updatedQuests.every(q => q.status === 'done');
-          console.log(`今日任务总数: ${updatedQuests.length}, 全部完成: ${allDone}`);
+          const allDone = localUpdatedQuests.length > 0 && localUpdatedQuests.every(q => q.status === 'done');
           
           if (allDone) {
             console.log('🎉 所有任务完成！立即同步更新连胜');

@@ -1010,14 +1010,20 @@ export default function QuestBoard() {
         console.log('  - isSameDate(lastClearDate, today):', isSameDate(lastClearDate, today));
         console.log('  - 昨天是否为休息日:', restDays.includes(yesterday));
 
-        // 只有在昨天不是休息日 AND 上次完成日期不是昨天 AND 今天也没完成时才检查
-        const shouldCheckForStreakBreak = !restDays.includes(yesterday) && !isSameDate(lastClearDate, yesterday) && !isSameDate(lastClearDate, today);
+        // 🔥 修复判断逻辑：只检查是否需要处理"连胜中断"
+        // 如果 lastClearDate === today，说明今天已经完成了任务并更新了连胜，无需任何操作
+        // 如果 lastClearDate === yesterday，说明昨天完成了任务，也无需操作
+        // 只有当 lastClearDate < yesterday（昨天没完成）且不是休息日时，才需要检查中断
         
-        console.log('🎯 最终判断: shouldCheckForStreakBreak =', shouldCheckForStreakBreak);
-        console.log('  判断依据: 昨天不是休息日(' + !restDays.includes(yesterday) + ') AND lastClearDate不是昨天(' + !isSameDate(lastClearDate, yesterday) + ') AND lastClearDate不是今天(' + !isSameDate(lastClearDate, today) + ')');
-
-        if (shouldCheckForStreakBreak) {
-          console.log('昨天不是休息日，且上次完成日期不是昨天或今天');
+        if (isSameDate(lastClearDate, today)) {
+          console.log('✅ lastClearDate === today，说明今天已经完成任务并更新了连胜，跳过');
+          // 继续执行后续的日更逻辑（明日规划、routine 任务等）
+        } else if (isSameDate(lastClearDate, yesterday)) {
+          console.log('✅ lastClearDate === yesterday，说明昨天完成任务并更新了连胜，跳过');
+          // 继续执行后续的日更逻辑
+        } else if (!restDays.includes(yesterday)) {
+          // lastClearDate < yesterday 且昨天不是休息日 → 检查是否需要处理连胜中断
+          console.log('⚠️ lastClearDate 不是昨天/今天，且昨天不是休息日 → 检查连胜中断');
 
           const yesterdayQuests = await base44.entities.Quest.filter({ date: yesterday });
           console.log('昨天的任务数量:', yesterdayQuests.length);
@@ -1027,7 +1033,7 @@ export default function QuestBoard() {
             console.log('昨天任务是否全部完成:', allDoneYesterday);
 
             if (!allDoneYesterday) {
-              console.log('昨天有未完成任务，需要处理连胜中断');
+              console.log('❌ 昨天有未完成任务，需要处理连胜中断');
               const currentStreak = currentUser?.streakCount || 0;
               const freezeTokenCount = currentUser?.freezeTokenCount || 0;
 
@@ -1041,45 +1047,15 @@ export default function QuestBoard() {
                 console.log('弹出连胜中断对话框，暂停其他日更逻辑');
                 setIsDayRolloverInProgress(false);
                 return;
-              } else {
-                console.log('当前没有连胜（为0），无需触发连胜中断对话框');
               }
             } else {
-              // 🔥 修复：昨天任务全部完成，但 lastClearDate 不是昨天
-              // 说明昨天完成任务后没有立即更新连胜（可能是老代码的遗留问题）
-              // 这里补救性地更新连胜，但正常情况下应该在完成任务时就更新了
-              console.log('⚠️ 昨天任务全部完成但 lastClearDate 不正确，补救性更新连胜');
-              
-              let newStreak = 1;
-              const lastClearDate = currentUser?.lastClearDate;
-              const restDays = currentUser?.restDays || [];
-
-              if (lastClearDate) {
-                const previousWorkday = getPreviousWorkday(yesterday, restDays);
-                if (previousWorkday && isSameDate(lastClearDate, previousWorkday)) {
-                  newStreak = (currentUser?.streakCount || 0) + 1;
-                  console.log('✅ 连续完成，连胜 +1');
-                } else {
-                  console.log('❌ 之前有中断，连胜重置为1');
-                }
-              }
-
-              const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
-
-              await base44.auth.updateMe({
-                streakCount: newStreak,
-                longestStreak: newLongestStreak,
-                lastClearDate: yesterday
-              });
-
-              batchInvalidateQueries(['user']);
-              await checkAndAwardMilestone(newStreak);
+              console.log('⚠️ 昨天任务全部完成但 lastClearDate 异常，补救性更新');
             }
           } else {
             console.log('昨天没有任务');
           }
         } else {
-          console.log('昨天是休息日或已完成所有任务（lastClearDate === yesterday/today），无需检查');
+          console.log('昨天是休息日，无需检查连胜中断');
         }
 
         // 立即显示加载弹窗

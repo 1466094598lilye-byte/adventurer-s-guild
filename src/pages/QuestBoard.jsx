@@ -1619,20 +1619,21 @@ export default function QuestBoard() {
       batchInvalidateQueries(['quests']);
       console.log('查询缓存已刷新');
 
-      // 🔥 关键修复：完成所有任务时立即更新连胜（移除 setTimeout，防止应用挂起时丢失更新）
+      // 🔥 关键修复：从后端重新获取今日所有任务后再检查是否全部完成
       if (user) {
         try {
-          // 1. 本地乐观计算：模拟当前任务和关联任务都已完成的状态
-          const localUpdatedQuests = quests.map(q => {
-            if (q.id === quest.id) return { ...q, status: 'done' };
-            if (relatedKickstartTasks.some(kt => kt.id === q.id)) return { ...q, status: 'done' };
-            return q;
-          });
+          console.log('⏳ 从后端重新获取今日任务，确认是否全部完成...');
           
-          const allDone = localUpdatedQuests.length > 0 && localUpdatedQuests.every(q => q.status === 'done');
+          // 从后端重新获取今日所有任务（确保数据最新）
+          const latestQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
+          console.log(`📋 获取到 ${latestQuests.length} 个今日任务`);
+          
+          // 检查是否所有任务都已完成
+          const allDone = latestQuests.length > 0 && latestQuests.every(q => q.status === 'done');
+          console.log(`✅ 所有任务完成状态：${allDone}`);
           
           if (allDone) {
-            console.log('🎉 所有任务完成！立即同步更新连胜');
+            console.log('🎉 确认所有任务完成！立即同步更新连胜');
             
             const currentUser = await base44.auth.me();
             const restDays = currentUser?.restDays || [];
@@ -1662,6 +1663,8 @@ export default function QuestBoard() {
             await checkAndAwardMilestone(newStreak);
             
             console.log(`✅ 连胜已同步更新：${newStreak} 天`);
+          } else {
+            console.log('⏸️ 还有未完成的任务，不更新连胜');
           }
         } catch (error) {
           console.error('❌ 连胜更新失败:', error);

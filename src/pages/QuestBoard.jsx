@@ -1040,7 +1040,13 @@ export default function QuestBoard() {
                 return;
               }
             } else {
-              console.log('⚠️ 昨天任务全部完成但 lastClearDate 异常，补救性更新');
+              console.log('⚠️ 昨天任务全部完成但 lastClearDate 异常，执行补救性更新');
+              // 🔥 补救性更新：昨天已完成所有任务，但 lastClearDate 没有更新
+              // 将其更新为 yesterday，这样今天的连胜计算就能正确进行
+              await base44.auth.updateMe({
+                lastClearDate: yesterday
+              });
+              console.log('✅ 已补救性更新 lastClearDate 为 yesterday');
             }
           } else {
             console.log('昨天没有任务');

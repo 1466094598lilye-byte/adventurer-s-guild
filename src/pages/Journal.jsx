@@ -60,9 +60,14 @@ export default function JournalPage() {
       const isRestDay = restDays.includes(dateStr);
       
       let completionRate = 0;
-      if (!isRestDay && dayQuests.length > 0) {
-        const doneCount = dayQuests.filter(q => q.status === 'done').length;
-        completionRate = Math.round((doneCount / dayQuests.length) * 100);
+      if (!isRestDay) {
+        if (dayQuests.length === 0) {
+          // 没有任务视为 100% 完成
+          completionRate = 100;
+        } else {
+          const doneCount = dayQuests.filter(q => q.status === 'done').length;
+          completionRate = Math.round((doneCount / dayQuests.length) * 100);
+        }
       }
 
       data.push({

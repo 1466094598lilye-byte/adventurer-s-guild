@@ -52,10 +52,10 @@ import Journal from './pages/Journal';
 import LongTermCalendarPage from './pages/LongTermCalendarPage';
 import LongTermProjectPage from './pages/LongTermProjectPage';
 import Profile from './pages/Profile';
+import QuestBoard from './pages/QuestBoard';
 import Treasures from './pages/Treasures';
 import crafting from './pages/crafting';
 import longTermProject from './pages/long-term-project';
-import QuestBoard from './pages/QuestBoard';
 import __Layout from './Layout.jsx';
 
 
@@ -65,10 +65,10 @@ export const PAGES = {
     "LongTermCalendarPage": LongTermCalendarPage,
     "LongTermProjectPage": LongTermProjectPage,
     "Profile": Profile,
+    "QuestBoard": QuestBoard,
     "Treasures": Treasures,
     "crafting": crafting,
     "long-term-project": longTermProject,
-    "QuestBoard": QuestBoard,
 }
 
 export const pagesConfig = {

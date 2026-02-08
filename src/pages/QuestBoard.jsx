@@ -1091,7 +1091,31 @@ export default function QuestBoard() {
                 return;
               }
             } else {
-              console.log('✅ 昨天任务全部完成，连胜正常');
+              console.log('✅ 昨天任务全部完成，但连胜可能未更新，执行补救更新');
+              
+              // 🔥 关键修复：昨天任务完成了，但可能因为网络/应用关闭导致连胜未更新，现在补救
+              // 重新计算连胜
+              let newStreak = 1;
+              if (lastClearDate) {
+                const previousWorkday = getPreviousWorkday(yesterday, restDays);
+                if (previousWorkday && isSameDate(lastClearDate, previousWorkday)) {
+                  newStreak = (currentUser?.streakCount || 0) + 1;
+                  console.log('✅ 连胜应该+1（补救）');
+                } else {
+                  console.log('✅ 连胜重置为1（补救）');
+                }
+              }
+              
+              const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
+              
+              await base44.auth.updateMe({
+                streakCount: newStreak,
+                longestStreak: newLongestStreak,
+                lastClearDate: yesterday  // 保持昨天，因为昨天确实完成了
+              });
+              
+              batchInvalidateQueries(['user']);
+              console.log(`✅ 补救性更新完成：lastClearDate = ${yesterday}, streakCount = ${newStreak}`);
             }
           }
           

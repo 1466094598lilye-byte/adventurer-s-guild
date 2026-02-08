@@ -1045,50 +1045,32 @@ export default function QuestBoard() {
                 console.log('当前没有连胜（为0），无需触发连胜中断对话框');
               }
             } else {
-              console.log('昨天所有任务都完成了，更新连胜数据');
-
-              // 🔥 昨天任务全部完成，更新连胜
-              console.log('=== 开始计算连胜 ===');
+              // 🔥 修复：昨天任务全部完成，但 lastClearDate 不是昨天
+              // 说明昨天完成任务后没有立即更新连胜（可能是老代码的遗留问题）
+              // 这里补救性地更新连胜，但正常情况下应该在完成任务时就更新了
+              console.log('⚠️ 昨天任务全部完成但 lastClearDate 不正确，补救性更新连胜');
+              
               let newStreak = 1;
               const lastClearDate = currentUser?.lastClearDate;
               const restDays = currentUser?.restDays || [];
 
-              console.log('📅 连胜计算输入:');
-              console.log('  - lastClearDate (原始):', lastClearDate);
-              console.log('  - lastClearDate (标准化):', normalizeDate(lastClearDate));
-              console.log('  - 当前连胜:', currentUser?.streakCount || 0);
-              console.log('  - 休息日列表:', restDays);
-
               if (lastClearDate) {
-                // 使用 getPreviousWorkday 获取上一个工作日
-                const previousWorkday = getPreviousWorkday(today, restDays);
-                console.log('🔍 上一个工作日 (getPreviousWorkday):', previousWorkday);
-                console.log('🔍 lastClearDate 标准化:', normalizeDate(lastClearDate));
-                
+                const previousWorkday = getPreviousWorkday(yesterday, restDays);
                 if (previousWorkday && isSameDate(lastClearDate, previousWorkday)) {
                   newStreak = (currentUser?.streakCount || 0) + 1;
-                  console.log('✅ 连续完成（跳过了休息日），连胜 +1');
-                  console.log('  - 判断依据: lastClearDate(' + normalizeDate(lastClearDate) + ') === previousWorkday(' + previousWorkday + ')');
-                  console.log('  - 新连胜:', newStreak);
+                  console.log('✅ 连续完成，连胜 +1');
                 } else {
                   console.log('❌ 之前有中断，连胜重置为1');
-                  console.log('  - 判断依据: lastClearDate(' + normalizeDate(lastClearDate) + ') !== previousWorkday(' + previousWorkday + ')');
-                  newStreak = 1;
                 }
-              } else {
-                console.log('第一次完成所有任务，连胜设为1');
-                newStreak = 1;
               }
 
               const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
-              console.log('新的最长连胜:', newLongestStreak);
 
               await base44.auth.updateMe({
                 streakCount: newStreak,
                 longestStreak: newLongestStreak,
                 lastClearDate: yesterday
               });
-              console.log('用户连胜数据已更新');
 
               batchInvalidateQueries(['user']);
               await checkAndAwardMilestone(newStreak);
@@ -1097,7 +1079,7 @@ export default function QuestBoard() {
             console.log('昨天没有任务');
           }
         } else {
-          console.log('昨天是休息日或已完成所有任务，无需检查连胜中断');
+          console.log('昨天是休息日或已完成所有任务（lastClearDate === yesterday/today），无需检查');
         }
 
         // 立即显示加载弹窗
@@ -1549,6 +1531,48 @@ export default function QuestBoard() {
 
       batchInvalidateQueries(['quests']);
       console.log('查询缓存已刷新');
+
+      // 🔥 关键修复：完成所有任务时立即更新连胜（不需要等开宝箱或刷新页面）
+      if (user) {
+        // 刷新任务列表以获取最新状态
+        setTimeout(async () => {
+          const updatedQuests = await base44.entities.Quest.filter({ date: today });
+          const allDone = updatedQuests.length > 0 && updatedQuests.every(q => q.status === 'done');
+          
+          if (allDone) {
+            console.log('🎉 所有任务完成！立即更新连胜');
+            
+            const currentUser = await base44.auth.me();
+            const restDays = currentUser?.restDays || [];
+            const lastClearDate = currentUser?.lastClearDate;
+            
+            let newStreak = 1;
+            
+            if (lastClearDate) {
+              const previousWorkday = getPreviousWorkday(today, restDays);
+              if (previousWorkday && isSameDate(lastClearDate, previousWorkday)) {
+                newStreak = (currentUser?.streakCount || 0) + 1;
+                console.log('✅ 连续完成，连胜 +1');
+              } else {
+                console.log('❌ 之前有中断，连胜重置为1');
+              }
+            }
+            
+            const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
+            
+            await base44.auth.updateMe({
+              streakCount: newStreak,
+              longestStreak: newLongestStreak,
+              lastClearDate: today  // 🔥 关键：设为今天，表示今天已完成
+            });
+            
+            batchInvalidateQueries(['user']);
+            await checkAndAwardMilestone(newStreak);
+            
+            console.log(`✅ 连胜已更新：${newStreak} 天`);
+          }
+        }, 500);
+      }
 
       // 处理大项目完成检查
       if (quest.isLongTermProject && quest.longTermProjectId) {

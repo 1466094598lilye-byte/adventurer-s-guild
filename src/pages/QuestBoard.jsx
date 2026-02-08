@@ -925,6 +925,62 @@ export default function QuestBoard() {
           }
         }, 100); // 延迟100ms执行清理任务
 
+        // 🔥 漏洞2修复：日更逻辑执行完后，兜底检查并更新 lastClearDate
+        console.log('=== 步骤7: 兜底检查 lastClearDate 是否需要更新 ===');
+        try {
+          const finalUser = await base44.auth.me();
+          const finalLastClearDate = finalUser?.lastClearDate;
+          const restDays = finalUser?.restDays || [];
+          
+          console.log('当前 lastClearDate:', finalLastClearDate);
+          console.log('today:', today);
+          console.log('yesterday:', yesterday);
+          
+          // 如果 lastClearDate 既不是今天也不是昨天，检查昨天的任务
+          if (!isSameDate(finalLastClearDate, today) && !isSameDate(finalLastClearDate, yesterday)) {
+            console.log('⚠️ lastClearDate 既不是今天也不是昨天，检查昨天任务是否遗漏更新');
+            
+            const yesterdayQuests = await base44.entities.Quest.filter({ date: yesterday });
+            if (yesterdayQuests.length > 0) {
+              const allDoneYesterday = yesterdayQuests.every(q => q.status === 'done');
+              
+              if (allDoneYesterday) {
+                console.log('✅ 昨天任务全部完成，执行兜底更新');
+                
+                // 重新计算连胜
+                let newStreak = 1;
+                if (finalLastClearDate) {
+                  const previousWorkday = getPreviousWorkday(yesterday, restDays);
+                  if (previousWorkday && isSameDate(finalLastClearDate, previousWorkday)) {
+                    newStreak = (finalUser?.streakCount || 0) + 1;
+                    console.log('✅ 连胜延续，+1');
+                  } else {
+                    console.log('❌ 连胜中断，重置为1');
+                  }
+                }
+                
+                const newLongestStreak = Math.max(newStreak, finalUser?.longestStreak || 0);
+                
+                await base44.auth.updateMe({
+                  streakCount: newStreak,
+                  longestStreak: newLongestStreak,
+                  lastClearDate: yesterday
+                });
+                
+                console.log(`✅ 兜底更新完成：lastClearDate = ${yesterday}, streakCount = ${newStreak}`);
+                batchInvalidateQueries(['user']);
+              } else {
+                console.log('❌ 昨天有未完成任务，不更新 lastClearDate');
+              }
+            }
+          } else {
+            console.log('✅ lastClearDate 已是最新，无需兜底更新');
+          }
+        } catch (error) {
+          console.error('❌ 兜底检查失败:', error);
+          // 不阻塞主流程
+        }
+
         console.log('=== 日更逻辑执行完成 ===');
         releaseLock(currentUser.id);
         } catch (error) {

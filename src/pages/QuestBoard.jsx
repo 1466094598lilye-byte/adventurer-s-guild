@@ -1153,6 +1153,16 @@ export default function QuestBoard() {
           }
         } else {
           console.log('昨天是休息日，无需检查连胜中断');
+          
+          // 🔥 漏洞4修复：休息日也要更新 lastClearDate，防止下次日更误判
+          if (!isSameDate(lastClearDate, yesterday)) {
+            console.log('⚠️ 昨天是休息日但 lastClearDate 未更新，执行更新');
+            await base44.auth.updateMe({
+              lastClearDate: yesterday
+            });
+            batchInvalidateQueries(['user']);
+            console.log(`✅ 已更新休息日的 lastClearDate = ${yesterday}`);
+          }
         }
 
         // 立即显示加载弹窗

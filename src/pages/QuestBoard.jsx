@@ -1125,12 +1125,28 @@ export default function QuestBoard() {
               }
             } else {
               console.log('⚠️ 昨天任务全部完成但 lastClearDate 异常，执行补救性更新');
-              // 🔥 补救性更新：昨天已完成所有任务，但 lastClearDate 没有更新
-              // 将其更新为 yesterday，这样今天的连胜计算就能正确进行
+              // 🔥 漏洞3修复：补救性更新必须重新计算连胜，不能只更新日期
+              
+              // 重新计算连胜
+              let newStreak = 1;
+              if (lastClearDate) {
+                const previousWorkday = getPreviousWorkday(yesterday, restDays);
+                if (previousWorkday && isSameDate(lastClearDate, previousWorkday)) {
+                  newStreak = (currentUser?.streakCount || 0) + 1;
+                  console.log('✅ 连胜延续，+1');
+                } else {
+                  console.log('❌ 连胜中断，重置为1');
+                }
+              }
+              
+              const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
+              
               await base44.auth.updateMe({
+                streakCount: newStreak,
+                longestStreak: newLongestStreak,
                 lastClearDate: yesterday
               });
-              console.log('✅ 已补救性更新 lastClearDate 为 yesterday');
+              console.log(`✅ 补救性更新完成：lastClearDate = ${yesterday}, streakCount = ${newStreak}`);
             }
           } else {
             console.log('昨天没有任务');

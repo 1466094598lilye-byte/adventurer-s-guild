@@ -925,61 +925,7 @@ export default function QuestBoard() {
           }
         }, 100); // 延迟100ms执行清理任务
 
-        // 🔥 漏洞2修复：日更逻辑执行完后，兜底检查并更新 lastClearDate
-        console.log('=== 步骤7: 兜底检查 lastClearDate 是否需要更新 ===');
-        try {
-          const finalUser = await base44.auth.me();
-          const finalLastClearDate = finalUser?.lastClearDate;
-          const restDays = finalUser?.restDays || [];
-          
-          console.log('当前 lastClearDate:', finalLastClearDate);
-          console.log('today:', today);
-          console.log('yesterday:', yesterday);
-          
-          // 如果 lastClearDate 既不是今天也不是昨天，检查昨天的任务
-          if (!isSameDate(finalLastClearDate, today) && !isSameDate(finalLastClearDate, yesterday)) {
-            console.log('⚠️ lastClearDate 既不是今天也不是昨天，检查昨天任务是否遗漏更新');
-            
-            const yesterdayQuests = await base44.entities.Quest.filter({ date: yesterday });
-            if (yesterdayQuests.length > 0) {
-              const allDoneYesterday = yesterdayQuests.every(q => q.status === 'done');
-              
-              if (allDoneYesterday) {
-                console.log('✅ 昨天任务全部完成，执行兜底更新');
-                
-                // 重新计算连胜
-                let newStreak = 1;
-                if (finalLastClearDate) {
-                  const previousWorkday = getPreviousWorkday(yesterday, restDays);
-                  if (previousWorkday && isSameDate(finalLastClearDate, previousWorkday)) {
-                    newStreak = (finalUser?.streakCount || 0) + 1;
-                    console.log('✅ 连胜延续，+1');
-                  } else {
-                    console.log('❌ 连胜中断，重置为1');
-                  }
-                }
-                
-                const newLongestStreak = Math.max(newStreak, finalUser?.longestStreak || 0);
-                
-                await base44.auth.updateMe({
-                  streakCount: newStreak,
-                  longestStreak: newLongestStreak,
-                  lastClearDate: yesterday
-                });
-                
-                console.log(`✅ 兜底更新完成：lastClearDate = ${yesterday}, streakCount = ${newStreak}`);
-                batchInvalidateQueries(['user']);
-              } else {
-                console.log('❌ 昨天有未完成任务，不更新 lastClearDate');
-              }
-            }
-          } else {
-            console.log('✅ lastClearDate 已是最新，无需兜底更新');
-          }
-        } catch (error) {
-          console.error('❌ 兜底检查失败:', error);
-          // 不阻塞主流程
-        }
+        // ✅ 连胜更新已在步骤0统一处理，无需兜底检查
 
         console.log('=== 日更逻辑执行完成 ===');
         releaseLock(currentUser.id);
@@ -1035,157 +981,81 @@ export default function QuestBoard() {
         console.log('=== 开始执行日更逻辑 (Initial Check) ===');
 
         // 步骤 0：检查昨天是否有未完成任务，处理连胜中断
-        console.log('=== 步骤 0: 检查连胜中断 ===');
+        console.log('=== 步骤 0: 基于完成率检查连胜 ===');
         const restDays = currentUser?.restDays || [];
         const lastClearDate = currentUser?.lastClearDate;
 
-        // 🔍 详细日志：原始日期值
-        console.log('📅 原始日期值:');
-        console.log('  - today (原始):', today, typeof today);
-        console.log('  - yesterday (原始):', yesterday, typeof yesterday);
-        console.log('  - lastClearDate (原始):', lastClearDate, typeof lastClearDate);
-        
-        // 🔍 详细日志：标准化后的日期值
-        console.log('📅 标准化后的日期值:');
-        console.log('  - today (标准化):', normalizeDate(today));
-        console.log('  - yesterday (标准化):', normalizeDate(yesterday));
-        console.log('  - lastClearDate (标准化):', normalizeDate(lastClearDate));
-        
-        // 🔍 详细日志：日期比较结果
-        console.log('🔍 日期比较结果:');
-        console.log('  - isSameDate(lastClearDate, yesterday):', isSameDate(lastClearDate, yesterday));
-        console.log('  - isSameDate(lastClearDate, today):', isSameDate(lastClearDate, today));
+        console.log('📅 日期信息:');
+        console.log('  - today:', today);
+        console.log('  - yesterday:', yesterday);
+        console.log('  - lastClearDate:', lastClearDate);
         console.log('  - 昨天是否为休息日:', restDays.includes(yesterday));
 
-        // 🔥 修复判断逻辑：只检查是否需要处理"连胜中断"
-        // 如果 lastClearDate === today，说明今天已经完成了任务并更新了连胜，无需任何操作
-        // 如果 lastClearDate === yesterday，说明昨天完成了任务，也无需操作
-        // 只有当 lastClearDate < yesterday（昨天没完成）且不是休息日时，才需要检查中断
+        // 🔥 新逻辑：直接基于昨天的任务完成率来判断连胜
         
         if (isSameDate(lastClearDate, today)) {
-          console.log('✅ lastClearDate === today，说明今天已经完成任务并更新了连胜，跳过');
-          // 继续执行后续的日更逻辑（明日规划、routine 任务等）
-        } else if (isSameDate(lastClearDate, yesterday)) {
-          console.log('✅ lastClearDate === yesterday，验证昨天任务完成情况');
-          
-          // 🔥 漏洞2修复：验证昨天的任务是否真的都完成了，防止数据异常
-          const yesterdayQuests = await base44.entities.Quest.filter({ date: yesterday });
-          if (yesterdayQuests.length > 0) {
-            const allDoneYesterday = yesterdayQuests.every(q => q.status === 'done');
-            
-            if (!allDoneYesterday) {
-              // 昨天有未完成任务，但 lastClearDate 被异常设置为昨天，触发连胜中断检查
-              console.log('❌ 昨天有未完成任务，但 lastClearDate 异常地为昨天，触发连胜中断检查');
-              const currentStreak = currentUser?.streakCount || 0;
-              const freezeTokenCount = currentUser?.freezeTokenCount || 0;
-              
-              if (currentStreak > 0) {
-                setStreakBreakInfo({
-                  incompleteDays: 1,
-                  currentStreak: currentStreak,
-                  freezeTokenCount: freezeTokenCount
-                });
-                
-                console.log('弹出连胜中断对话框，暂停其他日更逻辑');
-                setIsDayRolloverInProgress(false);
-                return;
-              }
-            } else {
-              console.log('✅ 昨天任务全部完成，但连胜可能未更新，执行补救更新');
-              
-              // 🔥 关键修复：昨天任务完成了，但可能因为网络/应用关闭导致连胜未更新，现在补救
-              // 重新计算连胜
-              let newStreak = 1;
-              if (lastClearDate) {
-                const previousWorkday = getPreviousWorkday(yesterday, restDays);
-                if (previousWorkday && isSameDate(lastClearDate, previousWorkday)) {
-                  newStreak = (currentUser?.streakCount || 0) + 1;
-                  console.log('✅ 连胜应该+1（补救）');
-                } else {
-                  console.log('✅ 连胜重置为1（补救）');
-                }
-              }
-              
-              const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
-              
-              await base44.auth.updateMe({
-                streakCount: newStreak,
-                longestStreak: newLongestStreak,
-                lastClearDate: yesterday  // 保持昨天，因为昨天确实完成了
-              });
-              
-              batchInvalidateQueries(['user']);
-              console.log(`✅ 补救性更新完成：lastClearDate = ${yesterday}, streakCount = ${newStreak}`);
-            }
-          }
-          
-          // 继续执行后续的日更逻辑
-        } else if (!restDays.includes(yesterday)) {
-          // lastClearDate < yesterday 且昨天不是休息日 → 检查是否需要处理连胜中断
-          console.log('⚠️ lastClearDate 不是昨天/今天，且昨天不是休息日 → 检查连胜中断');
-
-          const yesterdayQuests = await base44.entities.Quest.filter({ date: yesterday });
-          console.log('昨天的任务数量:', yesterdayQuests.length);
-
-          if (yesterdayQuests.length > 0) {
-            const allDoneYesterday = yesterdayQuests.every(q => q.status === 'done');
-            console.log('昨天任务是否全部完成:', allDoneYesterday);
-
-            if (!allDoneYesterday) {
-              console.log('❌ 昨天有未完成任务，需要处理连胜中断');
-              const currentStreak = currentUser?.streakCount || 0;
-              const freezeTokenCount = currentUser?.freezeTokenCount || 0;
-
-              if (currentStreak > 0) {
-                setStreakBreakInfo({
-                  incompleteDays: 1,
-                  currentStreak: currentStreak,
-                  freezeTokenCount: freezeTokenCount
-                });
-
-                console.log('弹出连胜中断对话框，暂停其他日更逻辑');
-                setIsDayRolloverInProgress(false);
-                return;
-              }
-            } else {
-              console.log('⚠️ 昨天任务全部完成但 lastClearDate 异常，执行补救性更新');
-              // 🔥 漏洞3修复：补救性更新必须重新计算连胜，不能只更新日期
-              
-              // 重新计算连胜
-              let newStreak = 1;
-              if (lastClearDate) {
-                const previousWorkday = getPreviousWorkday(yesterday, restDays);
-                if (previousWorkday && isSameDate(lastClearDate, previousWorkday)) {
-                  newStreak = (currentUser?.streakCount || 0) + 1;
-                  console.log('✅ 连胜延续，+1');
-                } else {
-                  console.log('❌ 连胜中断，重置为1');
-                }
-              }
-              
-              const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
-              
-              await base44.auth.updateMe({
-                streakCount: newStreak,
-                longestStreak: newLongestStreak,
-                lastClearDate: yesterday
-              });
-              console.log(`✅ 补救性更新完成：lastClearDate = ${yesterday}, streakCount = ${newStreak}`);
-            }
-          } else {
-            console.log('昨天没有任务');
-          }
+          console.log('✅ lastClearDate === today，今天已处理过，跳过');
+        } else if (restDays.includes(yesterday)) {
+          // 昨天是休息日，连胜不变，但更新 lastClearDate
+          console.log('✅ 昨天是休息日，更新 lastClearDate，连胜不变');
+          await base44.auth.updateMe({ lastClearDate: yesterday });
+          batchInvalidateQueries(['user']);
         } else {
-          console.log('昨天是休息日，无需检查连胜中断');
+          // 昨天不是休息日，检查完成率
+          console.log('🔍 检查昨天的任务完成率...');
+          const yesterdayQuests = await base44.entities.Quest.filter({ date: yesterday });
+          const completedCount = yesterdayQuests.filter(q => q.status === 'done').length;
+          const totalCount = yesterdayQuests.length;
           
-          // 🔥 漏洞4修复：休息日也要更新 lastClearDate，防止下次日更误判
-          if (!isSameDate(lastClearDate, yesterday)) {
-            console.log('⚠️ 昨天是休息日但 lastClearDate 未更新，执行更新');
+          console.log(`📊 昨天任务统计: ${completedCount}/${totalCount}`);
+          
+          // 计算完成率（没有任务视为 100%）
+          let completionRate;
+          if (totalCount === 0) {
+            completionRate = 1; // NaN 视为 100%
+            console.log('📝 昨天没有任务，视为 100% 完成');
+          } else {
+            completionRate = completedCount / totalCount;
+            console.log(`📝 昨天完成率: ${(completionRate * 100).toFixed(1)}%`);
+          }
+          
+          if (completionRate === 1) {
+            // 完成率 100%，连胜 +1
+            console.log('✅ 昨天完成率 100%，连胜 +1');
+            const newStreak = (currentUser?.streakCount || 0) + 1;
+            const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
+            
             await base44.auth.updateMe({
+              streakCount: newStreak,
+              longestStreak: newLongestStreak,
               lastClearDate: yesterday
             });
+            
             batchInvalidateQueries(['user']);
-            console.log(`✅ 已更新休息日的 lastClearDate = ${yesterday}`);
+            await checkAndAwardMilestone(newStreak);
+            console.log(`✅ 连胜已更新为 ${newStreak} 天`);
+          } else {
+            // 完成率 < 100%，触发连胜中断
+            console.log('❌ 昨天有未完成任务，触发连胜中断检查');
+            const currentStreak = currentUser?.streakCount || 0;
+            const freezeTokenCount = currentUser?.freezeTokenCount || 0;
+            
+            if (currentStreak > 0) {
+              setStreakBreakInfo({
+                incompleteDays: 1,
+                currentStreak: currentStreak,
+                freezeTokenCount: freezeTokenCount
+              });
+              
+              console.log('弹出连胜中断对话框，暂停其他日更逻辑');
+              setIsDayRolloverInProgress(false);
+              return;
+            } else {
+              // 连胜本来就是 0，直接更新 lastClearDate
+              console.log('连胜本来就是 0，更新 lastClearDate');
+              await base44.auth.updateMe({ lastClearDate: yesterday });
+              batchInvalidateQueries(['user']);
+            }
           }
         }
 
@@ -1643,58 +1513,7 @@ export default function QuestBoard() {
       batchInvalidateQueries(['quests']);
       console.log('查询缓存已刷新');
 
-      // 🔥 关键修复：从后端重新获取今日所有任务后再检查是否全部完成
-      if (user) {
-        try {
-          console.log('⏳ 从后端重新获取今日任务，确认是否全部完成...');
-          
-          // 从后端重新获取今日所有任务（确保数据最新）
-          const latestQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
-          console.log(`📋 获取到 ${latestQuests.length} 个今日任务`);
-          
-          // 检查是否所有任务都已完成
-          const allDone = latestQuests.length > 0 && latestQuests.every(q => q.status === 'done');
-          console.log(`✅ 所有任务完成状态：${allDone}`);
-          
-          if (allDone) {
-            console.log('🎉 确认所有任务完成！立即同步更新连胜');
-            
-            const currentUser = await base44.auth.me();
-            const restDays = currentUser?.restDays || [];
-            const lastClearDate = currentUser?.lastClearDate;
-            
-            let newStreak = 1;
-            
-            if (lastClearDate) {
-              const previousWorkday = getPreviousWorkday(today, restDays);
-              if (previousWorkday && isSameDate(lastClearDate, previousWorkday)) {
-                newStreak = (currentUser?.streakCount || 0) + 1;
-                console.log('✅ 连续完成，连胜 +1');
-              } else {
-                console.log('❌ 之前有中断，连胜重置为1');
-              }
-            }
-            
-            const newLongestStreak = Math.max(newStreak, currentUser?.longestStreak || 0);
-            
-            await base44.auth.updateMe({
-              streakCount: newStreak,
-              longestStreak: newLongestStreak,
-              lastClearDate: today  // 🔥 关键：设为今天，表示今天已完成
-            });
-            
-            batchInvalidateQueries(['user']);
-            await checkAndAwardMilestone(newStreak);
-            
-            console.log(`✅ 连胜已同步更新：${newStreak} 天`);
-          } else {
-            console.log('⏸️ 还有未完成的任务，不更新连胜');
-          }
-        } catch (error) {
-          console.error('❌ 连胜更新失败:', error);
-          // 不阻塞主流程，用户可以刷新页面触发日更逻辑作为兜底
-        }
-      }
+      // ✅ 连胜更新已移至 handleDayRollover 统一处理（基于完成率判断）
 
       // 处理大项目完成检查
       if (quest.isLongTermProject && quest.longTermProjectId) {

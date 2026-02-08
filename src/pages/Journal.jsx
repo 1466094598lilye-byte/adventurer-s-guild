@@ -1,15 +1,14 @@
-import React, { useState } from "react";
+import React from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, subDays } from 'date-fns';
 import StreakDisplay from '../components/profile/StreakDisplay';
 import { useLanguage } from '@/components/LanguageContext';
-import { LogIn, HelpCircle, X } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 
 export default function JournalPage() {
   const { language, t } = useLanguage();
-  const [showStreakInfo, setShowStreakInfo] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -180,26 +179,12 @@ export default function JournalPage() {
           </div>
         ) : (
           <>
-            <div className="mb-6 relative">
+            <div className="mb-6">
               <StreakDisplay 
                 currentStreak={user.streakCount || 0}
                 longestStreak={user.longestStreak || 0}
                 freezeTokens={user.freezeTokenCount || 0}
               />
-              
-              {/* Help button */}
-              <button
-                onClick={() => setShowStreakInfo(true)}
-                className="absolute top-4 right-4 p-2"
-                style={{
-                  backgroundColor: 'var(--color-yellow)',
-                  border: '3px solid var(--border-primary)',
-                  boxShadow: '3px 3px 0px var(--border-primary)',
-                  borderRadius: '50%'
-                }}
-              >
-                <HelpCircle className="w-5 h-5" strokeWidth={3} />
-              </button>
             </div>
 
             <div 
@@ -310,59 +295,23 @@ export default function JournalPage() {
                 </>
               )}
             </div>
-          </>
-        )}
 
-        {/* Streak Info Modal */}
-        {showStreakInfo && (
-          <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}
-            onClick={() => setShowStreakInfo(false)}
-          >
+            {/* Streak Update Notice */}
             <div 
-              className="relative max-w-md w-full p-6"
+              className="mt-6 p-4"
               style={{
-                backgroundColor: 'var(--color-cyan)',
-                border: '5px solid var(--border-primary)',
-                boxShadow: '12px 12px 0px var(--border-primary)'
+                backgroundColor: 'var(--color-yellow)',
+                border: '4px solid var(--border-primary)',
+                boxShadow: '6px 6px 0px var(--border-primary)'
               }}
-              onClick={(e) => e.stopPropagation()}
             >
-              <button
-                onClick={() => setShowStreakInfo(false)}
-                className="absolute top-3 right-3 p-1"
-                style={{
-                  backgroundColor: 'var(--bg-secondary)',
-                  border: '3px solid var(--border-primary)',
-                  boxShadow: '3px 3px 0px var(--border-primary)'
-                }}
-              >
-                <X className="w-5 h-5" strokeWidth={3} />
-              </button>
-
-              <h2 
-                className="text-2xl font-black uppercase text-center mb-4"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                💡 {language === 'zh' ? '连胜更新说明' : 'Streak Update Info'}
-              </h2>
-
-              <div 
-                className="p-4"
-                style={{
-                  backgroundColor: 'var(--bg-secondary)',
-                  border: '3px solid var(--border-primary)'
-                }}
-              >
-                <p className="font-bold text-center leading-relaxed">
-                  {language === 'zh' 
-                    ? '连胜统计将会在0点后更新'
-                    : 'Streak stats will be updated after midnight'}
-                </p>
-              </div>
+              <p className="font-bold text-center" style={{ color: 'var(--text-primary)' }}>
+                💡 {language === 'zh' 
+                  ? '连胜统计将会在0点后更新'
+                  : 'Streak stats will be updated after midnight'}
+              </p>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>

@@ -972,10 +972,6 @@ export default function QuestBoard() {
         return;
       }
 
-      // 🔥 【仅本地标记】避免跨标签页重复执行，不再使用服务端标记
-      markRolloverComplete(currentUser.id);
-      console.log('✅ 已在本地标记日更完成（防止跨标签页重复）');
-
       // 🔧 标记开始执行
       isRolloverRunningRef.current = true;
 
@@ -1057,13 +1053,17 @@ export default function QuestBoard() {
         setIsDayRolloverInProgress(true);
         await executeDayRolloverLogic(currentUser, currentTodayQuests);
 
-      } finally {
+        // 🔥 【关键修复】只有在日更逻辑成功完成后才标记为"已完成"
+        markRolloverComplete(currentUser.id);
+        console.log('✅ 日更逻辑执行成功，已标记为完成');
+
+        } finally {
         // 🔧 执行完成后释放并发锁
         isRolloverRunningRef.current = false;
         releaseLock(currentUser.id);
         console.log('✅ 日更锁已释放');
-      }
-    };
+        }
+        };
 
       // 🔧 无论是否有用户都执行（游客模式下会快速返回并关闭加载状态）
       if (user && quests) {

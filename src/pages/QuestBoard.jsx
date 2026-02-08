@@ -944,11 +944,9 @@ export default function QuestBoard() {
         return;
       }
 
-      // 🔥 【跨设备防重复】检查服务端标记，如果今天已完成就跳过
-      if (currentUser.lastRolloverCompletedDate === today) {
-        console.log('✅ 服务端标记显示今日日更已完成（可能在其他设备），跳过');
-        return;
-      }
+      // 🔥 【修复】移除 lastRolloverCompletedDate 检查，它会阻止连胜更新
+      // 日更逻辑应该只检查是否需要创建任务、处理昨天未完成等
+      // 连胜更新在完成所有任务时就已经处理了（line 1512-1550）
 
       // 如果正在处理连胜中断，跳过
       if (streakBreakInfo) {
@@ -974,12 +972,9 @@ export default function QuestBoard() {
         return;
       }
 
-      // 🔥 【关键】获取锁成功后立即在服务端标记，防止其他设备重复执行
-      await base44.auth.updateMe({
-        lastRolloverCompletedDate: today
-      });
+      // 🔥 【仅本地标记】避免跨标签页重复执行，不再使用服务端标记
       markRolloverComplete(currentUser.id);
-      console.log('✅ 已在服务端和本地提前标记日更完成（防止跨设备/跨标签页重复）');
+      console.log('✅ 已在本地标记日更完成（防止跨标签页重复）');
 
       // 🔧 标记开始执行
       isRolloverRunningRef.current = true;

@@ -1010,7 +1010,35 @@ export default function QuestBoard() {
           console.log('✅ lastClearDate === today，说明今天已经完成任务并更新了连胜，跳过');
           // 继续执行后续的日更逻辑（明日规划、routine 任务等）
         } else if (isSameDate(lastClearDate, yesterday)) {
-          console.log('✅ lastClearDate === yesterday，说明昨天完成任务并更新了连胜，跳过');
+          console.log('✅ lastClearDate === yesterday，验证昨天任务完成情况');
+          
+          // 🔥 漏洞2修复：验证昨天的任务是否真的都完成了，防止数据异常
+          const yesterdayQuests = await base44.entities.Quest.filter({ date: yesterday });
+          if (yesterdayQuests.length > 0) {
+            const allDoneYesterday = yesterdayQuests.every(q => q.status === 'done');
+            
+            if (!allDoneYesterday) {
+              // 昨天有未完成任务，但 lastClearDate 被异常设置为昨天，触发连胜中断检查
+              console.log('❌ 昨天有未完成任务，但 lastClearDate 异常地为昨天，触发连胜中断检查');
+              const currentStreak = currentUser?.streakCount || 0;
+              const freezeTokenCount = currentUser?.freezeTokenCount || 0;
+              
+              if (currentStreak > 0) {
+                setStreakBreakInfo({
+                  incompleteDays: 1,
+                  currentStreak: currentStreak,
+                  freezeTokenCount: freezeTokenCount
+                });
+                
+                console.log('弹出连胜中断对话框，暂停其他日更逻辑');
+                setIsDayRolloverInProgress(false);
+                return;
+              }
+            } else {
+              console.log('✅ 昨天任务全部完成，连胜正常');
+            }
+          }
+          
           // 继续执行后续的日更逻辑
         } else if (!restDays.includes(yesterday)) {
           // lastClearDate < yesterday 且昨天不是休息日 → 检查是否需要处理连胜中断

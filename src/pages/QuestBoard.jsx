@@ -993,8 +993,9 @@ export default function QuestBoard() {
 
         // 🔥 新逻辑：直接基于昨天的任务完成率来判断连胜
         
-        if (isSameDate(lastClearDate, today)) {
-          console.log('✅ lastClearDate === today，今天已处理过，跳过');
+        // 如果 lastClearDate >= yesterday，说明昨天的连胜已处理，跳过
+        if (lastClearDate && new Date(normalizeDate(lastClearDate)).getTime() >= new Date(normalizeDate(yesterday)).getTime()) {
+          console.log('✅ 昨天的连胜已处理（lastClearDate >= yesterday），跳过');
         } else if (restDays.includes(yesterday)) {
           // 昨天是休息日，连胜不变，但更新 lastClearDate
           console.log('✅ 昨天是休息日，更新 lastClearDate，连胜不变');

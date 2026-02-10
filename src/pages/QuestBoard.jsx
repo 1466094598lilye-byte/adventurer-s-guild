@@ -1076,11 +1076,11 @@ export default function QuestBoard() {
         }
         };
 
-      // 🔧 无论是否有用户都执行（游客模式下会快速返回并关闭加载状态）
-      if (user && quests) {
-      handleDayRollover(user, quests);
+      // 🔧 只在初次加载时执行一次
+      if (user && quests.length >= 0) {
+        handleDayRollover(user, quests);
       }
-      }, [user]); // Only depend on user to prevent double execution
+    }, []); // 只在组件首次挂载时执行
 
   // Handle use token (called from StreakBreakDialog)
   const handleUseToken = async () => {

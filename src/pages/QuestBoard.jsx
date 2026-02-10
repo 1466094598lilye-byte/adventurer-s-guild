@@ -946,10 +946,6 @@ export default function QuestBoard() {
         return;
       }
 
-      // 🔥 【修复】移除 lastRolloverCompletedDate 检查，它会阻止连胜更新
-      // 日更逻辑应该只检查是否需要创建任务、处理昨天未完成等
-      // 连胜更新在完成所有任务时就已经处理了（line 1512-1550）
-
       // 如果正在处理连胜中断，跳过
       if (streakBreakInfo) {
         console.log('正在处理连胜中断，跳过日更逻辑');
@@ -980,8 +976,39 @@ export default function QuestBoard() {
       try {
         console.log('=== 开始执行日更逻辑 (Initial Check) ===');
 
-        // 步骤 0：检查昨天是否有未完成任务，处理连胜中断
-        console.log('=== 步骤 0: 基于完成率检查连胜 ===');
+        // 步骤 0A：先计算并存储前一天（前天）的完成率到 DailySummary
+        console.log('=== 步骤 0A: 计算并存储前天的完成率 ===');
+        const twoDaysAgo = format(subDays(new Date(), 2), 'yyyy-MM-dd');
+        
+        try {
+          // 检查是否已经存储过前天的数据
+          const existingSummary = await base44.entities.DailySummary.filter({ date: twoDaysAgo });
+          
+          if (existingSummary.length === 0) {
+            console.log(`计算前天 (${twoDaysAgo}) 的完成率...`);
+            const twoDaysAgoQuests = await base44.entities.Quest.filter({ date: twoDaysAgo });
+            const completedCount = twoDaysAgoQuests.filter(q => q.status === 'done').length;
+            const totalCount = twoDaysAgoQuests.length;
+            const completionRate = totalCount === 0 ? 1 : completedCount / totalCount;
+            
+            await base44.entities.DailySummary.create({
+              date: twoDaysAgo,
+              completionRate: completionRate,
+              totalQuests: totalCount,
+              completedQuests: completedCount
+            });
+            
+            console.log(`✅ 前天完成率已存储: ${(completionRate * 100).toFixed(1)}% (${completedCount}/${totalCount})`);
+          } else {
+            console.log('✅ 前天的完成率已存在，跳过');
+          }
+        } catch (error) {
+          console.error('❌ 存储前天完成率失败:', error);
+          // 不阻塞日更流程
+        }
+
+        // 步骤 0B：基于 DailySummary 中昨天的完成率检查连胜
+        console.log('=== 步骤 0B: 基于 DailySummary 检查连胜 ===');
         const restDays = currentUser?.restDays || [];
         const lastClearDate = currentUser?.lastClearDate;
 
@@ -991,8 +1018,6 @@ export default function QuestBoard() {
         console.log('  - lastClearDate:', lastClearDate);
         console.log('  - 昨天是否为休息日:', restDays.includes(yesterday));
 
-        // 🔥 新逻辑：直接基于昨天的任务完成率来判断连胜
-        
         // 如果 lastClearDate >= yesterday，说明昨天的连胜已处理，跳过
         if (lastClearDate && new Date(normalizeDate(lastClearDate)).getTime() >= new Date(normalizeDate(yesterday)).getTime()) {
           console.log('✅ 昨天的连胜已处理（lastClearDate >= yesterday），跳过');
@@ -1002,22 +1027,38 @@ export default function QuestBoard() {
           await base44.auth.updateMe({ lastClearDate: yesterday });
           batchInvalidateQueries(['user']);
         } else {
-          // 昨天不是休息日，检查完成率
-          console.log('🔍 检查昨天的任务完成率...');
-          const yesterdayQuests = await base44.entities.Quest.filter({ date: yesterday });
-          const completedCount = yesterdayQuests.filter(q => q.status === 'done').length;
-          const totalCount = yesterdayQuests.length;
+          // 昨天不是休息日，从 DailySummary 读取完成率
+          console.log('🔍 从 DailySummary 读取昨天的完成率...');
           
-          console.log(`📊 昨天任务统计: ${completedCount}/${totalCount}`);
-          
-          // 计算完成率（没有任务视为 100%）
           let completionRate;
-          if (totalCount === 0) {
-            completionRate = 1; // NaN 视为 100%
-            console.log('📝 昨天没有任务，视为 100% 完成');
-          } else {
-            completionRate = completedCount / totalCount;
-            console.log(`📝 昨天完成率: ${(completionRate * 100).toFixed(1)}%`);
+          try {
+            const yesterdaySummary = await base44.entities.DailySummary.filter({ date: yesterday });
+            
+            if (yesterdaySummary.length > 0) {
+              completionRate = yesterdaySummary[0].completionRate;
+              console.log(`📊 从 DailySummary 读取: 昨天完成率 ${(completionRate * 100).toFixed(1)}%`);
+            } else {
+              // 如果 DailySummary 中没有昨天的数据，则实时计算（兜底逻辑）
+              console.log('⚠️ DailySummary 中没有昨天的数据，实时计算...');
+              const yesterdayQuests = await base44.entities.Quest.filter({ date: yesterday });
+              const completedCount = yesterdayQuests.filter(q => q.status === 'done').length;
+              const totalCount = yesterdayQuests.length;
+              completionRate = totalCount === 0 ? 1 : completedCount / totalCount;
+              
+              // 顺便存储到 DailySummary
+              await base44.entities.DailySummary.create({
+                date: yesterday,
+                completionRate: completionRate,
+                totalQuests: totalCount,
+                completedQuests: completedCount
+              });
+              
+              console.log(`📊 实时计算完成率: ${(completionRate * 100).toFixed(1)}% (${completedCount}/${totalCount})`);
+            }
+          } catch (error) {
+            console.error('❌ 读取/计算昨天完成率失败:', error);
+            // 兜底：假设完成率为 100%，避免误判
+            completionRate = 1;
           }
           
           if (completionRate === 1) {

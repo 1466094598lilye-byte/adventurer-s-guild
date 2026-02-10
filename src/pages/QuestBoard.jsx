@@ -1042,6 +1042,10 @@ export default function QuestBoard() {
             const freezeTokenCount = currentUser?.freezeTokenCount || 0;
             
             if (currentStreak > 0) {
+              // 🔥 【关键】即使弹出对话框，也立即标记连胜检查已完成
+              markRolloverComplete(currentUser.id);
+              console.log('✅ 连胜检查已完成，已标记（即使弹出对话框）');
+              
               setStreakBreakInfo({
                 incompleteDays: 1,
                 currentStreak: currentStreak,
@@ -1060,13 +1064,13 @@ export default function QuestBoard() {
           }
         }
 
+        // 🔥 【关键】连胜检查完成后立即标记，防止任务处理过程中出错导致重复
+        markRolloverComplete(currentUser.id);
+        console.log('✅ 连胜和任务检查已完成，已标记');
+
         // 立即显示加载弹窗
         setIsDayRolloverInProgress(true);
         await executeDayRolloverLogic(currentUser, currentTodayQuests);
-
-        // 🔥 【关键修复】只有在日更逻辑成功完成后才标记为"已完成"
-        markRolloverComplete(currentUser.id);
-        console.log('✅ 日更逻辑执行成功，已标记为完成');
 
         } finally {
         // 🔧 执行完成后释放并发锁

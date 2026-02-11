@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Check, MoreVertical, Edit, Trash2, RotateCcw, Clock } from 'lucide-react';
-import DifficultyBadge from './DifficultyBadge';
 import { format } from 'date-fns';
 import { useLanguage } from '@/components/LanguageContext';
 

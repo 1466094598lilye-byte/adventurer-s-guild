@@ -9,7 +9,7 @@ import QuestEditFormModal from '../components/quest/QuestEditFormModal';
 import EndOfDaySummaryAndPlanning from '../components/quest/EndOfDaySummaryAndPlanning';
 import JointPraiseDialog from '../components/quest/JointPraiseDialog';
 import StreakBreakDialog from '../components/streak/StreakBreakDialog';
-import BootstrapModeDialog from '../components/quest/BootstrapModeDialog';
+
 import CalendarModal from '../components/CalendarModal';
 import { format, subDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -42,10 +42,7 @@ export default function QuestBoard() {
   const [currentHour, setCurrentHour] = useState(new Date().getHours());
   const [streakBreakInfo, setStreakBreakInfo] = useState(null);
   const [isDayRolloverInProgress, setIsDayRolloverInProgress] = useState(false);
-  const [isGeneratingDeepRest, setIsGeneratingDeepRest] = useState(false);
-  const [showDeepRestDialog, setShowDeepRestDialog] = useState(false);
-  const [deepRestTasks, setDeepRestTasks] = useState([]);
-  const [isAddingDeepRest, setIsAddingDeepRest] = useState(false);
+
   const [fromChestOpen, setFromChestOpen] = useState(false);
   const [rolloverLoadingSeconds, setRolloverLoadingSeconds] = useState(0);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
@@ -1812,89 +1809,7 @@ export default function QuestBoard() {
     }
   };
 
-  const handleDeepRestChallenge = async () => {
-    if (isGeneratingDeepRest) return;
 
-    setIsGeneratingDeepRest(true);
-    const loadingAudio = await playLoadingSound();
-
-    try {
-      // 从数据库获取所有深度休息任务
-      const allTasks = await base44.entities.DeepRestTask.list();
-
-      if (allTasks.length < 3) {
-        alert(language === 'zh'
-          ? '深度休息任务库数据不足，请联系管理员'
-          : 'Insufficient deep rest tasks, please contact admin');
-        return;
-      }
-
-      // 随机抽取3个不重复的任务（Fisher-Yates shuffle取前3个）
-      const shuffled = [...allTasks];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      const selectedTasks = shuffled.slice(0, 3);
-
-      // 转换为前端需要的格式
-      const tasksWithIds = selectedTasks.map((task, index) => ({
-        title: language === 'zh' ? `【休息】${task.titleZh}` : `[Rest]: ${task.titleEn}`,
-        actionHint: language === 'zh' ? task.descriptionZh : task.descriptionEn,
-        tempId: `deeprest_${Date.now()}_${index}`
-      }));
-
-      setDeepRestTasks(tasksWithIds);
-      setShowDeepRestDialog(true);
-    } catch (error) {
-      console.error('获取深度休息任务失败:', error);
-      alert(language === 'zh'
-        ? '获取失败，请重试'
-        : 'Failed to load tasks, please try again');
-    }
-
-    if (loadingAudio) stopSound(loadingAudio);
-    setIsGeneratingDeepRest(false);
-  };
-
-  const handleConfirmDeepRestTasks = async (selectedTaskIds) => {
-    setIsAddingDeepRest(true);
-    const loadingAudio = await playLoadingSound();
-    
-    try {
-      const selectedTasks = deepRestTasks.filter(t => selectedTaskIds.includes(t.tempId));
-      
-      for (const task of selectedTasks) {
-        await createQuestMutation.mutateAsync({
-          title: task.title,
-          actionHint: task.actionHint,
-          difficulty: 'R',
-          rarity: 'Common',
-          date: today,
-          status: 'todo',
-          source: 'deeprest',
-          tags: ['深度休息']
-        });
-      }
-
-      await playQuestAddedSound();
-      setToast(language === 'zh' 
-        ? `✨ 已添加 ${selectedTasks.length} 个深度休息任务！` 
-        : `✨ Added ${selectedTasks.length} deep rest tasks!`);
-      setTimeout(() => setToast(null), 2000);
-      
-      setShowDeepRestDialog(false);
-      setDeepRestTasks([]);
-    } catch (error) {
-      console.error('添加深度休息任务失败:', error);
-      alert(language === 'zh'
-        ? '添加失败，请重试'
-        : 'Failed to add tasks, please try again');
-    }
-    
-    if (loadingAudio) stopSound(loadingAudio);
-    setIsAddingDeepRest(false);
-  };
 
   const filteredQuests = quests.filter(quest => {
     if (filter === 'all') return true;
@@ -2383,40 +2298,7 @@ export default function QuestBoard() {
           ))}
         </div>
 
-        <div className="mb-6">
-          <Button
-            onClick={handleDeepRestChallenge}
-            disabled={isGeneratingDeepRest}
-            className="w-full py-4 font-black uppercase flex items-center justify-center gap-3"
-            style={{
-              backgroundColor: 'var(--color-yellow)',
-              color: 'var(--text-primary)',
-              border: '4px solid var(--border-primary)',
-              boxShadow: '6px 6px 0px var(--border-primary)',
-              background: isGeneratingDeepRest 
-                ? '#E0E0E0' 
-                : 'linear-gradient(135deg, var(--color-yellow) 0%, #FFA94D 100%)',
-              opacity: isGeneratingDeepRest ? 0.7 : 1
-            }}
-          >
-            {isGeneratingDeepRest ? (
-              <>
-                <Loader2 className="w-6 h-6 animate-spin" strokeWidth={3} />
-                {language === 'zh' ? '正在生成深度休息任务...' : 'Generating deep rest tasks...'}
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-6 h-6" strokeWidth={3} />
-                {language === 'zh' ? '🧘 深度休息挑战' : '🧘 Deep Rest Challenge'}
-              </>
-            )}
-          </Button>
-          <p className="font-bold text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
-            {language === 'zh' 
-              ? '💡 生成低刺激任务，回收精神能量，真正有效的休息' 
-              : '💡 Generate low-stimulation tasks to recharge mental energy'}
-          </p>
-        </div>
+
 
         {isLoading ? (
           <div className="flex justify-center py-12">
@@ -2530,17 +2412,7 @@ export default function QuestBoard() {
           />
         )}
 
-        {showDeepRestDialog && (
-          <BootstrapModeDialog
-            tasks={deepRestTasks}
-            onClose={() => {
-              setShowDeepRestDialog(false);
-              setDeepRestTasks([]);
-            }}
-            onConfirm={handleConfirmDeepRestTasks}
-            isAdding={isAddingDeepRest}
-          />
-        )}
+
 
         {/* Calendar Modal */}
         <CalendarModal

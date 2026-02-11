@@ -33,7 +33,6 @@ export default function QuestBoard() {
   const [editingQuest, setEditingQuest] = useState(null);
   const [toast, setToast] = useState(null);
   const [milestoneReward, setMilestoneReward] = useState(null);
-  const [showRestDayDialog, setShowRestDayDialog] = useState(false);
   const [showPlanningDialog, setShowPlanningDialog] = useState(false);
   const [showCelebrationInPlanning, setShowCelebrationInPlanning] = useState(false);
   const [isConfirmingPending, setIsConfirmingPending] = useState(false);
@@ -968,23 +967,16 @@ export default function QuestBoard() {
 
         // 步骤 0B：基于 DailySummary 中昨天的完成率检查连胜
         console.log('=== 步骤 0B: 基于 DailySummary 检查连胜 ===');
-        const restDays = currentUser?.restDays || [];
         const lastClearDate = currentUser?.lastClearDate;
 
         console.log('📅 日期信息:');
         console.log('  - today:', today);
         console.log('  - yesterday:', yesterday);
         console.log('  - lastClearDate:', lastClearDate);
-        console.log('  - 昨天是否为休息日:', restDays.includes(yesterday));
 
         // 如果 lastClearDate >= yesterday，说明昨天的连胜已处理，跳过
         if (lastClearDate && new Date(normalizeDate(lastClearDate)).getTime() >= new Date(normalizeDate(yesterday)).getTime()) {
           console.log('✅ 昨天的连胜已处理（lastClearDate >= yesterday），跳过');
-        } else if (restDays.includes(yesterday)) {
-          // 昨天是休息日，连胜不变，但更新 lastClearDate
-          console.log('✅ 昨天是休息日，更新 lastClearDate，连胜不变');
-          await base44.auth.updateMe({ lastClearDate: yesterday });
-          batchInvalidateQueries(['user']);
         } else {
           // 昨天不是休息日，从 DailySummary 读取完成率
           console.log('🔍 从 DailySummary 读取昨天的完成率...');
@@ -1201,19 +1193,6 @@ export default function QuestBoard() {
     },
     onSuccess: async () => {
       batchInvalidateQueries(['quests', 'user']);
-
-      // 只有登录用户才处理休息日取消逻辑
-      if (user) {
-        const currentUser = await base44.auth.me();
-        const restDays = currentUser?.restDays || [];
-        if (restDays.includes(today)) {
-          await base44.auth.updateMe({
-            restDays: restDays.filter(d => d !== today)
-          });
-          setToast(t('questboard_toast_quest_added_rest_canceled'));
-          setTimeout(() => setToast(null), 2000);
-        }
-      }
     }
   });
 
@@ -1668,47 +1647,7 @@ export default function QuestBoard() {
     }
   };
 
-  const handleToggleRestDay = async () => {
-    // 游客模式下不允许设置休息日（因为需要保存到 user 数据）
-    if (!user) {
-      alert(language === 'zh' 
-        ? '游客模式下无法设置休息日（需要登录保存数据）' 
-        : 'Cannot set rest day in guest mode (login required to save data)');
-      return;
-    }
 
-    if (quests.length > 0 && !isRestDay) {
-      alert(t('questboard_alert_cannot_set_rest_day_with_quests'));
-      return;
-    }
-    
-    try {
-      const restDays = user?.restDays || [];
-      const isRestDayCurrently = restDays.includes(today);
-      
-      if (isRestDayCurrently) {
-        await base44.auth.updateMe({
-          restDays: restDays.filter(d => d !== today)
-        });
-        setToast(t('questboard_toast_rest_canceled_success'));
-      } else {
-        await base44.auth.updateMe({
-          restDays: [...restDays, today]
-        });
-        setToast(t('questboard_toast_rest_set_success'));
-      }
-      
-      batchInvalidateQueries(['user']);
-      setShowRestDayDialog(false);
-      setTimeout(() => setToast(null), 2000);
-    } catch (error) {
-      console.error('设置休息日失败:', error);
-      alert(language === 'zh'
-        ? '操作失败，请重试'
-        : 'Operation failed, please try again');
-      setShowRestDayDialog(false);
-    }
-  };
 
   const handleChestClose = async () => {
     console.log('=== 宝箱关闭 ===');
@@ -1818,7 +1757,6 @@ export default function QuestBoard() {
     return true;
   });
 
-  const isRestDay = user ? (user?.restDays || []).includes(today) : false;
   const nextDayPlannedCount = (user?.nextDayPlannedQuests || []).length;
   const canShowPlanningButton = currentHour >= 21 && user?.lastPlannedDate !== today;
 
@@ -1937,24 +1875,7 @@ export default function QuestBoard() {
           </p>
         </div>
 
-        {isRestDay && (
-          <div 
-            className="mb-6 p-4"
-            style={{
-              backgroundColor: 'var(--bg-cyan)',
-              border: '4px solid var(--border-primary)',
-              boxShadow: '6px 6px 0px var(--border-primary)'
-            }}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <Coffee className="w-6 h-6" strokeWidth={3} />
-              <p className="font-black uppercase">{t('questboard_rest_day')}</p>
-            </div>
-            <p className="text-center text-sm font-bold mt-2">
-              {t('questboard_rest_day_hint')}
-            </p>
-          </div>
-        )}
+
 
         <div 
           className="p-4 mb-6"
@@ -2332,33 +2253,7 @@ export default function QuestBoard() {
           </div>
         )}
 
-        <div className="mt-6">
-          <Button
-            onClick={() => setShowRestDayDialog(true)}
-            disabled={!user || (quests.length > 0 && !isRestDay)}
-            className="w-full py-4 font-black uppercase text-lg flex items-center justify-center gap-3"
-            style={{
-              backgroundColor: isRestDay ? 'var(--color-orange)' : 'var(--color-cyan)',
-              color: isRestDay ? 'var(--text-inverse)' : 'var(--text-primary)',
-              border: '4px solid var(--border-primary)',
-              boxShadow: '6px 6px 0px var(--border-primary)',
-              opacity: (!user || (quests.length > 0 && !isRestDay)) ? 0.5 : 1
-            }}
-          >
-            <Coffee className="w-6 h-6" strokeWidth={3} />
-            {isRestDay ? t('questboard_cancel_rest') : t('questboard_set_rest')}
-          </Button>
-          {!user && (
-            <p className="font-bold text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
-              {language === 'zh' ? '游客模式下无法设置休息日' : 'Cannot set rest day in guest mode'}
-            </p>
-          )}
-          {user && quests.length > 0 && !isRestDay && (
-            <p className="font-bold text-center mt-2" style={{ color: 'var(--text-secondary)' }}>
-              {t('questboard_cannot_set_rest_day_hint')}
-            </p>
-          )}
-        </div>
+
 
         {selectedQuest && (
           <PraiseDialog
@@ -2514,80 +2409,7 @@ export default function QuestBoard() {
           </div>
         )}
 
-        {showRestDayDialog && (
-          <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}
-            onClick={() => setShowRestDayDialog(false)}
-          >
-            <div 
-              className="relative max-w-lg w-full p-6 transform rotate-1"
-              style={{
-                backgroundColor: '#4ECDC4',
-                border: '5px solid #000',
-                boxShadow: '12px 12px 0px #000'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2 
-                className="text-2xl font-black uppercase text-center mb-4"
-                style={{ color: '#000' }}
-              >
-                {isRestDay ? t('rest_day_dialog_cancel_title') : t('rest_day_dialog_set_title')}
-              </h2>
 
-              <div 
-                className="mb-6 p-4"
-                style={{
-                  backgroundColor: '#FFF',
-                  border: '3px solid #000'
-                }}
-              >
-                {isRestDay ? (
-                  <div className="space-y-3 font-bold">
-                    <p>✓ {t('rest_day_dialog_cancel_hint_1')}</p>
-                    <p>✓ {t('rest_day_dialog_cancel_hint_2')}</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3 font-bold">
-                    <p>✓ {t('rest_day_dialog_set_hint_1')}</p>
-                    <p>✓ {t('rest_day_dialog_set_hint_2')}</p>
-                    <p>✓ {t('rest_day_dialog_set_hint_3')}</p>
-                    <p style={{ color: '#666' }}>
-                      💡 {t('rest_day_dialog_set_hint_4')}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-3">
-                <Button
-                  onClick={() => setShowRestDayDialog(false)}
-                  className="flex-1 py-3 font-black uppercase"
-                  style={{
-                    backgroundColor: '#FFF',
-                    border: '4px solid #000',
-                    boxShadow: '4px 4px 0px #000'
-                  }}
-                >
-                  {t('common_cancel')}
-                </Button>
-                <Button
-                  onClick={handleToggleRestDay}
-                  className="flex-1 py-3 font-black uppercase"
-                  style={{
-                    backgroundColor: isRestDay ? '#FF6B35' : '#FFE66D',
-                    color: isRestDay ? '#FFF' : '#000',
-                    border: '4px solid #000',
-                    boxShadow: '4px 4px 0px #000'
-                  }}
-                >
-                  {t('common_confirm')}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {streakBreakInfo && (

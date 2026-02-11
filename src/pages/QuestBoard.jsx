@@ -21,10 +21,6 @@ import { playSound, stopSound } from '@/components/AudioManager';
 import { isSameDate, normalizeDate, getPreviousWorkday } from '@/components/utils/dateUtils';
 import { useNavigate } from 'react-router-dom';
 
-// 🔒 跨标签页锁常量
-const LOCK_TIMEOUT = 60000; // 60秒超时
-const getLockKey = (userId, date) => `dayRollover_lock_${userId}_${date}`;
-
 export default function QuestBoard() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState('all');
@@ -78,34 +74,6 @@ export default function QuestBoard() {
     } catch {}
   };
 
-  // 🔒 获取跨标签页锁
-  const acquireLock = (userId) => {
-    try {
-      const lockKey = getLockKey(userId, today);
-      const lockData = localStorage.getItem(lockKey);
-      
-      if (lockData) {
-        const { timestamp } = JSON.parse(lockData);
-        if (Date.now() - timestamp < LOCK_TIMEOUT) {
-          return false; // 锁被其他标签页持有且未超时
-        }
-      }
-      
-      // 获取锁
-      localStorage.setItem(lockKey, JSON.stringify({ timestamp: Date.now() }));
-      return true;
-    } catch {
-      return true; // localStorage 失败时允许继续（降级处理）
-    }
-  };
-
-  // 🔒 释放跨标签页锁
-  const releaseLock = (userId) => {
-    try {
-      const lockKey = getLockKey(userId, today);
-      localStorage.removeItem(lockKey);
-    } catch {}
-  };
   const invalidationTimeoutRef = useRef(null);
   const rolloverTimerRef = useRef(null);
 
@@ -964,11 +932,7 @@ export default function QuestBoard() {
         return;
       }
 
-      // 🔒 【跨标签页防重复】尝试获取锁
-      if (!acquireLock(currentUser.id)) {
-        console.log('⚠️ 无法获取锁（其他标签页正在执行日更），跳过');
-        return;
-      }
+
 
       // 🔧 标记开始执行
       isRolloverRunningRef.current = true;
@@ -1116,8 +1080,7 @@ export default function QuestBoard() {
         } finally {
         // 🔧 执行完成后释放并发锁
         isRolloverRunningRef.current = false;
-        releaseLock(currentUser.id);
-        console.log('✅ 日更锁已释放');
+        console.log('✅ 日更并发锁已释放');
         }
         };
 

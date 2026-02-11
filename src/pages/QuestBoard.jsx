@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Filter, Loader2, Sparkles, Coffee, Briefcase, ChevronDown, ChevronUp, Check, Plus, Calendar as CalendarIcon, Gift } from 'lucide-react';
+import { Filter, Loader2, Sparkles, Briefcase, ChevronDown, ChevronUp, Check, Plus, Calendar as CalendarIcon, Gift } from 'lucide-react';
 import QuestCard from '../components/quest/QuestCard';
 import PraiseDialog from '../components/quest/PraiseDialog';
 import ChestOpening from '../components/treasure/ChestOpening';

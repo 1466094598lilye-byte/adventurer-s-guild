@@ -896,13 +896,11 @@ export default function QuestBoard() {
         // ✅ 连胜更新已在步骤0统一处理，无需兜底检查
 
         console.log('=== 日更逻辑执行完成 ===');
-        releaseLock(currentUser.id);
         } catch (error) {
         console.error('❌ 日更逻辑执行失败:', error);
         // 发生错误时也要关闭加载状态和并发锁
         setIsDayRolloverInProgress(false);
         isRolloverRunningRef.current = false;
-        releaseLock(currentUser.id);
         }
         };
 

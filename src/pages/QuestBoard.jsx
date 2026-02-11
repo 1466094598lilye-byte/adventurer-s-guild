@@ -15,7 +15,7 @@ import { format, subDays } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/components/LanguageContext';
-import { getTaskNamingPrompt, getBootstrapModePrompt } from '@/components/prompts';
+import { getTaskNamingPrompt } from '@/components/prompts';
 import { getGuestData, setGuestData, addGuestEntity, updateGuestEntity, deleteGuestEntity } from '@/components/utils/guestData';
 import { playSound, stopSound } from '@/components/AudioManager';
 import { isSameDate, normalizeDate, getPreviousWorkday } from '@/components/utils/dateUtils';
@@ -189,43 +189,16 @@ export default function QuestBoard() {
         const guestQuests = getGuestData('quests');
         const todayQuests = guestQuests.filter(q => q.date === today);
         
-        // 删除过期的启动模式任务
-        const now = new Date().getTime();
-        const validQuests = todayQuests.filter(q => {
-          if (q.source === 'bootstrap' && q.expiresAt && q.status === 'todo') {
-            return new Date(q.expiresAt).getTime() > now;
-          }
-          return true;
-        });
-        
-        // 如果有任务被删除，更新localStorage
-        if (validQuests.length < todayQuests.length) {
-          const allQuests = guestQuests.filter(q => q.date !== today).concat(validQuests);
-          setGuestData('quests', allQuests);
-        }
-        
-        return validQuests;
+        return todayQuests;
       }
 
       // 登录模式：从后端读取并解密
       try {
         const allQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
 
-        // 删除过期的启动模式任务
-        const now = new Date().getTime();
-        const expiredQuests = allQuests.filter(q => 
-          q.source === 'bootstrap' && q.expiresAt && q.status === 'todo' && new Date(q.expiresAt).getTime() <= now
-        );
-
-        if (expiredQuests.length > 0) {
-          await Promise.all(expiredQuests.map(q => base44.entities.Quest.delete(q.id)));
-        }
-
-        const validQuests = allQuests.filter(q => !expiredQuests.find(eq => eq.id === q.id));
-
         // 🔥 分离 routine（明文）和非 routine（需解密）任务
-        const routineQuests = validQuests.filter(q => q.isRoutine);
-        const nonRoutineQuests = validQuests.filter(q => !q.isRoutine);
+        const routineQuests = allQuests.filter(q => q.isRoutine);
+        const nonRoutineQuests = allQuests.filter(q => !q.isRoutine);
 
         console.log(`今日任务：${routineQuests.length} 个 routine（明文），${nonRoutineQuests.length} 个非 routine（需解密）`);
 
@@ -1471,27 +1444,8 @@ export default function QuestBoard() {
       // 播放任务完成音效
       await playSound('questCompleted');
       
-      // 启动任务完成时不显示表扬弹窗
-      if (quest.source !== 'kickstart') {
-        setSelectedQuest(quest);
-      }
-
-      // 检查是否有关联的启动任务需要自动完成
-      const relatedKickstartTasks = quests.filter(q => 
-        q.source === 'kickstart' && 
-        q.parentQuestId === quest.id && 
-        q.status === 'todo'
-      );
-
-      if (relatedKickstartTasks.length > 0) {
-        console.log(`发现 ${relatedKickstartTasks.length} 个关联的启动任务，自动标记为完成`);
-        for (const kickstartTask of relatedKickstartTasks) {
-          await updateQuestMutation.mutateAsync({
-            id: kickstartTask.id,
-            data: { status: 'done' }
-          });
-        }
-      }
+      // 显示表扬弹窗
+      setSelectedQuest(quest);
 
       batchInvalidateQueries(['quests']);
       console.log('查询缓存已刷新');
@@ -1717,36 +1671,7 @@ export default function QuestBoard() {
 
 
 
-  const handleKickstart = async (quest, { minimalAction, duration }) => {
-    try {
-      const now = new Date();
-      const expiresAt = new Date(now.getTime() + duration * 1000);
 
-      await createQuestMutation.mutateAsync({
-        title: minimalAction,
-        actionHint: minimalAction,
-        difficulty: quest.difficulty,
-        rarity: quest.rarity,
-        date: today,
-        status: 'todo',
-        source: 'kickstart',
-        isBootstrapTask: true,
-        parentQuestId: quest.id,
-        bootstrapMinimalAction: minimalAction,
-        bootstrapDuration: duration,
-        bootstrapExpiresAt: expiresAt.toISOString(),
-        tags: ['启动模式']
-      });
-
-      setToast(language === 'zh' 
-        ? `✨ 已创建启动任务：${minimalAction}` 
-        : `✨ Created kickstart task: ${minimalAction}`);
-      setTimeout(() => setToast(null), 2000);
-    } catch (error) {
-      console.error('创建启动任务失败:', error);
-      alert(language === 'zh' ? '创建失败，请重试' : 'Failed to create, please retry');
-    }
-  };
 
 
 
@@ -2247,7 +2172,6 @@ export default function QuestBoard() {
                 onEdit={(q) => setEditingQuest(q)}
                 onDelete={(id) => deleteQuestMutation.mutate(id)}
                 onReopen={handleReopen}
-                onKickstart={(kickstartData) => handleKickstart(quest, kickstartData)}
               />
             ))}
           </div>

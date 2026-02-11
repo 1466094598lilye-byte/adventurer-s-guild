@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Check, MoreVertical, Edit, Trash2, RotateCcw, Clock, Zap } from 'lucide-react';
+import { Check, MoreVertical, Edit, Trash2, RotateCcw, Clock } from 'lucide-react';
 import DifficultyBadge from './DifficultyBadge';
 import { format } from 'date-fns';
 import { useLanguage } from '@/components/LanguageContext';
-import KickstartModeDialog from './KickstartModeDialog';
 
-export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReopen, onKickstart }) {
+export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReopen }) {
   const [showMenu, setShowMenu] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [showKickstartDialog, setShowKickstartDialog] = useState(false);
   const [isGlowing, setIsGlowing] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
   const { t, language } = useLanguage();
@@ -48,31 +46,7 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
     return () => clearInterval(interval);
   }, [quest.source, quest.status, startTime]);
 
-  // 计算倒计时（启动模式任务）
-  useEffect(() => {
-    if (quest.source !== 'kickstart' || quest.status === 'done' || !quest.bootstrapExpiresAt) {
-      return;
-    }
 
-    const updateCountdown = () => {
-      const now = Date.now();
-      const expiresAt = new Date(quest.bootstrapExpiresAt).getTime();
-      const remaining = expiresAt - now;
-
-      if (remaining <= 0) {
-        setTimeLeft(language === 'zh' ? '悬浮中' : 'Floating');
-        return;
-      }
-
-      const minutes = Math.floor(remaining / 60000);
-      const seconds = Math.floor((remaining % 60000) / 1000);
-      setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`);
-    };
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-    return () => clearInterval(interval);
-  }, [quest.source, quest.status, quest.bootstrapExpiresAt, language]);
   
   const isDone = quest.status === 'done';
 
@@ -111,14 +85,12 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
             <div 
               className="flex items-center justify-center w-10 h-10 font-black text-lg transform -rotate-3"
               style={{
-                background: quest.source === 'kickstart' 
-                  ? 'linear-gradient(135deg, #72B01D 0%, #A8E063 100%)'
-                  : quest.isLongTermProject && quest.difficulty === 'S' 
+                background: quest.isLongTermProject && quest.difficulty === 'S' 
                   ? 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)'
                   : quest.difficulty === 'R' 
                   ? 'linear-gradient(135deg, #FFE66D 0%, #FFA94D 100%)'
                   : quest.difficulty === 'S' ? '#000' : quest.difficulty === 'A' ? '#C44569' : quest.difficulty === 'B' ? '#FF6B35' : '#FFE66D',
-                color: quest.source === 'kickstart' ? 'var(--text-inverse)' : quest.isLongTermProject && quest.difficulty === 'S' ? 'var(--text-inverse)' : quest.difficulty === 'S' ? 'var(--color-yellow)' : 'var(--text-primary)',
+                color: quest.isLongTermProject && quest.difficulty === 'S' ? 'var(--text-inverse)' : quest.difficulty === 'S' ? 'var(--color-yellow)' : 'var(--text-primary)',
                 border: `3px solid ${quest.difficulty === 'S' && !quest.isLongTermProject ? 'var(--color-yellow)' : 'var(--border-primary)'}`,
                 boxShadow: '3px 3px 0px rgba(0,0,0,1)',
                 textShadow: quest.isLongTermProject && quest.difficulty === 'S' ? '1px 1px 0px #000' : 'none'
@@ -133,20 +105,6 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
             <div className="flex items-start justify-between gap-2 mb-1">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  {quest.source === 'kickstart' && (
-                    <span 
-                      className="flex items-center gap-1 px-2 py-1"
-                      style={{
-                        backgroundColor: '#72B01D',
-                        color: 'var(--text-inverse)',
-                        border: '2px solid var(--border-primary)',
-                        boxShadow: '2px 2px 0px var(--border-primary)'
-                      }}
-                    >
-                      <Zap className="w-3 h-3" strokeWidth={3} />
-                      <span className="text-xs font-black">{language === 'zh' ? '启动任务' : 'Kickstart'}</span>
-                    </span>
-                  )}
                   <h3 
                     className="font-black text-sm uppercase leading-tight break-words flex-1"
                     style={{ 
@@ -175,20 +133,6 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                     }}
                   >
                     <Clock className="w-3 h-3" strokeWidth={3} />
-                    <span className="text-xs font-black">{timeLeft}</span>
-                  </div>
-                )}
-                {timeLeft && quest.source === 'kickstart' && (
-                  <div 
-                    className="inline-flex items-center gap-1 px-2 py-1 mt-1"
-                    style={{
-                      background: timeLeft === (language === 'zh' ? '悬浮中' : 'Floating') 
-                        ? 'linear-gradient(135deg, var(--color-pink) 0%, var(--color-orange) 100%)' 
-                        : 'linear-gradient(135deg, var(--color-cyan) 0%, #00B4D8 100%)',
-                      border: '2px solid var(--border-primary)'
-                    }}
-                  >
-                    <Zap className="w-3 h-3" strokeWidth={3} />
                     <span className="text-xs font-black">{timeLeft}</span>
                   </div>
                 )}
@@ -232,21 +176,6 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
                           }}
                         >
                           <RotateCcw className="w-3 h-3" /> {t('questcard_reopen')}
-                        </button>
-                      )}
-                      {!isDone && !quest.isBootstrapTask && (
-                        <button
-                          onClick={() => {
-                            setShowKickstartDialog(true);
-                            setShowMenu(false);
-                          }}
-                          className="w-full px-3 py-2 text-left text-xs font-bold flex items-center gap-2"
-                          style={{ 
-                            borderBottom: '2px solid var(--border-primary)',
-                            color: 'var(--text-primary)'
-                          }}
-                        >
-                          <Zap className="w-3 h-3" /> {language === 'zh' ? '启动模式' : 'Kickstart'}
                         </button>
                       )}
                       <button
@@ -306,15 +235,6 @@ export default function QuestCard({ quest, onComplete, onEdit, onDelete, onReope
           </button>
         </div>
       </div>
-
-      {/* Kickstart Mode Dialog */}
-      {showKickstartDialog && (
-        <KickstartModeDialog
-          quest={quest}
-          onConfirm={onKickstart}
-          onClose={() => setShowKickstartDialog(false)}
-        />
-      )}
 
       {/* Confirm Reopen Dialog */}
       {showConfirm && (

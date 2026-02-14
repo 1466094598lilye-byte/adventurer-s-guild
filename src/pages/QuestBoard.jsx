@@ -917,7 +917,7 @@ export default function QuestBoard() {
             const twoDaysAgoQuests = await base44.entities.Quest.filter({ date: twoDaysAgo });
             const completedCount = twoDaysAgoQuests.filter(q => q.status === 'done').length;
             const totalCount = twoDaysAgoQuests.length;
-            const completionRate = totalCount === 0 ? 1 : completedCount / totalCount;
+            const completionRate = totalCount === 0 ? 0 : completedCount / totalCount;
             
             await base44.entities.DailySummary.create({
               date: twoDaysAgo,
@@ -964,7 +964,7 @@ export default function QuestBoard() {
               const yesterdayQuests = await base44.entities.Quest.filter({ date: yesterday });
               const completedCount = yesterdayQuests.filter(q => q.status === 'done').length;
               const totalCount = yesterdayQuests.length;
-              completionRate = totalCount === 0 ? 1 : completedCount / totalCount;
+              completionRate = totalCount === 0 ? 0 : completedCount / totalCount;
               
               // 顺便存储到 DailySummary
               await base44.entities.DailySummary.create({

@@ -524,8 +524,9 @@ export default function QuestBoard() {
         // 筛选需要创建的任务
         const toCreate = [];
         for (const [actionHintPlain, templateQuest] of activeTemplatesMap) {
+          // 🔥 修复重复任务问题：只使用 originalActionHint 作为唯一标识进行判断
           const alreadyExists = refreshedTodayQuests.some(
-            q => q.isRoutine && (q.originalActionHint === actionHintPlain || q.actionHint === actionHintPlain)
+            q => q.isRoutine && q.originalActionHint === actionHintPlain
           );
           if (!alreadyExists) {
             toCreate.push({ actionHintPlain, templateQuest });

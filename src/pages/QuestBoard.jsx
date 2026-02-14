@@ -1048,11 +1048,11 @@ export default function QuestBoard() {
         }
         };
 
-      // 🔧 只在初次加载时执行一次
-      if (user && quests.length >= 0) {
+      // 🔧 只在数据加载完成后执行一次
+      if (user && !isLoading && quests.length >= 0) {
         handleDayRollover(user, quests);
       }
-    }, []); // 只在组件首次挂载时执行
+    }, [user?.id, isLoading]); // 当用户登录状态或加载状态变化时触发
 
   // Handle use token (called from StreakBreakDialog)
   const handleUseToken = async () => {

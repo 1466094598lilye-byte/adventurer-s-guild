@@ -1052,7 +1052,7 @@ export default function QuestBoard() {
       if (user && !isLoading && quests.length >= 0) {
         handleDayRollover(user, quests);
       }
-    }, [user?.id, isLoading]); // 当用户登录状态或加载状态变化时触发
+    }, [user?.id, isLoading, quests.length]); // 当用户登录状态、加载状态或任务数量变化时触发
 
   // Handle use token (called from StreakBreakDialog)
   const handleUseToken = async () => {

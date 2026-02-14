@@ -364,32 +364,38 @@ export default function QuestBoard() {
 
       try {
         // ========================================
-        // 步骤 5.1: 获取所有历史的例行任务模板
+        // 步骤 5.1: 获取历史的例行任务模板（排除今天）
         // ========================================
-        console.log('步骤 5.1: 获取所有历史的例行任务模板（已明文存储）...');
+        console.log('步骤 5.1: 获取历史的例行任务模板（已明文存储，排除今天）...');
 
-        // 获取所有标记为 isRoutine: true 的任务作为模板（不限制日期，从最近的记录中提取）
+        // 获取所有标记为 isRoutine: true 的任务作为模板
         const allRoutineTemplates = await base44.entities.Quest.filter({ 
           isRoutine: true
         }, '-created_date', 200);
-        console.log(`从历史记录中找到 ${allRoutineTemplates.length} 个例行任务模板`);
+        console.log(`从历史记录中找到 ${allRoutineTemplates.length} 个例行任务`);
+
+        // 🔥 关键：排除今天的任务（避免把今天已创建的任务再次作为模板）
+        const templatesExcludingToday = allRoutineTemplates.filter(t => t.date !== today);
+        console.log(`排除今天的任务后，剩余 ${templatesExcludingToday.length} 个可用作模板的历史任务`);
 
         // Routine 任务现在以明文存储，不需要解密
         // 直接构建活跃模板 Map: originalActionHint -> 最新的模板
         const activeTemplatesMap = new Map();
-        for (const template of allRoutineTemplates) {
-          // 使用 originalActionHint 作为唯一标识（如果没有则用 actionHint）
-          const templateKey = template.originalActionHint || template.actionHint;
+        for (const template of templatesExcludingToday) {
+          // 使用 originalActionHint 作为唯一标识
+          const templateKey = template.originalActionHint;
 
-          // 跳过空的模板
+          // 跳过没有 originalActionHint 的模板（可能是旧数据）
           if (!templateKey) {
-            console.warn(`跳过无效模板 (ID: ${template.id})`);
+            console.warn(`跳过无效模板 (ID: ${template.id}, 缺少 originalActionHint)`);
             continue;
           }
 
-          // 如果该键已存在，比较创建时间，保留最新的
-          if (!activeTemplatesMap.has(templateKey) || 
-              new Date(template.created_date) > new Date(activeTemplatesMap.get(templateKey).created_date)) {
+          // 如果该键已存在，比较日期和创建时间，保留最新的
+          const existing = activeTemplatesMap.get(templateKey);
+          if (!existing || 
+              template.date > existing.date || 
+              (template.date === existing.date && new Date(template.created_date) > new Date(existing.created_date))) {
             activeTemplatesMap.set(templateKey, template);
           }
         }

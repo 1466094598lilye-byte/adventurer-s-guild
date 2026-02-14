@@ -348,14 +348,13 @@ export default function QuestBoard() {
      * 处理每日修炼任务的生成、更新和删除
      * @param {Object} params - 参数对象
      * @param {string} params.today - 今天的日期 (YYYY-MM-DD)
-     * @param {string} params.yesterday - 昨天的日期 (YYYY-MM-DD)
      * @param {Function} params.batchInvalidateQueries - 批量刷新查询的函数
      * @param {Array} params.todayQuests - 今日已有的任务列表
      * @param {Function} params.setToast - 设置 Toast 提示的函数
      * @param {Function} params.t - 翻译函数
      * @returns {Promise<Object>} 返回操作统计 { updated: number, deleted: number, created: number }
      */
-    const runRoutineQuestsGeneration = async ({ today, yesterday, batchInvalidateQueries, todayQuests, setToast, t }) => {
+    const runRoutineQuestsGeneration = async ({ today, batchInvalidateQueries, todayQuests, setToast, t }) => {
       console.log('=== 步骤5: 开始处理每日修炼任务 ===');
 
       // 初始化操作计数器
@@ -365,16 +364,15 @@ export default function QuestBoard() {
 
       try {
         // ========================================
-        // 步骤 5.1: 获取昨天的例行任务模板
+        // 步骤 5.1: 获取所有历史的例行任务模板
         // ========================================
-        console.log('步骤 5.1: 获取昨天的例行任务模板（已明文存储）...');
+        console.log('步骤 5.1: 获取所有历史的例行任务模板（已明文存储）...');
 
-        // 只获取昨天标记为 isRoutine: true 的任务作为模板（避免历史乱码任务加载）
+        // 获取所有标记为 isRoutine: true 的任务作为模板（不限制日期，从最近的记录中提取）
         const allRoutineTemplates = await base44.entities.Quest.filter({ 
-          isRoutine: true,
-          date: yesterday
-        }, '-created_date', 100);
-        console.log(`从昨天找到 ${allRoutineTemplates.length} 个例行任务模板`);
+          isRoutine: true
+        }, '-created_date', 200);
+        console.log(`从历史记录中找到 ${allRoutineTemplates.length} 个例行任务模板`);
 
         // Routine 任务现在以明文存储，不需要解密
         // 直接构建活跃模板 Map: originalActionHint -> 最新的模板
@@ -816,7 +814,6 @@ export default function QuestBoard() {
         // 步骤2: 处理每日修炼任务（自动生成今日任务）
         await runRoutineQuestsGeneration({ 
           today,
-          yesterday,
           batchInvalidateQueries,
           todayQuests: currentTodayQuests,
           setToast,

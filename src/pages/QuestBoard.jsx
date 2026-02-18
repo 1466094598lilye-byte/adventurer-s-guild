@@ -131,6 +131,21 @@ export default function QuestBoard() {
     }, 100);
   };
 
+  // 🔥 Safari后台保持：监测日期变化，自动刷新页面
+  useEffect(() => {
+    const lastRenderedDate = format(new Date(), 'yyyy-MM-dd');
+    const checkDateChange = () => {
+      if (document.visibilityState === 'visible') {
+        const currentDate = format(new Date(), 'yyyy-MM-dd');
+        if (currentDate !== lastRenderedDate) {
+          window.location.reload();
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', checkDateChange);
+    return () => document.removeEventListener('visibilitychange', checkDateChange);
+  }, []);
+
   // 实时更新当前小时，用于判断是否显示"规划明日"板块
   useEffect(() => {
     const updateHour = () => {

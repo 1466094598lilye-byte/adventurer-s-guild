@@ -581,30 +581,36 @@ export default function QuestBoard() {
               )
             );
 
-            // 🔥 并行创建任务（Routine 任务不加密）
-            await Promise.all(
-              toCreate.map(async ({ actionHintPlain, templateQuest }, index) => {
-                const result = llmResults[index];
-                if (!result) return;
+            // 🔥 串行创建任务（防止并发竞争导致重复，每次创建前再次检查）
+            for (let i = 0; i < toCreate.length; i++) {
+              const { actionHintPlain, templateQuest } = toCreate[i];
+              const result = llmResults[i];
+              if (!result) continue;
 
-                try {
-                  await base44.entities.Quest.create({
-                    title: result.title,
-                    actionHint: actionHintPlain,
-                    difficulty: templateQuest.difficulty,
-                    rarity: templateQuest.rarity,
-                    date: today,
-                    status: 'todo',
-                    source: 'routine',
-                    isRoutine: true,
-                    originalActionHint: actionHintPlain,
-                    tags: []
-                  });
-                } catch (error) {
-                  console.error(`创建每日修炼任务失败: ${actionHintPlain}`, error);
+              try {
+                // 创建前再次检查（防止并发/重试导致重复）
+                const checkAgain = await base44.entities.Quest.filter({ date: today, isRoutine: true }, '-created_date', 200);
+                const alreadyCreated = checkAgain.some(q => q.originalActionHint === actionHintPlain);
+                if (alreadyCreated) {
+                  console.log(`⚠️ 已存在，跳过创建: ${actionHintPlain}`);
+                  continue;
                 }
-              })
-            );
+                await base44.entities.Quest.create({
+                  title: result.title,
+                  actionHint: actionHintPlain,
+                  difficulty: templateQuest.difficulty,
+                  rarity: templateQuest.rarity,
+                  date: today,
+                  status: 'todo',
+                  source: 'routine',
+                  isRoutine: true,
+                  originalActionHint: actionHintPlain,
+                  tags: []
+                });
+              } catch (error) {
+                console.error(`创建每日修炼任务失败: ${actionHintPlain}`, error);
+              }
+            }
 
             createdCount = toCreate.length;
           }

@@ -220,7 +220,7 @@ export function getTreasurePrompt(language, rarity, randomSeed = Math.floor(Math
     const rarityConfig = {
       'Common': {
         role: '偏远乡村的小卖店老板',
-        context: '你的铺子靠近驿道，主要客人是新手冒险者、猎人和本地村民。你进的货大多来自本地工匠、过路商队或以物易物。你卖的东西通常便宜、实用、消耗快，有时并不完美。',
+        context: '你的铺子靠近驿道，主要客人是新手冒险者、猎人和本地村民。你进的货大多来自本地工匠、过路商队或以物易物。你卖的东西通常便宜、实用，充满地方特色，或许有些磨损，但承载着旅途的故事和日常的温情。它们虽不完美，却都有其独特的用途和价值。',
         task: `请从这个生活场景出发，描述你货架上的一件**${selectedCategory}类**物品。`,
         nameLength: '4-8个汉字',
         descLength: '15-25个汉字',
@@ -288,7 +288,7 @@ ${config.task}
     const rarityConfig = {
       'Common': {
         role: 'a small shop owner in a remote village',
-        context: 'Your shop is near the caravan route. Your main customers are novice adventurers, hunters, and local villagers. Your goods mostly come from local craftsmen, passing merchants, or bartering. What you sell is usually cheap, practical, quickly consumed, and sometimes imperfect.',
+        context: 'Your shop is near the caravan route. Your main customers are novice adventurers, hunters, and local villagers. Your goods mostly come from local craftsmen, passing merchants, or bartering. What you sell is usually cheap and practical, full of local character — perhaps a little worn, but carrying the stories of the road and the warmth of everyday life. They may be imperfect, but each has its own unique use and charm.',
         task: `From this everyday scene, describe one **${selectedCategory}** item on your shelf.`,
         nameLength: '2-4 words',
         descLength: '15-25 words',

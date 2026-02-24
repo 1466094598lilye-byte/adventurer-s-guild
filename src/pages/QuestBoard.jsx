@@ -905,11 +905,7 @@ export default function QuestBoard() {
         return;
       }
 
-      // 🔥 【本地防重复】检查 localStorage，如果今天已完成就跳过
-      if (hasCompletedRolloverToday(currentUser.id)) {
-        console.log('✅ 本地标记显示今日日更已完成，跳过');
-        return;
-      }
+
 
 
 

@@ -55,20 +55,7 @@ export default function QuestBoard() {
   // 🔧 防止并发执行的 ref
   const isRolloverRunningRef = useRef(false);
   
-  // 检查 localStorage 是否今天已完成日更
-  const getRolloverKey = (userId) => `dayRollover_${userId}_${today}`;
-  const hasCompletedRolloverToday = (userId) => {
-    try {
-      return localStorage.getItem(getRolloverKey(userId)) === 'done';
-    } catch {
-      return false;
-    }
-  };
-  const markRolloverComplete = (userId) => {
-    try {
-      localStorage.setItem(getRolloverKey(userId), 'done');
-    } catch {}
-  };
+
 
   const invalidationTimeoutRef = useRef(null);
   const rolloverTimerRef = useRef(null);

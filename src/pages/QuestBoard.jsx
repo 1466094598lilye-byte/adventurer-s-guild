@@ -1015,9 +1015,7 @@ export default function QuestBoard() {
             const freezeTokenCount = currentUser?.freezeTokenCount || 0;
             
             if (currentStreak > 0) {
-              // 🔥 【关键】即使弹出对话框，也立即标记连胜检查已完成
-              markRolloverComplete(currentUser.id);
-              console.log('✅ 连胜检查已完成，已标记（即使弹出对话框）');
+
               
               setStreakBreakInfo({
                 incompleteDays: 1,

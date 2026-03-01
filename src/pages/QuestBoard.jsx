@@ -231,10 +231,10 @@ export default function QuestBoard() {
   });
 
   useEffect(() => {
-    if (user && !isLoading && quests.length >= 0 && !streakBreakInfo) {
+    if (user && !isLoading) {
       handleDayRollover();
     }
-  }, [user?.id, isLoading, quests.length]);
+  }, [user?.id]);
 
   // Handle use token (called from StreakBreakDialog)
   const handleUseToken = async () => {

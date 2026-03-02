@@ -146,9 +146,31 @@ export function useDayRollover({
         }
       }
 
-      // ── 步骤1+2: 调用后端 runDailyRollover（规划任务 + routine任务，幂等保护）──
+      // ── 步骤1+2: 调用后端 runDailyRollover（规划任务 + routine任务，幂等保护，自动重试3次）──
       setIsDayRolloverInProgress(true);
-      const { data: rolloverResult } = await base44.functions.invoke('runDailyRollover', { clientToday: today });
+      let rolloverResult = null;
+      let lastError = null;
+      const MAX_RETRIES = 3;
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          const { data } = await base44.functions.invoke('runDailyRollover', { clientToday: today });
+          rolloverResult = data;
+          lastError = null;
+          break;
+        } catch (err) {
+          lastError = err;
+          console.warn(`runDailyRollover 第 ${attempt} 次尝试失败:`, err);
+          if (attempt < MAX_RETRIES) {
+            await new Promise(resolve => setTimeout(resolve, 3000 * attempt));
+          }
+        }
+      }
+      if (lastError) {
+        setIsDayRolloverInProgress(false);
+        setRolloverError(true);
+        isRolloverRunningRef.current = false;
+        return;
+      }
       console.log('后端日更结果:', rolloverResult);
       if (rolloverResult && !rolloverResult.skipped) {
         batchInvalidateQueries(['quests', 'user']);

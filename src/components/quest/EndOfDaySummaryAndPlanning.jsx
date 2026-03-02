@@ -234,9 +234,14 @@ export default function EndOfDaySummaryAndPlanning({
     if (plannedQuests.length > 0) {
       await onPlanSaved(plannedQuests);
     }
-    // 静默预生成明天的 routine 任务（不阻塞关闭）
-    const tomorrow = format(new Date(new Date().setDate(new Date().getDate() + 1)), 'yyyy-MM-dd');
-    base44.functions.invoke('prepareNextDayRoutines', { clientTomorrow: tomorrow }).catch(() => {});
+    // 用户完成规划后，趁有网络立即预生成明日 routine 任务
+    try {
+      const tomorrow = format(new Date(new Date().getTime() + 86400000), 'yyyy-MM-dd');
+      base44.functions.invoke('prepareNextDayRoutines', { clientTomorrow: tomorrow });
+      // 不 await，后台静默执行，不阻塞关闭
+    } catch (e) {
+      // 静默失败，明天开屏再走正常 rollover
+    }
     onClose();
   };
 

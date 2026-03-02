@@ -44,6 +44,7 @@ export default function QuestBoard() {
   const [fromChestOpen, setFromChestOpen] = useState(false);
   const [rolloverLoadingSeconds, setRolloverLoadingSeconds] = useState(0);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [rolloverError, setRolloverError] = useState(false);
   const [pullStartY, setPullStartY] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);

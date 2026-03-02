@@ -53,11 +53,8 @@ export default function EndOfDaySummaryAndPlanning({
       generateCelebrationMessage();
     }
     loadRoutineQuests();
-    
-    // 如果是从宝箱打开的，检查今天是否已规划
-    if (fromChestOpen) {
-      checkExistingPlan();
-    }
+    // 无论从哪里打开，都检查今天是否已经规划过
+    checkExistingPlan();
   }, []);
 
   const checkExistingPlan = async () => {

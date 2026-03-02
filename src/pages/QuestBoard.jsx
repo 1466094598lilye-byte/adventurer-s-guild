@@ -228,6 +228,7 @@ export default function QuestBoard() {
     user, today, yesterday, quests,
     batchInvalidateQueries, setToast,
     setIsDayRolloverInProgress, setStreakBreakInfo,
+    setRolloverError,
     checkAndAwardMilestone, normalizeDate, t, language,
   });
 

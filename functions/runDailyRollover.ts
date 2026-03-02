@@ -54,8 +54,14 @@ Deno.serve(async (req) => {
     // ============================================================
     const lastRolloverDate = user.lastRolloverDate;
     if (lastRolloverDate === today) {
-      console.log(`今天 (${today}) 已执行过日更，跳过`);
-      return Response.json({ success: true, skipped: true, reason: 'already_ran_today' });
+      // 即使标记了今天已执行，也检查 routine 任务是否真的存在（容错）
+      const todayCheck = await base44.entities.Quest.filter({ date: today, isRoutine: true }, '-created_date', 10);
+      const hasRoutineQuests = todayCheck.length > 0;
+      if (hasRoutineQuests) {
+        console.log(`今天 (${today}) 已执行过日更，跳过`);
+        return Response.json({ success: true, skipped: true, reason: 'already_ran_today' });
+      }
+      console.log(`今天 (${today}) 标记已执行但 routine 任务缺失，重新执行...`);
     }
 
     console.log(`=== 开始执行日更 (${today}) ===`);

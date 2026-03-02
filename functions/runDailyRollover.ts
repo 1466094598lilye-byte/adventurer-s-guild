@@ -45,9 +45,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 使用 UTC+8 (Asia/Shanghai) 时间，与前端保持一致
-    const now = new Date(new Date().getTime() + 8 * 60 * 60 * 1000);
-    const today = now.toISOString().slice(0, 10);
+    // 使用前端传入的客户端本地日期，避免服务器时区问题
+    const body = await req.json().catch(() => ({}));
+    const today = body.clientToday || new Date().toISOString().slice(0, 10);
 
     // ============================================================
     // 幂等保护：检查今天是否已经执行过日更

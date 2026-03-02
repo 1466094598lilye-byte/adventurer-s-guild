@@ -147,7 +147,7 @@ export function useDayRollover({
 
       // ── 步骤1+2: 调用后端 runDailyRollover（规划任务 + routine任务，幂等保护）──
       setIsDayRolloverInProgress(true);
-      const { data: rolloverResult } = await base44.functions.invoke('runDailyRollover', {});
+      const { data: rolloverResult } = await base44.functions.invoke('runDailyRollover', { clientToday: today });
       console.log('后端日更结果:', rolloverResult);
       if (rolloverResult && !rolloverResult.skipped) {
         batchInvalidateQueries(['quests', 'user']);

@@ -724,6 +724,46 @@ export default function QuestBoard() {
         </div>
       )}
 
+      {rolloverError && (
+        <div className="fixed inset-0 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 9999 }}>
+          <div className="relative max-w-md w-full p-8 transform" style={{ backgroundColor: '#FF6B35', border: '5px solid #000', boxShadow: '12px 12px 0px #000' }}>
+            <div className="text-center">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h2 className="text-2xl font-black uppercase mb-3" style={{ color: '#FFF' }}>
+                {language === 'zh' ? '网络连接不稳定' : 'Network Unstable'}
+              </h2>
+              <div className="p-4 mb-5" style={{ backgroundColor: '#FFF', border: '3px solid #000' }}>
+                <p className="font-bold leading-relaxed">
+                  {language === 'zh'
+                    ? '任务未能加载（已自动重试3次）。请检查网络后重试，或点击"跳过"继续使用已有任务。'
+                    : 'Failed to load tasks after 3 retries. Check your network and retry, or skip to use existing quests.'}
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    setRolloverError(false);
+                    setIsDayRolloverInProgress(false);
+                    handleDayRollover();
+                  }}
+                  className="flex-1 py-4 font-black uppercase"
+                  style={{ backgroundColor: '#FFE66D', color: '#000', border: '4px solid #000', boxShadow: '5px 5px 0px #000' }}
+                >
+                  {language === 'zh' ? '🔄 重试' : '🔄 Retry'}
+                </Button>
+                <Button
+                  onClick={() => setRolloverError(false)}
+                  className="flex-1 py-4 font-black uppercase"
+                  style={{ backgroundColor: '#000', color: '#FFF', border: '4px solid #FFE66D', boxShadow: '5px 5px 0px #FFE66D' }}
+                >
+                  {language === 'zh' ? '跳过' : 'Skip'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 animate-fade-in-out" style={{ backgroundColor: '#4ECDC4', border: '4px solid #000', boxShadow: '6px 6px 0px #000', maxWidth: '90%' }}>
           <p className="font-black text-center">{toast}</p>

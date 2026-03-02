@@ -15,6 +15,7 @@ export function useDayRollover({
   setToast,
   setIsDayRolloverInProgress,
   setStreakBreakInfo,
+  setRolloverError,
   checkAndAwardMilestone,
   normalizeDate,
   t,

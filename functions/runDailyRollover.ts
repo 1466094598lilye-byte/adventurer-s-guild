@@ -48,6 +48,10 @@ Deno.serve(async (req) => {
     // 使用前端传入的客户端本地日期，避免服务器时区问题
     const body = await req.json().catch(() => ({}));
     const today = body.clientToday || new Date().toISOString().slice(0, 10);
+    
+    // 支持预生成模式：为指定日期（如明天）预生成 routine 任务
+    const targetDate = body.targetDate || today;
+    const isPrefetch = !!body.targetDate && body.targetDate !== today;
 
     // ============================================================
     // 幂等保护：检查今天是否已经执行过日更

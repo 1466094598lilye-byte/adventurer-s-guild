@@ -198,6 +198,7 @@ export function useDayRollover({
     } catch (error) {
       console.error('日更逻辑失败:', error);
       setIsDayRolloverInProgress(false);
+      setRolloverError(true);
     } finally {
       isRolloverRunningRef.current = false;
     }

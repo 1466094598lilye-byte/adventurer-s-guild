@@ -198,13 +198,14 @@ Deno.serve(async (req) => {
     }
 
     // ============================================================
-    // 幂等标记：记录今天已执行
+    // 幂等标记：所有任务创建完成后再记录（防止中途失败导致跳过）
     // ============================================================
     await base44.auth.updateMe({ lastRolloverDate: today });
 
     console.log(`=== 日更完成 ===`, results);
 
     return Response.json({ success: true, skipped: false, results });
+    
 
   } catch (error) {
     console.error('runDailyRollover error:', error);

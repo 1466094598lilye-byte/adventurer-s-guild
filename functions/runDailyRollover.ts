@@ -54,14 +54,68 @@ Deno.serve(async (req) => {
     const isPrefetch = !!body.targetDate && body.targetDate !== today;
 
     // ============================================================
+    // 预生成模式（isPrefetch=true）：只为 targetDate 生成 routine 任务，不做规划任务、连胜等逻辑
+    // ============================================================
+    if (isPrefetch) {
+      console.log(`=== 预生成模式：为 ${targetDate} 生成 routine 任务 ===`);
+
+      const allRoutineTemplates = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 200);
+      const templatesExcludingTarget = allRoutineTemplates.filter(t => t.date !== targetDate);
+      const activeTemplatesMap = new Map();
+      for (const template of templatesExcludingTarget) {
+        const key = template.originalActionHint;
+        if (!key) continue;
+        const existing = activeTemplatesMap.get(key);
+        if (!existing || template.date > existing.date) activeTemplatesMap.set(key, template);
+      }
+
+      const targetQuests = await base44.entities.Quest.filter({ date: targetDate, isRoutine: true }, '-created_date', 200);
+      const toCreate = [];
+      for (const [actionHint, templateQuest] of activeTemplatesMap) {
+        if (!targetQuests.some(q => q.originalActionHint === actionHint)) {
+          toCreate.push({ actionHint, templateQuest });
+        }
+      }
+
+      console.log(`预生成：需要创建 ${toCreate.length} 个 routine 任务`);
+
+      if (toCreate.length > 0) {
+        const titles = await Promise.all(
+          toCreate.map(({ actionHint }) => generateRoutineTitle(actionHint).catch(() => null))
+        );
+        for (let i = 0; i < toCreate.length; i++) {
+          const { actionHint, templateQuest } = toCreate[i];
+          const title = titles[i];
+          if (!title) continue;
+          // 创建前再次确认
+          const checkAgain = await base44.entities.Quest.filter({ date: targetDate, isRoutine: true }, '-created_date', 200);
+          if (checkAgain.some(q => q.originalActionHint === actionHint)) continue;
+          await base44.entities.Quest.create({
+            title, actionHint,
+            difficulty: templateQuest.difficulty,
+            rarity: templateQuest.rarity,
+            date: targetDate,
+            status: 'todo',
+            source: 'routine',
+            isRoutine: true,
+            originalActionHint: actionHint,
+            tags: []
+          });
+          console.log(`✅ 预生成 routine: ${actionHint}`);
+        }
+      }
+
+      return Response.json({ success: true, prefetch: true, targetDate, count: toCreate.length });
+    }
+
+    // ============================================================
     // 幂等保护：检查今天是否已经执行过日更
     // ============================================================
     const lastRolloverDate = user.lastRolloverDate;
     if (lastRolloverDate === today) {
       // 即使标记了今天已执行，也检查 routine 任务是否真的存在（容错）
       const todayCheck = await base44.entities.Quest.filter({ date: today, isRoutine: true }, '-created_date', 10);
-      const hasRoutineQuests = todayCheck.length > 0;
-      if (hasRoutineQuests) {
+      if (todayCheck.length > 0) {
         console.log(`今天 (${today}) 已执行过日更，跳过`);
         return Response.json({ success: true, skipped: true, reason: 'already_ran_today' });
       }
@@ -74,28 +128,19 @@ Deno.serve(async (req) => {
       plannedQuestsCreated: 0,
       routineQuestsCreated: 0,
       routineQuestsDeleted: 0,
-      routineQuestsUpdated: 0,
     };
 
     // ============================================================
     // 步骤1: 规划任务创建（nextDayPlannedQuests -> 今日任务）
     // ============================================================
-    console.log('=== 步骤1: 处理规划任务 ===');
     const nextDayPlanned = user.nextDayPlannedQuests || [];
     const lastPlannedDate = user.lastPlannedDate;
 
     if (nextDayPlanned.length > 0 && lastPlannedDate && lastPlannedDate < today) {
-      console.log(`发现 ${nextDayPlanned.length} 项规划任务，开始创建...`);
-
-      // 立即清空，防止重复创建
-      await base44.asServiceRole.entities.User.update(user.id, {
-        nextDayPlannedQuests: []
-      });
-
-      // 并行创建所有规划任务（规划任务是明文，不需要加密）
+      await base44.asServiceRole.entities.User.update(user.id, { nextDayPlannedQuests: [] });
       await Promise.all(
-        nextDayPlanned.map(async (plannedQuest) => {
-          await base44.entities.Quest.create({
+        nextDayPlanned.map(plannedQuest =>
+          base44.entities.Quest.create({
             title: plannedQuest.title,
             actionHint: plannedQuest.actionHint,
             difficulty: plannedQuest.difficulty,
@@ -104,94 +149,58 @@ Deno.serve(async (req) => {
             status: 'todo',
             source: 'ai',
             tags: plannedQuest.tags || []
-          });
-        })
+          })
+        )
       );
-
       results.plannedQuestsCreated = nextDayPlanned.length;
       console.log(`✅ 规划任务创建完成: ${results.plannedQuestsCreated} 条`);
-    } else {
-      console.log('无需处理的规划任务');
     }
 
     // ============================================================
-    // 步骤2: Routine 任务生成
+    // 步骤2: Routine 任务生成（优先使用预生成的，否则现场生成）
     // ============================================================
-    console.log('=== 步骤2: 处理 routine 任务 ===');
-
-    // 获取所有历史 routine 模板（排除今天）
-    const allRoutineTemplates = await base44.entities.Quest.filter(
-      { isRoutine: true }, '-created_date', 200
-    );
+    const allRoutineTemplates = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 200);
     const templatesExcludingToday = allRoutineTemplates.filter(t => t.date !== today);
-
-    // 按 originalActionHint 去重，保留最新的一条作为模板
     const activeTemplatesMap = new Map();
     for (const template of templatesExcludingToday) {
       const key = template.originalActionHint;
       if (!key) continue;
       const existing = activeTemplatesMap.get(key);
-      if (!existing ||
-          template.date > existing.date ||
-          (template.date === existing.date && new Date(template.created_date) > new Date(existing.created_date))) {
-        activeTemplatesMap.set(key, template);
-      }
+      if (!existing || template.date > existing.date) activeTemplatesMap.set(key, template);
     }
 
-    console.log(`唯一 routine 模板数: ${activeTemplatesMap.size}`);
-
-    // 获取今日已有的任务
     const todayQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
     const todayRoutineQuests = todayQuests.filter(q => q.isRoutine && q.source === 'routine');
 
-    // 删除废弃的今日 routine 任务（模板已不存在的）
+    // 删除废弃的今日 routine 任务
     for (const todayQuest of todayRoutineQuests) {
       const key = todayQuest.originalActionHint;
       if (key && !activeTemplatesMap.has(key)) {
         await base44.entities.Quest.delete(todayQuest.id);
         results.routineQuestsDeleted++;
-        console.log(`✅ 删除废弃 routine 任务: ${todayQuest.id}`);
       }
     }
 
-    // 找出今日缺少的 routine 任务，并行生成标题后串行创建（防重）
+    // 找出缺少的并创建
     const toCreate = [];
     for (const [actionHint, templateQuest] of activeTemplatesMap) {
-      const alreadyExists = todayQuests.some(
-        q => q.isRoutine && q.originalActionHint === actionHint
-      );
-      if (!alreadyExists) {
+      if (!todayQuests.some(q => q.isRoutine && q.originalActionHint === actionHint)) {
         toCreate.push({ actionHint, templateQuest });
       }
     }
 
-    console.log(`需要创建的 routine 任务数: ${toCreate.length}`);
-
     if (toCreate.length > 0) {
-      // 并行生成所有标题
       const titles = await Promise.all(
-        toCreate.map(({ actionHint }) =>
-          generateRoutineTitle(actionHint).catch(() => null)
-        )
+        toCreate.map(({ actionHint }) => generateRoutineTitle(actionHint).catch(() => null))
       );
-
-      // 串行创建（防并发重复）
       for (let i = 0; i < toCreate.length; i++) {
         const { actionHint, templateQuest } = toCreate[i];
         const title = titles[i];
         if (!title) continue;
-
-        // 创建前再次检查
         const checkAgain = await base44.entities.Quest.filter({ date: today, isRoutine: true }, '-created_date', 200);
-        const alreadyCreated = checkAgain.some(q => q.originalActionHint === actionHint);
-        if (alreadyCreated) {
-          console.log(`⚠️ 已存在，跳过: ${actionHint}`);
-          continue;
-        }
-
+        if (checkAgain.some(q => q.originalActionHint === actionHint)) continue;
         await base44.entities.Quest.create({
-          title,
-          actionHint,
+          title, actionHint,
           difficulty: templateQuest.difficulty,
           rarity: templateQuest.rarity,
           date: today,
@@ -201,21 +210,13 @@ Deno.serve(async (req) => {
           originalActionHint: actionHint,
           tags: []
         });
-
         results.routineQuestsCreated++;
-        console.log(`✅ 创建 routine 任务: ${actionHint}`);
       }
     }
 
-    // ============================================================
-    // 幂等标记：所有任务创建完成后再记录（防止中途失败导致跳过）
-    // ============================================================
     await base44.auth.updateMe({ lastRolloverDate: today });
-
     console.log(`=== 日更完成 ===`, results);
-
     return Response.json({ success: true, skipped: false, results });
-    
 
   } catch (error) {
     console.error('runDailyRollover error:', error);

@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      console.log(`预生成：需要创建 ${toCreate.length} 个 routine 任务`);
+
 
       if (toCreate.length > 0) {
         const titles = await Promise.all(

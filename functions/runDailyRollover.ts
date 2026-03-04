@@ -4,18 +4,18 @@ import { format, subDays } from 'npm:date-fns@3.6.0';
 const DEEPSEEK_API_KEY = Deno.env.get("DEEPSEEK_API_KEY");
 
 async function generateRoutineTitle(actionHint) {
-  const prompt = `你是【星陨纪元冒险者工会】的首席史诗书记官。
+  const prompt = `你是RPG游戏的任务书记官。请为以下每日任务生成一个新的RPG风格标题。
 
-**当前冒险者每日修炼内容：** ${actionHint}
-
-请为这个每日修炼任务生成**全新的**RPG风格标题（只需要标题，不需要重新评定难度）。
+任务内容：${actionHint}
 
 要求：
-1. 标题要有变化，不要每天都一样（但核心内容要体现任务本质）
-2. 格式：【2字类型】+ 7字标题
-3. 保持任务的核心特征
+1. 格式严格为：【2字类型】加7个汉字的描述
+2. 类型从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化
+3. 禁止使用"任务"二字
 
-只返回标题，格式：{"title": "..."}`;
+示例：{"title":"【研习】钻研多邻国语言奥秘"}
+
+请返回JSON：`;
 
   const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
     method: 'POST',
@@ -30,7 +30,10 @@ async function generateRoutineTitle(actionHint) {
     })
   });
 
-  if (!response.ok) throw new Error(`DeepSeek API error: ${response.status}`);
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`DeepSeek API error: ${response.status} - ${errText}`);
+  }
   const data = await response.json();
   const parsed = JSON.parse(data.choices[0].message.content);
   return parsed.title;

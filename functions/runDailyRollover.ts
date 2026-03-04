@@ -193,14 +193,19 @@ Deno.serve(async (req) => {
       }
     }
 
+    console.log(`需要创建 routine 任务数量: ${toCreate.length}`, toCreate.map(t => t.actionHint));
     if (toCreate.length > 0) {
       const titles = await Promise.all(
-        toCreate.map(({ actionHint }) => generateRoutineTitle(actionHint).catch(() => null))
+        toCreate.map(({ actionHint }) => generateRoutineTitle(actionHint).catch((err) => {
+          console.error(`generateRoutineTitle 失败 (${actionHint}):`, err.message);
+          return null;
+        }))
       );
+      console.log(`生成标题结果:`, titles);
       for (let i = 0; i < toCreate.length; i++) {
         const { actionHint, templateQuest } = toCreate[i];
-        const title = titles[i];
-        if (!title) continue;
+        // 降级：如果 AI 生成失败，使用模板的原标题
+        const title = titles[i] || templateQuest.title;
         const checkAgain = await base44.entities.Quest.filter({ date: today, isRoutine: true }, '-created_date', 200);
         if (checkAgain.some(q => q.originalActionHint === actionHint)) continue;
         await base44.entities.Quest.create({
@@ -215,6 +220,7 @@ Deno.serve(async (req) => {
           tags: []
         });
         results.routineQuestsCreated++;
+        console.log(`✅ 创建 routine: ${actionHint} -> ${title}`);
       }
     }
 

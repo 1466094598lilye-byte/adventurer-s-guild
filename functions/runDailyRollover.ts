@@ -192,15 +192,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`需要创建 routine 任务数量: ${toCreate.length}`, toCreate.map(t => t.actionHint));
     if (toCreate.length > 0) {
       const titles = await Promise.all(
-        toCreate.map(({ actionHint }) => generateRoutineTitle(actionHint).catch((err) => {
-          console.error(`generateRoutineTitle 失败 (${actionHint}):`, err.message);
-          return null;
-        }))
+        toCreate.map(({ actionHint }) => generateRoutineTitle(actionHint).catch(() => null))
       );
-      console.log(`生成标题结果:`, titles);
       for (let i = 0; i < toCreate.length; i++) {
         const { actionHint, templateQuest } = toCreate[i];
         // 降级：如果 AI 生成失败，使用模板的原标题

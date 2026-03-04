@@ -163,20 +163,16 @@ Deno.serve(async (req) => {
     // 步骤2: Routine 任务生成（优先使用预生成的，否则现场生成）
     // ============================================================
     const allRoutineTemplates = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 200);
-    console.log(`所有 routine 任务数量: ${allRoutineTemplates.length}`, allRoutineTemplates.map(t => `${t.date}|${t.originalActionHint}|src:${t.source}`));
     const templatesExcludingToday = allRoutineTemplates.filter(t => t.date !== today);
-    console.log(`排除今天后数量: ${templatesExcludingToday.length}`);
     const activeTemplatesMap = new Map();
     for (const template of templatesExcludingToday) {
       const key = template.originalActionHint;
-      if (!key) { console.log(`跳过无 originalActionHint: ${template.title}`); continue; }
+      if (!key) continue;
       const existing = activeTemplatesMap.get(key);
       if (!existing || template.date > existing.date) activeTemplatesMap.set(key, template);
     }
-    console.log(`activeTemplatesMap keys: ${[...activeTemplatesMap.keys()]}`);
 
     const todayQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
-    console.log(`今日任务数量: ${todayQuests.length}`, todayQuests.map(q => `${q.title}|routine:${q.isRoutine}|src:${q.source}|oah:${q.originalActionHint}`));
     const todayRoutineQuests = todayQuests.filter(q => q.isRoutine && q.source === 'routine');
 
     // 删除废弃的今日 routine 任务

@@ -232,11 +232,12 @@ export default function QuestBoard() {
     checkAndAwardMilestone, normalizeDate, t, language,
   });
 
+  // 日更触发：isLoading 必须在依赖中，否则 quests 加载完成时不会重新触发
   useEffect(() => {
     if (user && !isLoading) {
       handleDayRollover();
     }
-  }, [user?.id]);
+  }, [user?.id, isLoading]);
 
   // Handle use token (called from StreakBreakDialog)
   const handleUseToken = async () => {

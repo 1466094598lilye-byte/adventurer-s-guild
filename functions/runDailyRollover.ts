@@ -125,6 +125,9 @@ Deno.serve(async (req) => {
       console.log(`今天 (${today}) 标记已执行但 routine 任务缺失，重新执行...`);
     }
 
+    // 尽早声明今日已执行，防止并发请求重复创建任务
+    await base44.auth.updateMe({ lastRolloverDate: today });
+
     console.log(`=== 开始执行日更 (${today}) ===`);
 
     const results = {
@@ -135,27 +138,46 @@ Deno.serve(async (req) => {
 
     // ============================================================
     // 步骤1: 规划任务创建（nextDayPlannedQuests -> 今日任务）
+    // 先创建全部任务，成功后再清空 nextDayPlannedQuests，避免 Promise.all 部分失败时数据丢失
     // ============================================================
     const nextDayPlanned = user.nextDayPlannedQuests || [];
     const lastPlannedDate = user.lastPlannedDate;
 
     if (nextDayPlanned.length > 0 && lastPlannedDate && lastPlannedDate < today) {
-      await base44.asServiceRole.entities.User.update(user.id, { nextDayPlannedQuests: [] });
-      await Promise.all(
-        nextDayPlanned.map(plannedQuest =>
-          base44.entities.Quest.create({
-            title: plannedQuest.title,
-            actionHint: plannedQuest.actionHint,
-            difficulty: plannedQuest.difficulty,
-            rarity: plannedQuest.rarity,
-            date: today,
-            status: 'todo',
-            source: 'ai',
-            tags: plannedQuest.tags || []
-          })
-        )
-      );
-      results.plannedQuestsCreated = nextDayPlanned.length;
+      // 加密规划任务（与普通任务一致）
+      let encryptedQuests = nextDayPlanned;
+      try {
+        const { data: encData } = await base44.functions.invoke('encryptQuestData', {
+          quests: nextDayPlanned.map(q => ({ title: q.title, actionHint: q.actionHint }))
+        });
+        if (encData?.encryptedQuests?.length === nextDayPlanned.length) {
+          encryptedQuests = nextDayPlanned.map((q, i) => ({
+            ...q,
+            title: encData.encryptedQuests[i].encryptedTitle,
+            actionHint: encData.encryptedQuests[i].encryptedActionHint
+          }));
+        }
+      } catch (e) {
+        console.warn('规划任务加密失败，使用明文:', e);
+      }
+
+      // 串行创建，确保全部成功后再清空；避免 Promise.all 部分失败导致只创建部分且数据被清空
+      for (const plannedQuest of encryptedQuests) {
+        await base44.entities.Quest.create({
+          title: plannedQuest.title,
+          actionHint: plannedQuest.actionHint,
+          difficulty: plannedQuest.difficulty,
+          rarity: plannedQuest.rarity,
+          date: today,
+          status: 'todo',
+          source: 'ai',
+          tags: plannedQuest.tags || []
+        });
+        results.plannedQuestsCreated++;
+      }
+      if (results.plannedQuestsCreated > 0) {
+        await base44.asServiceRole.entities.User.update(user.id, { nextDayPlannedQuests: [] });
+      }
       console.log(`✅ 规划任务创建完成: ${results.plannedQuestsCreated} 条`);
     }
 
@@ -218,7 +240,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    await base44.auth.updateMe({ lastRolloverDate: today });
     console.log(`=== 日更完成 ===`, results);
     return Response.json({ success: true, skipped: false, results });
 

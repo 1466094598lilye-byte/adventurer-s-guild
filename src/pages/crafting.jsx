@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/components/LanguageContext';
 import { playSound, stopSound } from '@/components/AudioManager';
 import { getGuestData } from '@/components/utils/guestData';
+import { getTreasurePrompt } from '@/components/prompts';
 import { useNavigate } from 'react-router-dom';
 
 export default function Crafting() {
@@ -94,10 +95,16 @@ export default function Crafting() {
     const craftingAudio = await playSound('craftingLoop', { loop: true });
 
     try {
+      // 与开宝箱共用同一份文案源（getTreasurePrompt），不再让后端单独生成锻造文案
+      const randomSeed = Math.floor(
+        (Date.now() * Math.random() * 1000 + performance.now() * 1000) % 1000000
+      );
+      const { prompt } = getTreasurePrompt(language, targetRarity, randomSeed);
       const { data: result } = await base44.functions.invoke('craftLoot', {
         lootIds: selectedLoot.map(item => item.id),
         targetRarity: targetRarity,
-        language: language
+        language: language,
+        prompt: prompt
       });
 
       if (result.success) {

@@ -1,43 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { format, subDays } from 'npm:date-fns@3.6.0';
-
-const DEEPSEEK_API_KEY = Deno.env.get("DEEPSEEK_API_KEY");
-
-async function generateRoutineTitle(actionHint) {
-  const prompt = `你是RPG游戏的任务书记官。请为以下每日任务生成一个新的RPG风格标题。
-
-任务内容：${actionHint}
-
-要求：
-1. 格式严格为：【2字类型】加7个汉字的描述
-2. 类型从以下选择：征讨、探索、铸造、研习、护送、调查、收集、锻造、外交、记录、守护、净化
-3. 禁止使用"任务"二字
-
-示例：{"title":"【研习】钻研多邻国语言奥秘"}
-
-请返回JSON：`;
-
-  const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: "deepseek-chat",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" }
-    })
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`DeepSeek API error: ${response.status} - ${errText}`);
-  }
-  const data = await response.json();
-  const parsed = JSON.parse(data.choices[0].message.content);
-  return parsed.title;
-}
 
 Deno.serve(async (req) => {
   try {
@@ -51,65 +12,6 @@ Deno.serve(async (req) => {
     // 使用前端传入的客户端本地日期，避免服务器时区问题
     const body = await req.json().catch(() => ({}));
     const today = body.clientToday || new Date().toISOString().slice(0, 10);
-    
-    // 支持预生成模式：为指定日期（如明天）预生成 routine 任务
-    const targetDate = body.targetDate || today;
-    const isPrefetch = !!body.targetDate && body.targetDate !== today;
-
-    // ============================================================
-    // 预生成模式（isPrefetch=true）：只为 targetDate 生成 routine 任务，不做规划任务、连胜等逻辑
-    // ============================================================
-    if (isPrefetch) {
-      console.log(`=== 预生成模式：为 ${targetDate} 生成 routine 任务 ===`);
-
-      const allRoutineTemplates = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 200);
-      const templatesExcludingTarget = allRoutineTemplates.filter(t => t.date !== targetDate);
-      const activeTemplatesMap = new Map();
-      for (const template of templatesExcludingTarget) {
-        const key = template.originalActionHint;
-        if (!key) continue;
-        const existing = activeTemplatesMap.get(key);
-        if (!existing || template.date > existing.date) activeTemplatesMap.set(key, template);
-      }
-
-      const targetQuests = await base44.entities.Quest.filter({ date: targetDate, isRoutine: true }, '-created_date', 200);
-      const toCreate = [];
-      for (const [actionHint, templateQuest] of activeTemplatesMap) {
-        if (!targetQuests.some(q => q.originalActionHint === actionHint)) {
-          toCreate.push({ actionHint, templateQuest });
-        }
-      }
-
-
-
-      if (toCreate.length > 0) {
-        const titles = await Promise.all(
-          toCreate.map(({ actionHint }) => generateRoutineTitle(actionHint).catch(() => null))
-        );
-        for (let i = 0; i < toCreate.length; i++) {
-          const { actionHint, templateQuest } = toCreate[i];
-          const title = titles[i];
-          if (!title) continue;
-          // 创建前再次确认
-          const checkAgain = await base44.entities.Quest.filter({ date: targetDate, isRoutine: true }, '-created_date', 200);
-          if (checkAgain.some(q => q.originalActionHint === actionHint)) continue;
-          await base44.entities.Quest.create({
-            title, actionHint,
-            difficulty: templateQuest.difficulty,
-            rarity: templateQuest.rarity,
-            date: targetDate,
-            status: 'todo',
-            source: 'routine',
-            isRoutine: true,
-            originalActionHint: actionHint,
-            tags: []
-          });
-          console.log(`✅ 预生成 routine: ${actionHint}`);
-        }
-      }
-
-      return Response.json({ success: true, prefetch: true, targetDate, count: toCreate.length });
-    }
 
     // ============================================================
     // 幂等保护：检查今天是否已经执行过日更
@@ -182,7 +84,7 @@ Deno.serve(async (req) => {
     }
 
     // ============================================================
-    // 步骤2: Routine 任务生成（优先使用预生成的，否则现场生成）
+    // 步骤2: Routine 任务生成（直接复用模板标题，不调用 AI，消除生成时的竞态窗口）
     // ============================================================
     const allRoutineTemplates = await base44.entities.Quest.filter({ isRoutine: true }, '-created_date', 200);
     const templatesExcludingToday = allRoutineTemplates.filter(t => t.date !== today);
@@ -197,7 +99,7 @@ Deno.serve(async (req) => {
     const todayQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
     const todayRoutineQuests = todayQuests.filter(q => q.isRoutine && q.source === 'routine');
 
-    // 删除废弃的今日 routine 任务
+    // 删除废弃的今日 routine 任务（模板已不存在的）
     for (const todayQuest of todayRoutineQuests) {
       const key = todayQuest.originalActionHint;
       if (key && !activeTemplatesMap.has(key)) {
@@ -206,7 +108,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 找出缺少的并创建
+    // 找出今天还缺的 routine 并创建
     const toCreate = [];
     for (const [actionHint, templateQuest] of activeTemplatesMap) {
       if (!todayQuests.some(q => q.isRoutine && q.originalActionHint === actionHint)) {
@@ -214,30 +116,25 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (toCreate.length > 0) {
-      const titles = await Promise.all(
-        toCreate.map(({ actionHint }) => generateRoutineTitle(actionHint).catch(() => null))
-      );
-      for (let i = 0; i < toCreate.length; i++) {
-        const { actionHint, templateQuest } = toCreate[i];
-        // 降级：如果 AI 生成失败，使用模板的原标题
-        const title = titles[i] || templateQuest.title;
-        const checkAgain = await base44.entities.Quest.filter({ date: today, isRoutine: true }, '-created_date', 200);
-        if (checkAgain.some(q => q.originalActionHint === actionHint)) continue;
-        await base44.entities.Quest.create({
-          title, actionHint,
-          difficulty: templateQuest.difficulty,
-          rarity: templateQuest.rarity,
-          date: today,
-          status: 'todo',
-          source: 'routine',
-          isRoutine: true,
-          originalActionHint: actionHint,
-          tags: []
-        });
-        results.routineQuestsCreated++;
-        console.log(`✅ 创建 routine: ${actionHint} -> ${title}`);
-      }
+    for (const { actionHint, templateQuest } of toCreate) {
+      // 创建前再查一次（多一层防护；现在没有 AI 慢调用，查→建窗口极小）
+      const checkAgain = await base44.entities.Quest.filter({ date: today, isRoutine: true }, '-created_date', 200);
+      if (checkAgain.some(q => q.originalActionHint === actionHint)) continue;
+      // 直接复用模板标题，不再调用 DeepSeek（现场生成变为毫秒级）
+      await base44.entities.Quest.create({
+        title: templateQuest.title,
+        actionHint,
+        difficulty: templateQuest.difficulty,
+        rarity: templateQuest.rarity,
+        date: today,
+        status: 'todo',
+        source: 'routine',
+        isRoutine: true,
+        originalActionHint: actionHint,
+        tags: []
+      });
+      results.routineQuestsCreated++;
+      console.log(`✅ 创建 routine: ${actionHint} -> ${templateQuest.title}`);
     }
 
     console.log(`=== 日更完成 ===`, results);

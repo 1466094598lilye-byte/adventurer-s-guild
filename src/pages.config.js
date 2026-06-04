@@ -47,10 +47,8 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import CraftingPage from './pages/CraftingPage';
 import Journal from './pages/Journal';
 import LongTermCalendarPage from './pages/LongTermCalendarPage';
-import LongTermProjectPage from './pages/LongTermProjectPage';
 import Profile from './pages/Profile';
 import QuestBoard from './pages/QuestBoard';
 import Treasures from './pages/Treasures';
@@ -60,10 +58,8 @@ import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "CraftingPage": CraftingPage,
     "Journal": Journal,
     "LongTermCalendarPage": LongTermCalendarPage,
-    "LongTermProjectPage": LongTermProjectPage,
     "Profile": Profile,
     "QuestBoard": QuestBoard,
     "Treasures": Treasures,

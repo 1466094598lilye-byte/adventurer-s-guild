@@ -19,6 +19,7 @@ import { getTaskNamingPrompt } from '@/components/prompts';
 import { getGuestData, addGuestEntity, updateGuestEntity, deleteGuestEntity } from '@/components/utils/guestData';
 import { playSound, stopSound } from '@/components/AudioManager';
 import { normalizeDate } from '@/components/utils/dateUtils';
+import { resolveRoutineDuplicates } from '@/components/utils/routineDedup';
 import { useNavigate } from 'react-router-dom';
 
 export default function QuestBoard() {
@@ -152,7 +153,10 @@ export default function QuestBoard() {
     cacheTime: 0,
     queryFn: async () => {
       if (!user) {
-        return getGuestData('quests').filter(q => q.date === today);
+        const guestQuests = getGuestData('quests').filter(q => q.date === today);
+        const { visible, duplicateTodoIds } = resolveRoutineDuplicates(guestQuests);
+        duplicateTodoIds.forEach(id => { try { deleteGuestEntity('quests', id); } catch { /* ignore */ } });
+        return visible;
       }
       try {
         const allQuests = await base44.entities.Quest.filter({ date: today }, '-created_date');
@@ -178,7 +182,13 @@ export default function QuestBoard() {
             decryptedNonRoutineQuests = nonRoutineQuests;
           }
         }
-        return [...routineQuests, ...decryptedNonRoutineQuests];
+        const fullList = [...routineQuests, ...decryptedNonRoutineQuests];
+        const { visible, duplicateTodoIds } = resolveRoutineDuplicates(fullList);
+        if (duplicateTodoIds.length > 0) {
+          // fire-and-forget 清理多余的重复 routine（不阻塞渲染；规则保证只会删 todo、绝不删 done）
+          duplicateTodoIds.forEach(id => base44.entities.Quest.delete(id).catch(() => {}));
+        }
+        return visible;
       } catch (error) {
         console.error('获取任务失败:', error);
         return [];

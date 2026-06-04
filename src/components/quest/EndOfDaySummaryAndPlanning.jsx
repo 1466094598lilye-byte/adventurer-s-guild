@@ -231,9 +231,7 @@ export default function EndOfDaySummaryAndPlanning({
     if (plannedQuests.length > 0) {
       await onPlanSaved(plannedQuests);
     }
-    // 趁用户有网，预生成明日 routine 任务（后台静默执行，不阻塞关闭）
-    const tomorrow = format(new Date(new Date().getTime() + 86400000), 'yyyy-MM-dd');
-    base44.functions.invoke('runDailyRollover', { clientToday: today, targetDate: tomorrow }).catch(() => {});
+    // 预生成已移除：routine 改为点开时直接复用模板标题、毫秒级现场生成，无需提前生成
     onClose();
   };
 

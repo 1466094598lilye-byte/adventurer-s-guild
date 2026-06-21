@@ -1,0 +1,119 @@
+{
+  "name": "Quest",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Guild-style quest title"
+    },
+    "actionHint": {
+      "type": "string",
+      "description": "Clear action in parentheses"
+    },
+    "dueDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Quest deadline"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Quest tags"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "C",
+        "B",
+        "A",
+        "S",
+        "R"
+      ],
+      "default": "C",
+      "description": "Quest difficulty rank"
+    },
+    "rarity": {
+      "type": "string",
+      "enum": [
+        "Common",
+        "Rare",
+        "Epic",
+        "Legendary"
+      ],
+      "default": "Common",
+      "description": "Quest rarity"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "todo",
+        "done",
+        "skipped"
+      ],
+      "default": "todo",
+      "description": "Quest status"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "voice",
+        "text",
+        "ai",
+        "routine",
+        "longterm",
+        "bootstrap",
+        "deeprest"
+      ],
+      "default": "text",
+      "description": "How quest was created"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Quest assignment date"
+    },
+    "isRoutine": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is a daily routine quest"
+    },
+    "originalActionHint": {
+      "type": "string",
+      "description": "Original action hint for routine quests"
+    },
+    "isLongTermProject": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this quest is from long-term project planning"
+    },
+    "longTermProjectId": {
+      "type": "string",
+      "description": "\u6240\u5c5e\u5927\u9879\u76ee\u7684ID"
+    }
+  },
+  "required": [
+    "title",
+    "actionHint",
+    "date"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    },
+    "write": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

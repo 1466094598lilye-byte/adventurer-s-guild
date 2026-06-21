@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Filter, Loader2, Sparkles, Briefcase, ChevronDown, ChevronUp, Check, Calendar as CalendarIcon, Gift } from 'lucide-react';
 import QuestCard from '../components/quest/QuestCard';
-import PraiseDialog from '../components/quest/PraiseDialog';
+
 import ChestOpening from '../components/treasure/ChestOpening';
 import QuestEditFormModal from '../components/quest/QuestEditFormModal';
 import EndOfDaySummaryAndPlanning from '../components/quest/EndOfDaySummaryAndPlanning';
@@ -26,7 +26,6 @@ import { useNavigate } from 'react-router-dom';
 export default function QuestBoard() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState('all');
-  const [selectedQuest, setSelectedQuest] = useState(null);
   const [showChest, setShowChest] = useState(false);
   const [textInput, setTextInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -382,7 +381,6 @@ export default function QuestBoard() {
     try {
       await updateQuestMutation.mutateAsync({ id: quest.id, data: { status: 'done' } });
       await playSound('questCompleted');
-      setSelectedQuest(quest);
       batchInvalidateQueries(['quests']);
       if (quest.isLongTermProject && quest.longTermProjectId) {
         setTimeout(async () => {
@@ -665,7 +663,6 @@ export default function QuestBoard() {
           </div>
         )}
 
-        {selectedQuest && <PraiseDialog quest={selectedQuest} onClose={() => setSelectedQuest(null)} onAddNote={() => { alert(t('questboard_alert_review_notes_wip')); }} />}
         {showChest && <ChestOpening date={today} onClose={handleChestClose} onLootGenerated={() => { batchInvalidateQueries(['loot']); }} />}
         {editingQuest && <QuestEditFormModal quest={editingQuest} onSave={handleEditQuestSave} onClose={() => setEditingQuest(null)} />}
         {showPlanningDialog && user && <EndOfDaySummaryAndPlanning showCelebration={showCelebrationInPlanning} currentStreak={user?.streakCount || 0} fromChestOpen={fromChestOpen} onClose={() => { setShowPlanningDialog(false); setShowCelebrationInPlanning(false); setFromChestOpen(false); }} onPlanSaved={handlePlanSaved} />}

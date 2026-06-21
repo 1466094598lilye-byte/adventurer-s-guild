@@ -1,0 +1,125 @@
+{
+  "type": "object",
+  "name": "User",
+  "properties": {
+    "username": {
+      "type": "string",
+      "description": "User's unique username"
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Adventurer display name"
+    },
+    "title": {
+      "type": "string",
+      "description": "Current title/badge earned from milestones"
+    },
+    "unlockedMilestones": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      },
+      "default": [],
+      "description": "Array of unlocked milestone streak days (e.g., [7, 21, 50])"
+    },
+    "streakCount": {
+      "type": "integer",
+      "default": 0,
+      "description": "Current consecutive days streak"
+    },
+    "longestStreak": {
+      "type": "integer",
+      "default": 0,
+      "description": "Longest streak achieved"
+    },
+    "lastClearDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Last date all quests were cleared"
+    },
+    "freezeTokenCount": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of freeze tokens available"
+    },
+    "chestOpenCounter": {
+      "type": "integer",
+      "default": 0,
+      "description": "Counter for chest opens towards freeze token pity (resets at 60)"
+    },
+    "restDays": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Array of dates marked as guild rest days (format: yyyy-MM-dd)"
+    },
+    "praiseTone": {
+      "type": "string",
+      "default": "guild",
+      "description": "Praise dialog tone"
+    },
+    "nextDayPlannedQuests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "actionHint": {
+            "type": "string"
+          },
+          "difficulty": {
+            "type": "string",
+            "enum": [
+              "C",
+              "B",
+              "A",
+              "S"
+            ]
+          },
+          "rarity": {
+            "type": "string",
+            "enum": [
+              "Common",
+              "Rare",
+              "Epic",
+              "Legendary"
+            ]
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          }
+        },
+        "required": [
+          "title",
+          "actionHint",
+          "difficulty",
+          "rarity"
+        ]
+      },
+      "default": [],
+      "description": "Adventurer's planned quests for the next day, pre-processed by AI but not yet created as actual Quest entities."
+    },
+    "lastPlannedDate": {
+      "type": "string",
+      "format": "date",
+      "description": "Last date the adventurer used the 'Plan for Tomorrow' feature."
+    },
+    "streakManuallyReset": {
+      "type": "boolean",
+      "default": false,
+      "description": "Flag indicating if streak was manually reset by user (vs lost due to bug)"
+    }
+  },
+  "required": [
+    "displayName",
+    "lastClearDate"
+  ]
+}

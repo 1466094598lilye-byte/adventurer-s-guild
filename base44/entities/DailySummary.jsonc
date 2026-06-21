@@ -1,0 +1,43 @@
+{
+  "name": "DailySummary",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "\u65e5\u671f (YYYY-MM-DD)"
+    },
+    "completionRate": {
+      "type": "number",
+      "description": "\u5b8c\u6210\u7387 (0-1 \u4e4b\u95f4\u7684\u5c0f\u6570)"
+    },
+    "totalQuests": {
+      "type": "integer",
+      "description": "\u5f53\u5929\u603b\u4efb\u52a1\u6570"
+    },
+    "completedQuests": {
+      "type": "integer",
+      "description": "\u5f53\u5929\u5df2\u5b8c\u6210\u4efb\u52a1\u6570"
+    }
+  },
+  "required": [
+    "date",
+    "completionRate",
+    "totalQuests",
+    "completedQuests"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

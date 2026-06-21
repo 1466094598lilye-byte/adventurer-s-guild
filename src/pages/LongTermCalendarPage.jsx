@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar as CalendarIcon, Trash2, Edit2, AlertTriangle, ChevronRight, ChevronDown, Plus, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar as CalendarIcon, Trash2, Edit2, AlertTriangle, ChevronRight, ChevronDown, Plus, Loader2, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { format, parseISO, isSameDay, isValid } from 'date-fns';
 import { zhCN } from 'date-fns/locale';

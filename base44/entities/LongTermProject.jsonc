@@ -1,0 +1,48 @@
+{
+  "name": "LongTermProject",
+  "type": "object",
+  "properties": {
+    "projectName": {
+      "type": "string",
+      "description": "\u5927\u9879\u76ee\u540d\u79f0"
+    },
+    "description": {
+      "type": "string",
+      "description": "\u5927\u9879\u76ee\u7b80\u4ecb"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "completed"
+      ],
+      "default": "active",
+      "description": "\u5927\u9879\u76ee\u72b6\u6001"
+    },
+    "completionDate": {
+      "type": "string",
+      "format": "date",
+      "description": "\u9879\u76ee\u5b8c\u6210\u65e5\u671f"
+    }
+  },
+  "required": [
+    "projectName"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    },
+    "write": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

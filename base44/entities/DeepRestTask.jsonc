@@ -1,0 +1,33 @@
+{
+  "name": "DeepRestTask",
+  "type": "object",
+  "properties": {
+    "titleZh": {
+      "type": "string",
+      "description": "\u4e2d\u6587\u4efb\u52a1\u540d\u79f0"
+    },
+    "titleEn": {
+      "type": "string",
+      "description": "English task name"
+    },
+    "descriptionZh": {
+      "type": "string",
+      "description": "\u4e2d\u6587\u4efb\u52a1\u63cf\u8ff0"
+    },
+    "descriptionEn": {
+      "type": "string",
+      "description": "English task description"
+    }
+  },
+  "required": [
+    "titleZh",
+    "titleEn",
+    "descriptionZh",
+    "descriptionEn"
+  ],
+  "rls": {
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

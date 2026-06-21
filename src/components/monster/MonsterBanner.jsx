@@ -70,7 +70,7 @@ export default function MonsterBanner({ dateString, quests = [] }) {
           0%, 100% { transform: rotate(-2.5deg); }
           50%      { transform: rotate(2.5deg); }
         }
-        .monster-walk { animation: monster-walk 10s steps(20) infinite; }
+        .monster-walk { animation: monster-walk 30s steps(30) infinite; }
         .monster-sway { animation: monster-sway 0.5s ease-in-out infinite; transform-origin: bottom center; }
       `}</style>
     </div>

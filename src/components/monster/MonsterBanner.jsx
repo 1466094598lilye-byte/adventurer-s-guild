@@ -19,8 +19,10 @@ export default function MonsterBanner({ dateString, quests = [] }) {
           <div className="monster-sway" style={{ display: 'flex', justifyContent: 'center' }}>
             <MonsterSprite dateString={dateString} cell={7} />
           </div>
+          {/* 地平线——怪兽脚下 */}
+          <div style={{ borderTop: '3px solid var(--border-primary)', marginTop: 2 }} />
           {/* 血条——地平线以下 */}
-          <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
             <div style={{ fontSize: 14, fontWeight: 900, color: 'var(--color-yellow)', letterSpacing: 0.5 }}>
               {current}/{max}
             </div>
@@ -38,25 +40,25 @@ export default function MonsterBanner({ dateString, quests = [] }) {
           </div>
         </div>
       ) : (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 14,
-            left: 0,
-            right: 0,
-            textAlign: 'center',
-            color: 'var(--text-secondary)',
-            fontWeight: 800,
-            fontSize: 15,
-            letterSpacing: 1,
-          }}
-        >
-          王国无事发生……
-        </div>
+        <>
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 14,
+              left: 0,
+              right: 0,
+              textAlign: 'center',
+              color: 'var(--text-secondary)',
+              fontWeight: 800,
+              fontSize: 15,
+              letterSpacing: 1,
+            }}
+          >
+            王国无事发生……
+          </div>
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, borderBottom: '3px solid var(--border-primary)' }} />
+        </>
       )}
-
-      {/* 完整地平线——始终横跨整个 banner */}
-      <div style={{ position: 'absolute', bottom: 34, left: 0, right: 0, borderTop: '3px solid var(--border-primary)' }} />
 
       <style>{`
         @keyframes monster-walk {

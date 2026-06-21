@@ -15,7 +15,7 @@ export function LanguageProvider({ children }) {
     try {
       const browserLang = navigator.language || navigator.userLanguage || '';
       return browserLang.toLowerCase().startsWith('zh') ? 'zh' : 'en';
-    } catch (error) {
+    } catch {
       // 3. 兜底：如果检测失败，默认中文
       return 'zh';
     }

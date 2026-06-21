@@ -216,7 +216,7 @@ export default function ChestOpening({ date, onClose, onLootGenerated }) {
 
         playSound('chestOpen');
         onLootGenerated(savedLoot);
-      } catch (error) {
+      } catch {
         alert(language === 'zh' ? '开箱失败，请重试' : 'Failed to open chest, please retry');
       }
       setIsOpening(false);

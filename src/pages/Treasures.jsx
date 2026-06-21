@@ -24,7 +24,7 @@ export default function TreasuresPage() {
     queryFn: async () => {
       try {
         return await base44.auth.me();
-      } catch (error) {
+      } catch {
         return null;
       }
     },

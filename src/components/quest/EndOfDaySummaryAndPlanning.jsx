@@ -108,7 +108,7 @@ export default function EndOfDaySummaryAndPlanning({
       setCelebrationMessage(result.message || (language === 'zh' 
         ? '恭喜完成今日所有委托！' 
         : 'Congratulations on completing all quests today!'));
-    } catch (error) {
+    } catch {
       setCelebrationMessage(language === 'zh' 
         ? '恭喜完成今日所有委托！' 
         : 'Congratulations on completing all quests today!');

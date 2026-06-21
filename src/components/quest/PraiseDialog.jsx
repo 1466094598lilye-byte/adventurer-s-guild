@@ -48,7 +48,7 @@ export default function PraiseDialog({ quest, onClose }) {
       
       // 表扬信文字生成完成后播放音效
       await playSound('praiseSound');
-    } catch (error) {
+    } catch {
       setPraise(language === 'zh'
         ? '我看到了你的努力。这份坚持正在让你变得更强大。'
         : 'I witnessed your effort. This persistence is making you stronger.');

@@ -115,7 +115,7 @@ export default function Crafting() {
       } else {
         setError(result.error || (language === 'zh' ? '合成失败，请重试' : 'Crafting failed, please retry'));
       }
-    } catch (err) {
+    } catch {
       setError(language === 'zh' ? '合成失败，请重试' : 'Crafting failed, please retry');
     }
 

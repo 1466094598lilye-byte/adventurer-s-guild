@@ -14,7 +14,7 @@ export default function JournalPage() {
     queryFn: async () => {
       try {
         return await base44.auth.me();
-      } catch (error) {
+      } catch {
         return null;
       }
     },

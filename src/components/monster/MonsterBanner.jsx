@@ -13,15 +13,20 @@ export default function MonsterBanner({ dateString, quests = [] }) {
   const pct = max > 0 ? (current / max) * 100 : 0;
 
   return (
-    <div style={{ position: 'relative', height: 80, marginBottom: 24 }}>
+    <div style={{ position: 'relative', height: 130, marginBottom: 24 }}>
       {hasMonster ? (
-        /* 怪兽 + 头顶血条：一起水平走 */
         <div className="monster-walk" style={{ position: 'absolute', bottom: 4 }}>
           <div className="monster-sway" style={{ display: 'flex', justifyContent: 'center' }}>
             <MonsterSprite dateString={dateString} cell={7} />
           </div>
-          <div style={{ marginTop: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 60, height: 8, border: '2px solid var(--border-primary)', backgroundColor: '#1a1a1a', borderRadius: 2 }}>
+          {/* 地平线——怪兽脚下 */}
+          <div style={{ borderTop: '3px solid var(--border-primary)', marginTop: 2 }} />
+          {/* 血条——地平线以下 */}
+          <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <div style={{ fontSize: 14, fontWeight: 900, color: 'var(--color-yellow)', letterSpacing: 0.5 }}>
+              {current}/{max}
+            </div>
+            <div style={{ width: 140, height: 12, border: '3px solid var(--border-primary)', backgroundColor: '#1a1a1a', borderRadius: 3 }}>
               <div
                 style={{
                   width: `${pct}%`,
@@ -32,37 +37,33 @@ export default function MonsterBanner({ dateString, quests = [] }) {
                 }}
               />
             </div>
-            <div style={{ fontSize: 10, fontWeight: 900, color: 'var(--color-yellow)', lineHeight: 1 }}>
-              {current}/{max}
-            </div>
           </div>
         </div>
       ) : (
-        /* 没有任务：王国无事发生 */
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 14,
-            left: 0,
-            right: 0,
-            textAlign: 'center',
-            color: 'var(--text-secondary)',
-            fontWeight: 800,
-            fontSize: 15,
-            letterSpacing: 1,
-          }}
-        >
-          王国无事发生……
-        </div>
+        <>
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 14,
+              left: 0,
+              right: 0,
+              textAlign: 'center',
+              color: 'var(--text-secondary)',
+              fontWeight: 800,
+              fontSize: 15,
+              letterSpacing: 1,
+            }}
+          >
+            王国无事发生……
+          </div>
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, borderBottom: '3px solid var(--border-primary)' }} />
+        </>
       )}
-
-      {/* 地平线 */}
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, borderBottom: '3px solid var(--border-primary)' }} />
 
       <style>{`
         @keyframes monster-walk {
           0%   { left: 4%; }
-          50%  { left: calc(96% - 63px); }
+          50%  { left: calc(96% - 140px); }
           100% { left: 4%; }
         }
         @keyframes monster-sway {

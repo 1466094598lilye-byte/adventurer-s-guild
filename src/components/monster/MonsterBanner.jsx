@@ -15,7 +15,7 @@ export default function MonsterBanner({ dateString, quests = [] }) {
   return (
     <div style={{ position: 'relative', height: 130, marginBottom: 24 }}>
       {hasMonster ? (
-        <div className="monster-walk" style={{ position: 'absolute', bottom: 34 }}>
+        <div className="monster-walk" style={{ position: 'absolute', bottom: 4 }}>
           <div className="monster-sway" style={{ display: 'flex', justifyContent: 'center' }}>
             <MonsterSprite dateString={dateString} cell={7} />
           </div>

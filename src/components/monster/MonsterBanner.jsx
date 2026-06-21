@@ -17,23 +17,24 @@ export default function MonsterBanner({ dateString, quests = [] }) {
       {hasMonster ? (
         /* 怪兽 + 头顶血条：一起水平走 */
         <div className="monster-walk" style={{ position: 'absolute', bottom: 4 }}>
-          <div style={{ marginBottom: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-            <div style={{ fontSize: 9, fontWeight: 900, color: 'var(--color-yellow)', lineHeight: 1 }}>
-              {current}/{max}
-            </div>
-            <div style={{ width: 54, height: 5, border: '1.5px solid var(--border-primary)', backgroundColor: '#2a2a2a' }}>
+          <div className="monster-sway" style={{ display: 'flex', justifyContent: 'center' }}>
+            <MonsterSprite dateString={dateString} cell={7} />
+          </div>
+          <div style={{ marginTop: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 60, height: 8, border: '2px solid var(--border-primary)', backgroundColor: '#1a1a1a', borderRadius: 2 }}>
               <div
                 style={{
                   width: `${pct}%`,
                   height: '100%',
                   backgroundColor: pct > 40 ? 'var(--color-cyan)' : '#FF6B35',
                   transition: 'width 0.3s ease',
+                  borderRadius: 2,
                 }}
               />
             </div>
-          </div>
-          <div className="monster-sway" style={{ display: 'flex', justifyContent: 'center' }}>
-            <MonsterSprite dateString={dateString} cell={7} />
+            <div style={{ fontSize: 10, fontWeight: 900, color: 'var(--color-yellow)', lineHeight: 1 }}>
+              {current}/{max}
+            </div>
           </div>
         </div>
       ) : (

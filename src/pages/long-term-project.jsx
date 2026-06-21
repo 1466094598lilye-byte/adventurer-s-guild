@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Loader2, ChevronDown, ChevronUp, Edit2, Calendar as CalendarIcon } from 'lucide-react';
+import { ArrowLeft, Loader2, ChevronDown, ChevronUp, Calendar as CalendarIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { format } from 'date-fns';
 import { useLanguage } from '@/components/LanguageContext';

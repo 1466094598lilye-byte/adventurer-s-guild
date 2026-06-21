@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, X, Sparkles, Flame } from 'lucide-react';
+import { ArrowLeft, Sparkles, Flame } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/components/LanguageContext';

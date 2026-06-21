@@ -1,4 +1,3 @@
-import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from '@/App.jsx'
 import '@/index.css'
@@ -17,6 +16,5 @@ if (import.meta.hot) {
     window.parent?.postMessage({ type: 'sandbox:afterUpdate' }, '*');
   });
 }
-
 
 

@@ -280,23 +280,6 @@ export default function QuestBoard() {
     }
   };
 
-  const createQuestMutation = useMutation({
-    mutationFn: async (questData) => {
-      if (!user) return addGuestEntity('quests', questData);
-      if (questData.isRoutine) return base44.entities.Quest.create(questData);
-      const { data: encrypted } = await base44.functions.invoke('encryptQuestData', { title: questData.title, actionHint: questData.actionHint });
-      return base44.entities.Quest.create({ ...questData, title: encrypted.encryptedTitle, actionHint: encrypted.encryptedActionHint });
-    },
-    onMutate: async (newQuest) => {
-      await queryClient.cancelQueries({ queryKey: ['quests', today] });
-      const previousQuests = queryClient.getQueryData(['quests', today]);
-      queryClient.setQueryData(['quests', today], (old = []) => [...old, { ...newQuest, id: `temp_${Date.now()}`, created_date: new Date().toISOString(), updated_date: new Date().toISOString(), created_by: user?.email || 'guest' }]);
-      return { previousQuests };
-    },
-    onError: (err, newQuest, context) => { queryClient.setQueryData(['quests', today], context.previousQuests); },
-    onSuccess: async () => { batchInvalidateQueries(['quests', 'user']); }
-  });
-
   const updateQuestMutation = useMutation({
     mutationFn: async ({ id, data }) => {
       if (!user) return updateGuestEntity('quests', id, data);

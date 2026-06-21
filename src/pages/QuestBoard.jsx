@@ -20,6 +20,7 @@ import { getGuestData, addGuestEntity, updateGuestEntity, deleteGuestEntity } fr
 import { playSound, stopSound } from '@/components/AudioManager';
 import { normalizeDate } from '@/components/utils/dateUtils';
 import { resolveRoutineDuplicates } from '@/components/utils/routineDedup';
+import MonsterBanner from '@/components/monster/MonsterBanner';
 import { useNavigate } from 'react-router-dom';
 
 export default function QuestBoard() {
@@ -538,10 +539,7 @@ export default function QuestBoard() {
       )}
       
       <div className="max-w-2xl mx-auto">
-        <div className="mb-6 p-4 transform -rotate-1" style={{ backgroundColor: 'var(--bg-black)', color: 'var(--color-yellow)', border: '5px solid var(--color-yellow)', boxShadow: '8px 8px 0px var(--color-yellow)' }}>
-          <h1 className="text-3xl font-black uppercase text-center">⚔️ {t('questboard_title')} ⚔️</h1>
-          <p className="text-center font-bold mt-2 text-sm">{language === 'zh' ? format(new Date(), 'yyyy年MM月dd日') : format(new Date(), 'MMMM dd, yyyy')}</p>
-        </div>
+        <MonsterBanner dateString={today} quests={quests} />
 
         <div className="p-4 mb-6" style={{ backgroundColor: 'var(--bg-warning)', border: '4px solid var(--border-primary)', boxShadow: '6px 6px 0px var(--border-primary)' }}>
           <div className="flex gap-3 mb-3">
